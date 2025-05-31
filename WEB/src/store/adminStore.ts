@@ -221,7 +221,12 @@ interface AdminState {
   createMission: (mission: Partial<Mission>) => Promise<void>;
   deleteMission: (id: string) => Promise<void>;
   updateMission: (id: string, data: Partial<Mission>) => void;
-  updateDocument: (id: string, data: Partial<Document>) => void;
+  updateDocument: (
+    id: string,
+    data: Partial<Document>,
+    userId: string,
+    profData: Partial<Profile>
+  ) => void;
   fetchDocumentsWithSignedUrls: () => Promise<Document[]>;
   deleteDocument: (id: string) => void;
   updateBlogPost: (id: string, data: Partial<BlogPost>) => void;
@@ -846,15 +851,31 @@ export const useAdminStore = create<AdminState>()(
           set({ loading: false });
         }
       },
-      updateDocument: async (id, data) => {
+      updateDocument: async (id, data, userId, profData) => {
         set({ loading: true, error: null });
 
         try {
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .update(profData)
+            .eq("id", userId)
+            .select();
+
+          if (profileError) {
+            console.error(
+              `Error updating profile with ID ${id}:`,
+              profileError
+            );
+            set({ error: profileError.message });
+            return;
+          }
+
           const { error } = await supabase
             .from("user_documents")
             .update(data)
             .eq("id", id)
             .select();
+
           if (error) {
             console.error(`Error updating document with ID ${id}:`, error);
             set({ error: error.message });
@@ -862,6 +883,7 @@ export const useAdminStore = create<AdminState>()(
           } else {
             console.log(`Updated document with ID ${id}`);
           }
+
           set((state) => ({
             documents: state.documents.map((document) =>
               document.id === id ? { ...document, ...data } : document

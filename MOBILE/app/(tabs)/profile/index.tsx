@@ -17,39 +17,105 @@ import {
   GraduationCap,
   Globe,
   Folder,
+  RefreshCw,
+  Info,
 } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
+
+const technicianCategories = [
+  {
+    label: 'Techniciens en Agriculture de Précision',
+    value: 'precision_agriculture_technician',
+  },
+  {
+    label: 'Techniciens en Matériel Agricole',
+    value: 'agricultural_equipment_technician',
+  },
+  {
+    label: 'Techniciens en Cultures et Sols',
+    value: 'crop_and_soil_technician',
+  },
+  {
+    label: 'Techniciens de Recherche et Laboratoire',
+    value: 'research_and_laboratory_technician',
+  },
+  {
+    label: 'Techniciens en Élevage et Laitier',
+    value: 'livestock_and_airy_technician',
+  },
+  {
+    label: 'Techniciens en Sécurité Alimentaire et Qualité',
+    value: 'food_safety_and_quality_technician',
+  },
+  {
+    label: 'Techniciens en Gestion des Ravageurs et Environnement',
+    value: 'pest_management_and_environmental_technician',
+  },
+  {
+    label: "Techniciens d'Inspection et Certification",
+    value: 'inspection_and_certification_technician',
+  },
+  {
+    label: 'Techniciens en Vente et Support',
+    value: 'sales_and_support_technician',
+  },
+  { label: 'Autre', value: 'other' },
+];
+
+const workerCategories = [
+  {
+    label: 'Ouvriers de Production Végétale',
+    value: 'crop_production_worker',
+  },
+  { label: 'Ouvriers en Élevage', value: 'livestock_worker' },
+  { label: 'Ouvriers Mécanisés', value: 'mechanized_worker' },
+  { label: 'Ouvriers de Transformation', value: 'processing_worker' },
+  { label: 'Ouvriers Spécialisés', value: 'specialized_worker' },
+  { label: 'Ouvriers Saisonniers', value: 'seasonal_worker' },
+  { label: "Ouvriers d'Entretien", value: 'maintenance_worker' },
+  { label: 'Autre', value: 'other' },
+];
 
 export default function ProfileScreen() {
   const { colors } = useThemeStore();
   const { fetchProfile, loading, profile, error } = useAuthStore();
 
-  interface Profile {
-    full_name?: string;
-    role?: string;
-    super_role?: string;
-    phone?: string;
-    profile_picture?: string;
-    bio?: string;
-    specialization?: string;
-    certifications?: string;
-    education?: string;
-    experience?: string;
-    languages?: string;
-    actual_location?: string;
-    portfolio?: string;
-    skills?: string;
-    work_experience?: string;
-    availability_locations?: string;
-  }
-
   useEffect(() => {
     const fetchUserProfile = async () => {
       await fetchProfile();
     };
-    fetchUserProfile(); 
+    fetchUserProfile();
   }, []);
+
+  const handleRefresh = async () => {
+    await fetchProfile();
+  };
+
+  if (loading && !profile) {
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  const translateSpecialization = (value?: string | null) => {
+    if (!value) return null;
+
+    // Check technician categories
+    const techCategory = technicianCategories.find(
+      (cat) => cat.value === value
+    );
+    if (techCategory) return techCategory.label;
+
+    // Check worker categories
+    const workerCategory = workerCategories.find((cat) => cat.value === value);
+    if (workerCategory) return workerCategory.label;
+
+    // Return original value if not found in categories
+    return value;
+  };
 
   const getDashboardRoute = () => {
     if (profile?.super_role === 'admin') {
@@ -160,6 +226,18 @@ export default function ProfileScreen() {
       >
         {/* Header Section */}
         <View style={[styles.header, { backgroundColor: colors.card }]}>
+          <TouchableOpacity
+            style={[styles.refreshButton, { backgroundColor: colors.primary }]}
+            onPress={handleRefresh}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.card} />
+            ) : (
+              <RefreshCw size={20} color={colors.card} />
+            )}
+          </TouchableOpacity>
+
           <View style={styles.headerContent}>
             <View style={styles.profileImageContainer}>
               {profile?.profile_picture ? (
@@ -195,7 +273,13 @@ export default function ProfileScreen() {
                 ]}
               >
                 <Text style={[styles.role, { color: colors.primary }]}>
-                  {profile?.role || 'Rôle Inconnu'}
+                  {profile?.role === 'worker'
+                    ? 'Ouvrier'
+                    : profile?.role === 'technician'
+                    ? 'Technicien'
+                    : profile?.role === 'entrepreneur'
+                    ? 'Entrepreneur'
+                    : 'Inconnu'}
                 </Text>
               </View>
               <View style={styles.locationContainer}>
@@ -227,18 +311,43 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
         {/* Profile Details Section */}
         <View style={styles.detailsContainer}>
+          <ProfileSection
+            title="À Propos"
+            icon={<Info size={20} color={colors.primary} />}
+            details={[
+              {
+                label: 'Bio',
+                value: profile?.bio,
+              },
+            ]}
+            colors={colors}
+            renderDetailValue={renderDetailValue}
+          />
           <ProfileSection
             title="Compétences et Expérience"
             icon={<Briefcase size={20} color={colors.primary} />}
             details={[
-              { label: 'Compétences', value: Array.isArray(profile?.skills) ? profile.skills.join(', ') : profile?.skills },
+              {
+                label: 'Compétences',
+                value: Array.isArray(profile?.skills)
+                  ? profile.skills.join(', ')
+                  : profile?.skills,
+              },
               {
                 label: 'Expérience Professionnelle',
-                value: Array.isArray(profile?.work_experience) ? profile.work_experience.join(', ') : profile?.work_experience,
+                value: Array.isArray(profile?.work_experience)
+                  ? profile.work_experience.join(', ')
+                  : profile?.work_experience,
               },
-              { label: 'Spécialisation', value: Array.isArray(profile?.specialization) ? profile.specialization.join(', ') : profile?.specialization },
+              {
+                label: 'Spécialisation',
+                value: translateSpecialization(
+                  profile?.specialization || profile?.other_specialization
+                ),
+              },
             ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
@@ -248,7 +357,12 @@ export default function ProfileScreen() {
             title="Éducation et Certifications"
             icon={<GraduationCap size={20} color={colors.primary} />}
             details={[
-              { label: 'Certifications', value: Array.isArray(profile?.certifications) ? profile.certifications.join(', ') : profile?.certifications },
+              {
+                label: 'Certifications',
+                value: Array.isArray(profile?.certifications)
+                  ? profile.certifications.join(', ')
+                  : profile?.certifications,
+              },
             ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
@@ -257,7 +371,14 @@ export default function ProfileScreen() {
           <ProfileSection
             title="Langues"
             icon={<Globe size={20} color={colors.primary} />}
-            details={[{ label: 'Langues', value: Array.isArray(profile?.languages) ? profile.languages.join(', ') : profile?.languages }]}
+            details={[
+              {
+                label: 'Langues',
+                value: Array.isArray(profile?.languages)
+                  ? profile.languages.join(', ')
+                  : profile?.languages,
+              },
+            ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
           />
@@ -265,7 +386,14 @@ export default function ProfileScreen() {
           <ProfileSection
             title="Portfolio"
             icon={<Folder size={20} color={colors.primary} />}
-            details={[{ label: 'Portfolio', value: Array.isArray(profile?.portfolio) ? profile.portfolio.join(', ') : profile?.portfolio }]}
+            details={[
+              {
+                label: 'Portfolio',
+                value: Array.isArray(profile?.portfolio)
+                  ? profile.portfolio.join(', ')
+                  : profile?.portfolio,
+              },
+            ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
           />
@@ -275,7 +403,9 @@ export default function ProfileScreen() {
             details={[
               {
                 label: 'Zones',
-                value: Array.isArray(profile?.availability_locations) ? profile.availability_locations.join(', ') : profile?.availability_locations,
+                value: Array.isArray(profile?.availability_locations)
+                  ? profile.availability_locations.join(', ')
+                  : profile?.availability_locations,
               },
             ]}
             colors={colors}
@@ -515,5 +645,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     marginBottom: 0,
     paddingBottom: 0,
+  },
+  refreshButton: {
+    position: 'absolute',
+    top: 24,
+    right: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

@@ -21,6 +21,8 @@ import {
   ChevronRight,
   CheckSquare,
   Square,
+  ChevronDown,
+  Shield,
 } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useThemeStore } from '@/stores/theme';
@@ -29,7 +31,7 @@ import { useAuthStore } from '@/stores/auth';
 const roles = [
   {
     id: 'worker',
-    label: 'Travailleur',
+    label: 'Ouvrier',
     description: 'Trouver des opportunités de travail',
   },
   {
@@ -42,6 +44,57 @@ const roles = [
     label: 'Entrepreneur',
     description: 'Gérez une entreprise agricole',
   },
+];
+
+const technicianCategories = [
+  {
+    label: 'Techniciens en Agriculture de Précision',
+    value: 'precision_agriculture_technician',
+  },
+  {
+    label: 'Techniciens en Matériel Agricole',
+    value: 'agricultural_equipment_technician',
+  },
+  {
+    label: 'Techniciens en Cultures et Sols',
+    value: 'crop_and_soil_technician',
+  },
+  {
+    label: 'Techniciens de Recherche et Laboratoire',
+    value: 'research_and_laboratory_technician',
+  },
+  {
+    label: 'Techniciens en Élevage et Laitier',
+    value: 'livestock_and_airy_technician',
+  },
+  {
+    label: 'Techniciens en Sécurité Alimentaire et Qualité',
+    value: 'food_safety_and_quality_technician',
+  },
+  {
+    label: 'Techniciens en Gestion des Ravageurs et Environnement',
+    value: 'pest_management_and_environmental_technician',
+  },
+  {
+    label: "Techniciens d'Inspection et Certification",
+    value: 'inspection_and_certification_technician',
+  },
+  {
+    label: 'Techniciens en Vente et Support',
+    value: 'sales_and_support_technician',
+  },
+  { label: 'Autre', value: 'other' },
+];
+
+const workerCategories = [
+  { label: 'Ouvriers de Production Végétale', value: 'crop_production_worker' },
+  { label: 'Ouvriers en Élevage', value: 'livestock_worker' },
+  { label: 'Ouvriers Mécanisés', value: 'mechanized_worker' },
+  { label: 'Ouvriers de Transformation', value: 'processing_worker' },
+  { label: 'Ouvriers Spécialisés', value: 'specialized_worker' },
+  { label: 'Ouvriers Saisonniers', value: 'seasonal_worker' },
+  { label: "Ouvriers d'Entretien", value: 'maintenance_worker' },
+  { label: 'Autre', value: 'other' },
 ];
 
 const passwordRequirements = [
@@ -74,11 +127,21 @@ export default function RegisterScreen() {
     account_status: 'healthy',
     password: '',
     confirmPassword: '',
+    actor_specialization: '',
+    customSpecialization: '',
   });
   const [selectedCountryCode, setSelectedCountryCode] = useState('+226');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [showSpecializationDropdown, setShowSpecializationDropdown] =
+    useState(false);
+
+  const getSpecializationCategories = () => {
+    if (formData.role === 'technician') return technicianCategories;
+    if (formData.role === 'worker') return workerCategories;
+    return [];
+  };
 
   const checkPasswordRequirement = (requirement: string) => {
     const { password } = formData;
@@ -110,6 +173,18 @@ export default function RegisterScreen() {
         throw new Error('Please fill in all required fields');
       }
 
+      if (['technician', 'worker'].includes(formData.role)) {
+        if (!formData.actor_specialization) {
+          throw new Error('Please select a specialization');
+        }
+        if (
+          formData.actor_specialization === 'other' &&
+          !formData.customSpecialization.trim()
+        ) {
+          throw new Error('Please specify your specialization');
+        }
+      }
+
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
@@ -121,6 +196,13 @@ export default function RegisterScreen() {
       if (!allRequirementsMet) {
         throw new Error('Please meet all password requirements');
       }
+
+      // const finalSpecialization =
+      //   formData.specialization === 'other'
+      //     ? [formData.customSpecialization]
+      //     : formData.specialization
+      //     ? [formData.specialization]
+      //     : [];
 
       await signUp(formData.email, formData.password, {
         role: formData.role as 'worker' | 'technician' | 'entrepreneur',
@@ -139,7 +221,25 @@ export default function RegisterScreen() {
           | 'national'
           | 'international'
           | 'foreign',
-        specialization: null,
+        specialization: formData.actor_specialization as
+          | 'precision_agriculture_technician'
+          | 'agricultural_equipment_technician'
+          | 'crop_and_soil_technician'
+          | 'research_and_laboratory_technician'
+          | 'livestock_and_airy_technician'
+          | 'food_safety_and_quality_technician'
+          | 'pest_management_and_environmental_technician'
+          | 'inspection_and_certification_technician'
+          | 'sales_and_support_technician'
+          | 'crop_production_worker'
+          | 'livestock_worker'
+          | 'mechanized_worker'
+          | 'processing_worker'
+          | 'specialized_worker'
+          | 'seasonal_worker'
+          | 'maintenance_worker'
+          | 'other',
+        other_specialization: formData.customSpecialization,
         availability_status: 'available',
         verification_status: 'not_verified',
         docs_status: 'pending',
@@ -263,7 +363,7 @@ export default function RegisterScreen() {
             />
           </View>
 
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Sélectionnez votre rôle
           </Text>
 
@@ -278,7 +378,12 @@ export default function RegisterScreen() {
                     formData.role === role.id ? colors.primary : colors.border,
                 },
               ]}
-              onPress={() => setFormData({ ...formData, role: role.id })}
+              onPress={() => setFormData({ 
+                ...formData, 
+                role: role.id,
+                actor_specialization: '', // Reset specialization on role change
+                customSpecialization: '' // Reset custom specialization
+              })}
             >
               <View style={styles.roleInfo}>
                 <Text style={[styles.roleTitle, { color: colors.text }]}>
@@ -293,6 +398,72 @@ export default function RegisterScreen() {
               )}
             </TouchableOpacity>
           ))}
+
+          {(formData.role === 'technician' || formData.role === 'worker') && (
+            <View>
+              <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 16 }]}>
+                Spécialisation
+              </Text>
+              
+              <TouchableOpacity
+                style={[
+                  styles.dropdownButton,
+                  { 
+                    backgroundColor: colors.card,
+                    borderColor: colors.border
+                  }
+                ]}
+                onPress={() => setShowSpecializationDropdown(!showSpecializationDropdown)}
+              >
+                <Text style={[styles.dropdownButtonText, { color: formData.actor_specialization ? colors.text : colors.muted }]}>
+                  {formData.actor_specialization 
+                    ? getSpecializationCategories().find(cat => cat.value === formData.actor_specialization)?.label || 'Select specialization'
+                    : 'Sélectionnez votre spécialisation'}
+                </Text>
+                <ChevronDown size={20} color={colors.muted} />
+              </TouchableOpacity>
+
+              {showSpecializationDropdown && (
+                <View style={[styles.dropdownContainer, { backgroundColor: colors.card }]}>
+                  {getSpecializationCategories().map((category) => (
+                    <TouchableOpacity
+                      key={category.value}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setFormData({ 
+                          ...formData, 
+                          actor_specialization: category.value,
+                          customSpecialization: category.value === 'other' ? formData.customSpecialization : ''
+                        });
+                        setShowSpecializationDropdown(false);
+                      }}
+                    >
+                      <Text style={[styles.dropdownItemText, { color: colors.text }]}>
+                        {category.label}
+                      </Text>
+                      {formData.actor_specialization === category.value && (
+                        <Check size={20} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* Custom Specialization Input */}
+              {formData.actor_specialization === 'other' && (
+                <View style={[styles.inputContainer, { marginTop: 8 }]}>
+                  <Shield size={20} color={colors.muted} />
+                  <TextInput
+                    style={[styles.input, { color: colors.text }]}
+                    placeholder="Précisez votre spécialisation"
+                    value={formData.customSpecialization}
+                    onChangeText={(text) => setFormData({ ...formData, customSpecialization: text })}
+                    placeholderTextColor={colors.muted}
+                  />
+                </View>
+              )}
+            </View>
+          )}
 
           <View style={styles.inputContainer}>
             <Lock size={20} color={colors.muted} />
@@ -597,5 +768,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
     borderRadius: 8,
     paddingHorizontal: 12,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  dropdownButtonText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+  },
+  dropdownContainer: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginTop: 4,
+    maxHeight: 'auto',
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  dropdownItemText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
   },
 });

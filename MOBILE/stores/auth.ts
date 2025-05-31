@@ -113,6 +113,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             full_name: profileData.full_name,
             role: profileData.role,
             phone: profileData.phone || null,
+            specialization: profileData.specialization || null,
+            other_specialization: profileData.other_specialization || null,
             verification_status: 'not_verified',
             docs_status: 'not_uploaded',
           },

@@ -23,8 +23,62 @@ import {
 } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useThemeStore } from '@/stores/theme';
-import { useMissionStore,  } from '@/stores/mission';
+import { useMissionStore } from '@/stores/mission';
 import { Mission, MissionStatus } from '@/types/mission';
+
+const technicianCategories = [
+  {
+    label: 'Techniciens en Agriculture de Précision',
+    value: 'precision_agriculture_technician',
+  },
+  {
+    label: 'Techniciens en Matériel Agricole',
+    value: 'agricultural_equipment_technician',
+  },
+  {
+    label: 'Techniciens en Cultures et Sols',
+    value: 'crop_and_soil_technician',
+  },
+  {
+    label: 'Techniciens de Recherche et Laboratoire',
+    value: 'research_and_laboratory_technician',
+  },
+  {
+    label: 'Techniciens en Élevage et Laitier',
+    value: 'livestock_and_airy_technician',
+  },
+  {
+    label: 'Techniciens en Sécurité Alimentaire et Qualité',
+    value: 'food_safety_and_quality_technician',
+  },
+  {
+    label: 'Techniciens en Gestion des Ravageurs et Environnement',
+    value: 'pest_management_and_environmental_technician',
+  },
+  {
+    label: "Techniciens d'Inspection et Certification",
+    value: 'inspection_and_certification_technician',
+  },
+  {
+    label: 'Techniciens en Vente et Support',
+    value: 'sales_and_support_technician',
+  },
+  { label: 'Autre', value: 'other' },
+];
+
+const workerCategories = [
+  {
+    label: 'Ouvriers de Production Végétale',
+    value: 'crop_production_worker',
+  },
+  { label: 'Ouvriers en Élevage', value: 'livestock_worker' },
+  { label: 'Ouvriers Mécanisés', value: 'mechanized_worker' },
+  { label: 'Ouvriers de Transformation', value: 'processing_worker' },
+  { label: 'Ouvriers Spécialisés', value: 'specialized_worker' },
+  { label: 'Ouvriers Saisonniers', value: 'seasonal_worker' },
+  { label: "Ouvriers d'Entretien", value: 'maintenance_worker' },
+  { label: 'Autre', value: 'other' },
+];
 
 function MissionDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -148,6 +202,30 @@ function MissionDetailScreen() {
     );
   };
 
+  const getSpecializationLabel = () => {
+    const specialization = mission?.actor_specialization;
+    const role = mission?.needed_actor;
+
+    if (role === 'technician') {
+      const category = technicianCategories.find(
+        (cat) => cat.value === specialization
+      );
+      if (specialization === 'other') {
+        return mission?.other_actor_specialization || 'Autre (spécifié)';
+      }
+      return category?.label || specialization;
+    } else if (role === 'worker') {
+      const category = workerCategories.find(
+        (cat) => cat.value === specialization
+      );
+      if (specialization === 'other') {
+        return mission?.other_actor_specialization || 'Autre (spécifié)';
+      }
+      return category?.label || specialization;
+    }
+    return specialization; // For entrepreneur or other roles
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -213,9 +291,19 @@ function MissionDetailScreen() {
           {/* Actor Specialization */}
           <Section title="Spécialisation de l'acteur">
             <Text style={[styles.description, { color: colors.text }]}>
-              {' '}
-              {mission.actor_specialization || 'Non spécifié'}{' '}
+              {getSpecializationLabel()}
             </Text>
+
+            {/* Display custom specialization if it exists */}
+            {mission?.other_actor_specialization && (
+              <View style={styles.customSpecializationContainer}>
+                <Text
+                  style={[styles.customSpecialization, { color: colors.text }]}
+                >
+                  {mission.other_actor_specialization}
+                </Text>
+              </View>
+            )}
           </Section>
 
           {/* Surface Details */}
@@ -309,7 +397,7 @@ function MissionDetailScreen() {
                 </Text>
               </View>
 
-              {mission.status === 'accepted' as MissionStatus  && (
+              {mission.status === ('accepted' as MissionStatus) && (
                 <View style={styles.footer}>
                   <TouchableOpacity
                     style={[
@@ -585,6 +673,17 @@ const styles = StyleSheet.create({
   payButtonText: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
+  },
+  customSpecializationContainer: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  customSpecialization: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    fontStyle: 'italic',
   },
 });
 

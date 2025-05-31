@@ -1,13 +1,20 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useThemeStore } from '@/stores/theme';
-import { Users, Briefcase, CheckCircle, TrendingUp } from 'lucide-react-native';
+import {
+  Users,
+  Briefcase,
+  CheckCircle,
+  TrendingUp,
+  RefreshCw,
+} from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { StatCard } from '@/components/StatCard';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -19,15 +26,44 @@ export default function AdminDashboardScreen() {
   const { colors } = useThemeStore();
   const { profiles, fetchProfiles } = useAuthStore();
   const { missions, fetchMissions } = useMissionStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchProfiles();
+      await fetchMissions();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
-      await fetchProfiles();
-      await fetchMissions();
+      setRefreshing(true);
+      try {
+        await fetchProfiles();
+        await fetchMissions();
+      } finally {
+        setRefreshing(false);
+      }
     };
 
     fetchData();
   }, [fetchProfiles, fetchMissions]);
+
+  if (refreshing && profiles.length === 0 && missions.length === 0) {
+    return (
+      <View
+        style={[
+          styles.centeredContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   // Calculate statistics from real data
   const totalUsers = profiles.length;
@@ -213,68 +249,92 @@ export default function AdminDashboardScreen() {
   );
 
   return (
-    <FlatList
-      data={[
-        { type: 'stats' },
-        { type: 'roleBreakdown' },
-        { type: 'engagementMetrics' },
-        { type: 'activityChart' },
-      ]}
-      keyExtractor={(item, index) => `${item.type}-${index}`}
-      ListHeaderComponent={
-        <TouchableOpacity
-          style={{
-            backgroundColor: colors.primary,
-            padding: 12,
-            borderRadius: 8,
-            alignItems: 'center',
-            margin: 12,
-          }}
-          onPress={() => Linking.openURL('http://localhost:5173/admin')}
-        >
-          <Text
-            style={{
-              color: '#fff',
-              fontFamily: 'Inter-SemiBold',
-              fontSize: 16,
-            }}
-          >
-            Aller au dashboard web admin
-          </Text>
-        </TouchableOpacity>
-      }
-      renderItem={({ item }) => {
-        if (item.type === 'stats') {
-          return (
-            <>
-              <SectionHeader title="Statistiques" colors={colors} />
-              <View style={styles.statsGrid}>
-                {stats.map((stat, index) => (
-                  <StatCard
-                    key={index}
-                    icon={stat.icon}
-                    title={stat.title}
-                    value={stat.value}
-                    colors={colors}
-                  />
-                ))}
-              </View>
-            </>
-          );
-        } else if (item.type === 'roleBreakdown') {
-          return <RoleBreakdown />;
-        } else if (item.type === 'engagementMetrics') {
-          return <EngagementMetrics />;
-        } else if (item.type === 'activityChart') {
-          return <ActivityChart />;
+    <View style={{ flex: 1 }}>
+      <TouchableOpacity
+        style={[styles.refreshButton, { backgroundColor: colors.primary }]}
+        onPress={handleRefresh}
+        disabled={refreshing}
+      >
+        {refreshing ? (
+          <ActivityIndicator size="small" color={colors.card} />
+        ) : (
+          <RefreshCw size={20} color={colors.card} />
+        )}
+      </TouchableOpacity>
+
+      <FlatList
+        data={[
+          { type: 'stats' },
+          { type: 'roleBreakdown' },
+          { type: 'engagementMetrics' },
+          { type: 'activityChart' },
+        ]}
+        keyExtractor={(item, index) => `${item.type}-${index}`}
+        ListHeaderComponent={
+          <View>
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                padding: 12,
+                borderRadius: 8,
+                alignItems: 'center',
+                margin: 12,
+              }}
+              onPress={() => Linking.openURL('http://localhost:5173/admin')}
+            >
+              <Text
+                style={{
+                  color: '#fff',
+                  fontFamily: 'Inter-SemiBold',
+                  fontSize: 16,
+                }}
+              >
+                Aller au dashboard web admin
+              </Text>
+            </TouchableOpacity>
+
+            {refreshing && (
+              <ActivityIndicator
+                size="small"
+                color={colors.primary}
+                style={{ marginBottom: 10 }}
+              />
+            )}
+          </View>
         }
-        return null;
-      }}
-      contentContainerStyle={{
-        padding: 12,
-        backgroundColor: colors.background,
-      }}
-    />
+        renderItem={({ item }) => {
+          if (item.type === 'stats') {
+            return (
+              <>
+                <SectionHeader title="Statistiques" colors={colors} />
+                <View style={styles.statsGrid}>
+                  {stats.map((stat, index) => (
+                    <StatCard
+                      key={index}
+                      icon={stat.icon}
+                      title={stat.title}
+                      value={stat.value}
+                      colors={colors}
+                    />
+                  ))}
+                </View>
+              </>
+            );
+          } else if (item.type === 'roleBreakdown') {
+            return <RoleBreakdown />;
+          } else if (item.type === 'engagementMetrics') {
+            return <EngagementMetrics />;
+          } else if (item.type === 'activityChart') {
+            return <ActivityChart />;
+          }
+          return null;
+        }}
+        contentContainerStyle={{
+          padding: 12,
+          backgroundColor: colors.background,
+        }}
+      />
+    </View>
   );
 }
 
@@ -346,5 +406,26 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 16,
+  },
+  refreshButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

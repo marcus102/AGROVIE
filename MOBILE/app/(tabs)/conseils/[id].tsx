@@ -8,24 +8,18 @@ import {
   TouchableOpacity,
   Platform,
   useWindowDimensions,
-  LogBox,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Calendar, Clock, BookOpen } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { createClient } from '@supabase/supabase-js';
-import RenderHtml from 'react-native-render-html';
+import WebView from 'react-native-webview';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Suppress specific warning about defaultProps in function components
-LogBox.ignoreLogs([
-  'TNodeChildrenRenderer: Support for defaultProps will be removed from function components in a future major release.',
-]);
 
 type Document = {
   id: string;
@@ -44,6 +38,7 @@ export default function ArticleScreen() {
   const { colors } = useThemeStore();
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
+  const [webViewHeight, setWebViewHeight] = useState(200); // Initial height
 
   // Fetch document details from Supabase
   const fetchDocument = async () => {
@@ -93,6 +88,75 @@ export default function ArticleScreen() {
       </View>
     );
   }
+
+  // Generate HTML content with proper styling
+  const generateHtmlContent = () => {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              font-size: 18px;
+              line-height: 1.6;
+              color: ${colors.text};
+              background-color: transparent;
+              margin: 0;
+              padding: 0;
+            }
+            strong {
+              font-weight: bold;
+            }
+            em {
+              font-style: italic;
+            }
+            p {
+              margin-bottom: 16px;
+            }
+          </style>
+        </head>
+        <body>
+          ${document.description}
+        </body>
+      </html>
+    `;
+  };
+
+  // Handle WebView height calculation
+  const handleWebViewMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.height) {
+        setWebViewHeight(data.height);
+      }
+    } catch (error) {
+      console.error('Error parsing WebView message:', error);
+    }
+  };
+
+  // Inject script to calculate content height
+  const injectedJavaScript = `
+    window.addEventListener('load', () => {
+      const height = document.documentElement.scrollHeight;
+      window.ReactNativeWebView.postMessage(JSON.stringify({ height }));
+    });
+    
+    // Also send height when content changes (e.g., images load)
+    const observer = new MutationObserver(() => {
+      const height = document.documentElement.scrollHeight;
+      window.ReactNativeWebView.postMessage(JSON.stringify({ height }));
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true
+    });
+    
+    true;
+  `;
 
   return (
     <ScrollView
@@ -153,16 +217,20 @@ export default function ArticleScreen() {
           </View>
 
           <View style={styles.description}>
-            <RenderHtml
-              contentWidth={width}
-              source={{ html: document.description }}
-              baseStyle={{ color: colors.text }}
-              tagsStyles={{
-                body: styles.htmlBase,
-                strong: styles.strong,
-                em: styles.em,
-                p: styles.paragraph,
+            <WebView
+              source={{ html: generateHtmlContent() }}
+              style={{ 
+                width: width - 48, // Account for padding
+                height: webViewHeight,
+                backgroundColor: 'transparent'
               }}
+              originWhitelist={['*']}
+              scalesPageToFit={false}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              onMessage={handleWebViewMessage}
+              injectedJavaScript={injectedJavaScript}
+              scrollEnabled={false}
             />
           </View>
         </Animated.View>
@@ -255,19 +323,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 20,
-  },
-  htmlBase: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 18,
-    lineHeight: 28,
-  },
-  strong: {
-    fontFamily: 'Inter-Bold',
-  },
-  em: {
-    fontFamily: 'Inter-Italic',
-  },
-  paragraph: {
-    marginBottom: 16,
   },
 });

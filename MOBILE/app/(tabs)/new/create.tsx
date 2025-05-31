@@ -24,6 +24,7 @@ import {
   Home,
   Star,
 } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useMissionStore } from '@/stores/mission';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useThemeStore } from '@/stores/theme';
@@ -32,6 +33,8 @@ import {
   ExperienceLevel,
   AdvantageType,
   PriceStatus,
+  ActorSpecialization,
+  SurfaceUnit,
 } from '@/types/mission';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
@@ -79,6 +82,57 @@ const ADVANTAGES = [
   { id: 'accommodation', label: 'Hébergement', icon: Home, reduction: 8000 },
 ];
 
+const technicianCategories = [
+  {
+    label: 'Techniciens en Agriculture de Précision',
+    value: 'precision_agriculture_technician',
+  },
+  {
+    label: 'Techniciens en Matériel Agricole',
+    value: 'agricultural_equipment_technician',
+  },
+  {
+    label: 'Techniciens en Cultures et Sols',
+    value: 'crop_and_soil_technician',
+  },
+  {
+    label: 'Techniciens de Recherche et Laboratoire',
+    value: 'research_and_laboratory_technician',
+  },
+  {
+    label: 'Techniciens en Élevage et Laitier',
+    value: 'livestock_and_airy_technician',
+  },
+  {
+    label: 'Techniciens en Sécurité Alimentaire et Qualité',
+    value: 'food_safety_and_quality_technician',
+  },
+  {
+    label: 'Techniciens en Gestion des Ravageurs et Environnement',
+    value: 'pest_management_and_environmental_technician',
+  },
+  {
+    label: "Techniciens d'Inspection et Certification",
+    value: 'inspection_and_certification_technician',
+  },
+  {
+    label: 'Techniciens en Vente et Support',
+    value: 'sales_and_support_technician',
+  },
+  { label: 'Autre', value: 'other' },
+];
+
+const workerCategories = [
+  { label: 'Ouvriers de Production Végétale', value: 'crop_production_worker' },
+  { label: 'Ouvriers en Élevage', value: 'livestock_worker' },
+  { label: 'Ouvriers Mécanisés', value: 'mechanized_worker' },
+  { label: 'Ouvriers de Transformation', value: 'processing_worker' },
+  { label: 'Ouvriers Spécialisés', value: 'specialized_worker' },
+  { label: 'Ouvriers Saisonniers', value: 'seasonal_worker' },
+  { label: "Ouvriers d'Entretien", value: 'maintenance_worker' },
+  { label: 'Autre', value: 'other' },
+];
+
 // Configuration for price calculation
 const PRICE_CONFIG = {
   experienceMultipliers: {
@@ -117,6 +171,7 @@ function CreateJobScreen() {
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showUnitPicker, setShowUnitPicker] = useState(false);
+  const [showSpecializationModal, setShowSpecializationModal] = useState(false);
 
   const calculateBasePrice = () => {
     const baseRate =
@@ -248,7 +303,9 @@ function CreateJobScreen() {
                         { borderBottomColor: colors.border },
                       ]}
                       onPress={() => {
-                        updateDraftMission({ surface_unit: unit.id });
+                        updateDraftMission({
+                          surface_unit: unit.id as SurfaceUnit,
+                        });
                         setShowUnitPicker(false);
                       }}
                     >
@@ -268,186 +325,276 @@ function CreateJobScreen() {
     );
   };
 
-  const renderBasicsStep = () => (
-    <Animated.View entering={FadeInDown}>
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>
-          Expertise Recherchée
-        </Text>
-        <View style={styles.roleButtons}>
-          {availableRoles.map((role) => (
-            <TouchableOpacity
-              key={role}
-              style={[
-                styles.roleButton,
-                {
-                  backgroundColor: colors.card,
-                  borderColor:
-                    draftMission?.needed_actor === role
-                      ? colors.primary
-                      : colors.border,
-                },
-                draftMission?.needed_actor === role && {
-                  backgroundColor: colors.primary,
-                },
-              ]}
-              onPress={() => updateDraftMission({ needed_actor: role })}
-            >
-              <Text
+  const renderBasicsStep = () => {
+    const currentRole = draftMission?.needed_actor;
+    const isTechnician = currentRole === 'technician';
+    const isWorker = currentRole === 'worker';
+    const categories = isTechnician
+      ? technicianCategories
+      : isWorker
+      ? workerCategories
+      : [];
+    const showOtherInput = draftMission?.actor_specialization === 'other';
+
+    return (
+      <Animated.View entering={FadeInDown}>
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Expertise Recherchée
+          </Text>
+          <View style={styles.roleButtons}>
+            {availableRoles.map((role) => (
+              <TouchableOpacity
+                key={role}
                 style={[
-                  styles.roleButtonText,
-                  { color: colors.muted },
-                  draftMission?.needed_actor === role && { color: colors.card },
+                  styles.roleButton,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor:
+                      draftMission?.needed_actor === role
+                        ? colors.primary
+                        : colors.border,
+                  },
+                  draftMission?.needed_actor === role && {
+                    backgroundColor: colors.primary,
+                  },
                 ]}
+                onPress={() => updateDraftMission({ needed_actor: role })}
               >
-                {role === 'technician'
-                  ? 'Technicien'
-                  : role === 'worker'
-                  ? 'Travailleur'
-                  : 'Entrepreneur'}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.roleButtonText,
+                    { color: colors.muted },
+                    draftMission?.needed_actor === role && {
+                      color: colors.card,
+                    },
+                  ]}
+                >
+                  {role === 'technician'
+                    ? 'Technicien'
+                    : role === 'worker'
+                    ? 'Ouvrier'
+                    : 'Entrepreneur'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>
-          Spécialisation de l'acteur
-        </Text>
-        <View
-          style={[
-            styles.inputWrapper,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <Briefcase
-            size={20}
-            color={colors.primary}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            value={draftMission?.actor_specialization}
-            onChangeText={(text) =>
-              updateDraftMission({ actor_specialization: text })
-            }
-            placeholder="Ex: Récolte, Plantation, etc."
-            placeholderTextColor={colors.muted}
-          />
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Spécialisation de l'acteur
+          </Text>
+
+          {isTechnician || isWorker ? (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.inputWrapper,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    justifyContent: 'space-between',
+                  },
+                ]}
+                onPress={() => setShowSpecializationModal(true)}
+              >
+                <Text style={[styles.input, { color: colors.text }]}>
+                  {draftMission?.actor_specialization
+                    ? categories.find(
+                        (cat) => cat.value === draftMission.actor_specialization
+                      )?.label || 'Sélectionner'
+                    : 'Sélectionner une spécialisation'}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color={colors.muted} />
+              </TouchableOpacity>
+
+              {showOtherInput && (
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      marginTop: 8,
+                    },
+                  ]}
+                >
+                  <TextInput
+                    style={[styles.input, { color: colors.text }]}
+                    value={draftMission?.other_actor_specialization || ''}
+                    onChangeText={(text) =>
+                      updateDraftMission({ other_actor_specialization: text })
+                    }
+                    placeholder="Précisez la spécialisation..."
+                    placeholderTextColor={colors.muted}
+                  />
+                </View>
+              )}
+
+              <Modal
+                visible={showSpecializationModal}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowSpecializationModal(false)}
+              >
+                <View style={{ flex: 1, marginTop: 100 }}>
+                  <ScrollView
+                    style={[
+                      styles.modalContent,
+                      { backgroundColor: colors.card },
+                    ]}
+                  >
+                    {categories.map((category) => (
+                      <TouchableOpacity
+                        key={category.value}
+                        style={[
+                          styles.modalItem,
+                          {
+                            borderBottomColor: colors.border,
+                            backgroundColor:
+                              draftMission?.actor_specialization ===
+                              category.value
+                                ? colors.primary + '20'
+                                : 'transparent',
+                          },
+                        ]}
+                        onPress={() => {
+                          updateDraftMission({
+                            actor_specialization:
+                              category.value === 'other'
+                                ? (category.value as ActorSpecialization)
+                                : (category.value as ActorSpecialization),
+                            ...(category.value !== 'other' && {
+                              other_actor_specialization: undefined,
+                            }),
+                          });
+                          setShowSpecializationModal(false);
+                        }}
+                      >
+                        <Text
+                          style={[styles.modalItemText, { color: colors.text }]}
+                        >
+                          {category.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </Modal>
+            </>
+          ) : (
+            <View
+              style={[
+                styles.inputWrapper,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                value={draftMission?.actor_specialization}
+                onChangeText={(text) =>
+                  updateDraftMission({ other_actor_specialization: text })
+                }
+                placeholder="Ex: Technicien en récolte, plantation, etc..."
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+          )}
         </View>
-      </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>
-          Titre de la mission
-        </Text>
-        <View
-          style={[
-            styles.inputWrapper,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <Briefcase
-            size={20}
-            color={colors.primary}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            value={draftMission?.mission_title}
-            onChangeText={(text) => updateDraftMission({ mission_title: text })}
-            placeholder="Ex: Récolte de pommes bio"
-            placeholderTextColor={colors.muted}
-          />
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Titre de la mission
+          </Text>
+          <View
+            style={[
+              styles.inputWrapper,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <Briefcase
+              size={20}
+              color={colors.primary}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={[styles.input, { color: colors.text }]}
+              value={draftMission?.mission_title}
+              onChangeText={(text) =>
+                updateDraftMission({ mission_title: text })
+              }
+              placeholder="Ex: Récolte de pommes bio"
+              placeholderTextColor={colors.muted}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>Description</Text>
-        <View
-          style={[
-            styles.inputWrapper,
-            styles.textAreaWrapper,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <FileText size={20} color={colors.primary} style={styles.inputIcon} />
-          <TextInput
-            style={[styles.input, styles.textArea, { color: colors.text }]}
-            value={draftMission?.mission_description}
-            onChangeText={(text) =>
-              updateDraftMission({ mission_description: text })
-            }
-            placeholder="Décrivez la mission en détail..."
-            placeholderTextColor={colors.muted}
-            multiline
-            numberOfLines={4}
-          />
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Description
+          </Text>
+          <View
+            style={[
+              styles.inputWrapper,
+              styles.textAreaWrapper,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <FileText
+              size={20}
+              color={colors.primary}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={[styles.input, styles.textArea, { color: colors.text }]}
+              value={draftMission?.mission_description}
+              onChangeText={(text) =>
+                updateDraftMission({ mission_description: text })
+              }
+              placeholder="Décrivez la mission en détail..."
+              placeholderTextColor={colors.muted}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>
-          Nombre de personnes recherchées
-        </Text>
-        <View
-          style={[
-            styles.inputWrapper,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <Users size={20} color={colors.primary} style={styles.inputIcon} />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            value={draftMission?.needed_actor_amount?.toString()}
-            onChangeText={(text) =>
-              updateDraftMission({ needed_actor_amount: parseInt(text) || 0 })
-            }
-            keyboardType="numeric"
-            placeholder="Nombre de personnes"
-            placeholderTextColor={colors.muted}
-          />
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Nombre de personnes recherchées
+          </Text>
+          <View
+            style={[
+              styles.inputWrapper,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <Users size={20} color={colors.primary} style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { color: colors.text }]}
+              value={draftMission?.needed_actor_amount?.toString()}
+              onChangeText={(text) =>
+                updateDraftMission({ needed_actor_amount: parseInt(text) || 0 })
+              }
+              keyboardType="numeric"
+              placeholder="Nombre de personnes"
+              placeholderTextColor={colors.muted}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.inputContainer}>
-        {/* <Text style={[styles.label, { color: colors.text }]}>
-          Surface du terrain
-        </Text>
-        <View
-          style={[
-            styles.inputWrapper,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            value={draftMission?.surface_area?.toString() ?? ''}
-            onChangeText={(text) =>
-              updateDraftMission({ surface_area: parseFloat(text) || 0 })
-            }
-            keyboardType="numeric"
-            placeholder="Ex: 100"
-            placeholderTextColor={colors.muted}
-          />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            value={draftMission?.surface_unit}
-            onChangeText={(text) => updateDraftMission({ surface_unit: text })}
-            placeholder="Ex: hectares"
-            placeholderTextColor={colors.muted}
-          />
-        </View> */}
-        {renderSurfaceInput()}
-      </View>
-    </Animated.View>
-  );
+        <View style={styles.inputContainer}>{renderSurfaceInput()}</View>
+      </Animated.View>
+    );
+  };
 
   const renderLogisticsStep = () => (
     <Animated.View entering={FadeInDown}>
       <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>Localisation</Text>
+        <Text style={[styles.label, { color: colors.text }]}>
+          Localisation(Commune)
+        </Text>
         <View
           style={[
             styles.inputWrapper,
@@ -810,144 +957,315 @@ function CreateJobScreen() {
     );
   };
 
-  const renderReviewStep = () => (
-    <Animated.View
-      entering={FadeInDown}
-      style={[styles.reviewContainer, { backgroundColor: colors.card }]}
-    >
-      <Text style={[styles.reviewTitle, { color: colors.text }]}>
-        Récapitulatif de la mission
-      </Text>
+  // const renderReviewStep = () => (
+  //   <Animated.View
+  //     entering={FadeInDown}
+  //     style={[styles.reviewContainer, { backgroundColor: colors.card }]}
+  //   >
+  //     <Text style={[styles.reviewTitle, { color: colors.text }]}>
+  //       Récapitulatif de la mission
+  //     </Text>
 
-      <View style={styles.reviewSection}>
-        <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-          Informations générales
-        </Text>
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>Type</Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {draftMission?.needed_actor === 'technician'
-            ? 'Technicien'
-            : draftMission?.needed_actor === 'worker'
-            ? 'Travailleur'
-            : 'Entrepreneur'}
+  //     <View style={styles.reviewSection}>
+  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+  //         Informations générales
+  //       </Text>
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>Type</Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {draftMission?.needed_actor === 'technician'
+  //           ? 'Technicien'
+  //           : draftMission?.needed_actor === 'worker'
+  //           ? 'Travailleur'
+  //           : 'Entrepreneur'}
+  //       </Text>
+
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>Titre</Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {draftMission?.mission_title}
+  //       </Text>
+
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Description
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {draftMission?.mission_description}
+  //       </Text>
+
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Spécialisation de l'acteur
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {draftMission?.actor_specialization}
+  //       </Text>
+  //     </View>
+
+  //     <View style={styles.reviewSection}>
+  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+  //         Détails
+  //       </Text>
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Localisation
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {draftMission?.location}
+  //       </Text>
+
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Période
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         Du {draftMission?.start_date} au {draftMission?.end_date}
+  //       </Text>
+
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Personnes recherchées
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {draftMission?.needed_actor_amount}
+  //       </Text>
+
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Surface
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {draftMission?.surface_area} {draftMission?.surface_unit}
+  //       </Text>
+  //     </View>
+
+  //     <View style={styles.reviewSection}>
+  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+  //         Exigences et équipement
+  //       </Text>
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Niveau d'expérience
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {
+  //           EXPERIENCE_LEVELS.find((level) => level.id === experienceLevel)
+  //             ?.label
+  //         }
+  //       </Text>
+
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Équipement
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //         {providesEquipment ? "Fourni par l'employeur" : 'Non fourni'}
+  //       </Text>
+  //     </View>
+
+  //     <View style={styles.reviewSection}>
+  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+  //         Avantages
+  //       </Text>
+  //       {selectedAdvantages.map((advantageId) => {
+  //         const advantage = ADVANTAGES.find((a) => a.id === advantageId);
+  //         return (
+  //           <Text
+  //             key={advantageId}
+  //             style={[styles.reviewValue, { color: colors.text }]}
+  //           >
+  //             • {advantage?.label}
+  //           </Text>
+  //         );
+  //       })}
+  //     </View>
+
+  //     <View style={styles.reviewSection}>
+  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+  //         Rémunération
+  //       </Text>
+  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //         Prix final
+  //       </Text>
+  //       <Text style={[styles.reviewValue, { color: colors.primary }]}>
+  //         {calculateFinalPrice().toLocaleString()} FCFA
+  //       </Text>
+
+  //       {priceAdjustment !== 0 && (
+  //         <>
+  //           <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+  //             Ajustement manuel
+  //           </Text>
+  //           <Text style={[styles.reviewValue, { color: colors.text }]}>
+  //             {priceAdjustment}% - {adjustmentReason}
+  //           </Text>
+  //         </>
+  //       )}
+  //     </View>
+  //   </Animated.View>
+  // );
+
+  const renderReviewStep = () => {
+    // Helper function to get the display label for actor specialization
+    const getSpecializationLabel = () => {
+      const specialization = draftMission?.actor_specialization;
+      const role = draftMission?.needed_actor;
+
+      if (role === 'technician') {
+        const category = technicianCategories.find(
+          (cat) => cat.value === specialization
+        );
+        if (specialization === 'other') {
+          return draftMission?.other_actor_specialization || 'Autre (spécifié)';
+        }
+        return category?.label || specialization;
+      } else if (role === 'worker') {
+        const category = workerCategories.find(
+          (cat) => cat.value === specialization
+        );
+        if (specialization === 'other') {
+          return draftMission?.other_actor_specialization || 'Autre (spécifié)';
+        }
+        return category?.label || specialization;
+      }
+      return specialization; // For entrepreneur or other roles
+    };
+
+    return (
+      <Animated.View
+        entering={FadeInDown}
+        style={[styles.reviewContainer, { backgroundColor: colors.card }]}
+      >
+        <Text style={[styles.reviewTitle, { color: colors.text }]}>
+          Récapitulatif de la mission
         </Text>
 
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>Titre</Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {draftMission?.mission_title}
-        </Text>
+        <View style={styles.reviewSection}>
+          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+            Informations générales
+          </Text>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Type
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {draftMission?.needed_actor === 'technician'
+              ? 'Technicien'
+              : draftMission?.needed_actor === 'worker'
+              ? 'Travailleur'
+              : 'Entrepreneur'}
+          </Text>
 
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Description
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {draftMission?.mission_description}
-        </Text>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Titre
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {draftMission?.mission_title}
+          </Text>
 
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Spécialisation de l'acteur
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {draftMission?.actor_specialization}
-        </Text>
-      </View>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Description
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {draftMission?.mission_description}
+          </Text>
 
-      <View style={styles.reviewSection}>
-        <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-          Détails
-        </Text>
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Localisation
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {draftMission?.location}
-        </Text>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Spécialisation de l'acteur
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {getSpecializationLabel()}
+          </Text>
+        </View>
 
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Période
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          Du {draftMission?.start_date} au {draftMission?.end_date}
-        </Text>
+        {/* Rest of the review step remains unchanged */}
+        <View style={styles.reviewSection}>
+          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+            Détails
+          </Text>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Localisation
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {draftMission?.location}
+          </Text>
 
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Personnes recherchées
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {draftMission?.needed_actor_amount}
-        </Text>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Période
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            Du {draftMission?.start_date} au {draftMission?.end_date}
+          </Text>
 
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Surface
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {draftMission?.surface_area} {draftMission?.surface_unit}
-        </Text>
-      </View>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Personnes recherchées
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {draftMission?.needed_actor_amount}
+          </Text>
 
-      <View style={styles.reviewSection}>
-        <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-          Exigences et équipement
-        </Text>
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Niveau d'expérience
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {
-            EXPERIENCE_LEVELS.find((level) => level.id === experienceLevel)
-              ?.label
-          }
-        </Text>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Surface
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {draftMission?.surface_area} {draftMission?.surface_unit}
+          </Text>
+        </View>
 
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Équipement
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.text }]}>
-          {providesEquipment ? "Fourni par l'employeur" : 'Non fourni'}
-        </Text>
-      </View>
+        <View style={styles.reviewSection}>
+          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+            Exigences et équipement
+          </Text>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Niveau d'expérience
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {
+              EXPERIENCE_LEVELS.find((level) => level.id === experienceLevel)
+                ?.label
+            }
+          </Text>
 
-      <View style={styles.reviewSection}>
-        <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-          Avantages
-        </Text>
-        {selectedAdvantages.map((advantageId) => {
-          const advantage = ADVANTAGES.find((a) => a.id === advantageId);
-          return (
-            <Text
-              key={advantageId}
-              style={[styles.reviewValue, { color: colors.text }]}
-            >
-              • {advantage?.label}
-            </Text>
-          );
-        })}
-      </View>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Équipement
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.text }]}>
+            {providesEquipment ? "Fourni par l'employeur" : 'Non fourni'}
+          </Text>
+        </View>
 
-      <View style={styles.reviewSection}>
-        <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-          Rémunération
-        </Text>
-        <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-          Prix final
-        </Text>
-        <Text style={[styles.reviewValue, { color: colors.primary }]}>
-          {calculateFinalPrice().toLocaleString()} FCFA
-        </Text>
+        <View style={styles.reviewSection}>
+          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+            Avantages
+          </Text>
+          {selectedAdvantages.map((advantageId) => {
+            const advantage = ADVANTAGES.find((a) => a.id === advantageId);
+            return (
+              <Text
+                key={advantageId}
+                style={[styles.reviewValue, { color: colors.text }]}
+              >
+                • {advantage?.label}
+              </Text>
+            );
+          })}
+        </View>
 
-        {priceAdjustment !== 0 && (
-          <>
-            <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-              Ajustement manuel
-            </Text>
-            <Text style={[styles.reviewValue, { color: colors.text }]}>
-              {priceAdjustment}% - {adjustmentReason}
-            </Text>
-          </>
-        )}
-      </View>
-    </Animated.View>
-  );
+        <View style={styles.reviewSection}>
+          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+            Rémunération
+          </Text>
+          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+            Prix final
+          </Text>
+          <Text style={[styles.reviewValue, { color: colors.primary }]}>
+            {calculateFinalPrice().toLocaleString()} FCFA
+          </Text>
+
+          {priceAdjustment !== 0 && (
+            <>
+              <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+                Ajustement manuel
+              </Text>
+              <Text style={[styles.reviewValue, { color: colors.text }]}>
+                {priceAdjustment}% - {adjustmentReason}
+              </Text>
+            </>
+          )}
+        </View>
+      </Animated.View>
+    );
+  };
 
   const renderImageUploadStep = () => {
     const handleImageSelection = async () => {

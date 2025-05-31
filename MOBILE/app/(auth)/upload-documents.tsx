@@ -219,7 +219,9 @@ export default function UploadDocumentsScreen() {
     fileSize: number
   ) => {
     if (!SUPPORTED_FORMATS.includes(fileType)) {
-      throw new Error('Format de fichier non supporté. Veuillez utiliser JPG, PNG ou PDF.');
+      throw new Error(
+        'Format de fichier non supporté. Veuillez utiliser JPG, PNG ou PDF.'
+      );
     }
 
     if (fileSize > MAX_FILE_SIZE) {
@@ -306,7 +308,9 @@ export default function UploadDocumentsScreen() {
         }, 500);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Échec de la sélection du document');
+      setError(
+        err instanceof Error ? err.message : 'Échec de la sélection du document'
+      );
     }
   };
 

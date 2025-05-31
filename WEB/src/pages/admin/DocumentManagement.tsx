@@ -20,6 +20,7 @@ import {
   DocumentStatus,
   useAdminStore,
 } from "../../store/adminStore";
+import { u } from "framer-motion/client";
 
 export function DocumentManagement() {
   const [selectedStatus, setSelectedStatus] = useState<DocumentStatus | "All">(
@@ -30,12 +31,8 @@ export function DocumentManagement() {
   //   null
   // );
 
-  const {
-    documents,
-    updateDocument,
-    fetchDocumentsWithSignedUrls,
-    loading,
-  } = useAdminStore();
+  const { documents, updateDocument, fetchDocumentsWithSignedUrls, loading } =
+    useAdminStore();
 
   useEffect(() => {
     const fetchAndGroupDocuments = async () => {
@@ -49,17 +46,21 @@ export function DocumentManagement() {
     fetchAndGroupDocuments();
   }, [fetchDocumentsWithSignedUrls]);
 
-  const handleAccept = async (documentId: string) => {
+  const handleAccept = async (documentId: string, userId: string) => {
     try {
-      await updateDocument(documentId, { status: "approved" });
+      await updateDocument(documentId, { status: "approved" }, userId, {
+        docs_status: "accepted",
+      });
     } catch (error) {
       console.error("Error accepting document:", error);
     }
   };
 
-  const handleReject = async (documentId: string) => {
+  const handleReject = async (documentId: string, userId: string) => {
     try {
-      await updateDocument(documentId, { status: "rejected" });
+      await updateDocument(documentId, { status: "rejected" }, userId, {
+        docs_status: "rejected",
+      });
     } catch (error) {
       console.error("Error rejecting document:", error);
     }
@@ -147,8 +148,8 @@ export function DocumentManagement() {
                     document.status === "approved"
                       ? "bg-green-100 text-green-800"
                       : document.status === "rejected"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-yellow-100 text-yellow-800"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
                   {document.status.charAt(0).toUpperCase() +
@@ -204,7 +205,9 @@ export function DocumentManagement() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 dark:text-gray-200">Document Type</p>
+                  <p className="text-gray-500 dark:text-gray-200">
+                    Document Type
+                  </p>
                   <p className="font-medium dark:text-gray-300">
                     {document.legal_document_type.toUpperCase()}
                   </p>
@@ -217,14 +220,14 @@ export function DocumentManagement() {
               <div className="px-4 py-3 border-t border-gray-200">
                 <div className="flex justify-between gap-4">
                   <button
-                    onClick={() => handleAccept(document.id)}
+                    onClick={() => handleAccept(document.id, document.user_id)}
                     className="flex-1 flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                   >
                     <Check className="h-4 w-4 mr-2" />
                     Accept
                   </button>
                   <button
-                    onClick={() => handleReject(document.id)}
+                    onClick={() => handleReject(document.id, document.user_id)}
                     className="flex-1 flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
                     <X className="h-4 w-4 mr-2" />

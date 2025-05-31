@@ -47,10 +47,10 @@ export default function LoginScreen() {
 
       <View style={styles.content}>
         <Animated.View entering={FadeInDown.delay(200)} style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>
+          <Text style={[styles.title]}>
             Bienvenue à nouveau
           </Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>
+          <Text style={[styles.subtitle]}>
             Connectez-vous pour continuer vers votre compte
           </Text>
         </Animated.View>
@@ -118,7 +118,7 @@ export default function LoginScreen() {
             onPress={handleLogin}
             disabled={loading}
           >
-            <Text style={[styles.loginButtonText, { color: colors.text }]}>
+            <Text style={[styles.loginButtonText]}>
               {loading ? 'Connexion en cours...' : 'Se connecter'}
             </Text>
           </TouchableOpacity>

@@ -25,29 +25,8 @@ import { NotificationsModal } from '@/components/modals/NotificationsModal';
 import { useThemeStore } from '@/stores/theme';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { AgroLogo } from './components/AgroLogo';
+import { AgroLogo} from './components/AgroLogo';
 import { useNotificationStore } from '@/stores/notification';
-
-// const stats = [
-//   {
-//     icon: Users,
-//     value: '2,500+',
-//     label: 'Travailleurs',
-//     color: '#059669',
-//   },
-//   {
-//     icon: Star,
-//     value: '4.8/5',
-//     label: 'Note moyenne',
-//     color: '#92400e',
-//   },
-//   {
-//     icon: Calendar,
-//     value: '15,000+',
-//     label: 'Missions',
-//     color: '#1d4ed8',
-//   },
-// ];
 
 const testimonials = [
   {

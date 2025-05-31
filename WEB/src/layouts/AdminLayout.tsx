@@ -10,8 +10,11 @@ import {
   LogOut,
   Bell,
   ArrowBigLeft,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAdminStore } from "../store/adminStore";
+import { useTheme } from "../contexts/ThemeContext"; // <-- Add this import
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -23,10 +26,18 @@ const navigation = [
   { name: "Notifications", href: "/admin/notifications", icon: Bell },
 ];
 
-export function AdminLayout() {
+// Accept language and onLanguageChange as props
+export function AdminLayout({
+  language,
+  onLanguageChange,
+}: {
+  language: string;
+  onLanguageChange: (lang: string) => void;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAdminStore();
+  const { theme, toggleTheme } = useTheme(); // <-- Use theme context
 
   const handleLogout = () => {
     logout();
@@ -46,6 +57,28 @@ export function AdminLayout() {
               title="Logout"
             >
               <LogOut className="h-5 w-5" />
+            </button>
+          </div>
+          {/* Theme & Language Controls */}
+          <div className="flex items-center justify-between px-4 mt-4 gap-2">
+            <select
+              value={language}
+              onChange={(e) => onLanguageChange(e.target.value)}
+              className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 bg-transparent dark:bg-gray-900"
+            >
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+            </select>
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5 text-gray-300" />
+              ) : (
+                <Moon className="h-5 w-5 text-gray-600" />
+              )}
             </button>
           </div>
           <div className="mt-5 flex-grow flex flex-col">
@@ -78,7 +111,7 @@ export function AdminLayout() {
           </div>
           <Link
             to="/"
-            className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 hover:text-gray-900 dark:hover:bg-gray-800 hover:text-gray-900"
+            className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 hover:text-gray-900 dark:hover:bg-gray-800 hover:text-gray-900 mb-10"
           >
             <ArrowBigLeft className="mr-3 h-5 w-5 text-primary group-hover:text-primary" />
             Back to Site

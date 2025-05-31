@@ -180,8 +180,6 @@ export const useMissionStore = create<MissionState>((set, get) => ({
           },
         ])
         .select('*');
-
-      console.log(data, error);
       if (error) throw error;
       if (data) {
         set((state) => ({ missions: [data[0] as Mission, ...state.missions] }));

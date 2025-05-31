@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -32,7 +31,6 @@ interface FormData {
   phone: string;
   actual_location: string;
   bio: string;
-  specialization: string[];
   portfolio: string[];
   certifications: string[];
   languages: string[];
@@ -146,7 +144,6 @@ export default function EditProfileScreen() {
     phone: '',
     actual_location: '',
     bio: '',
-    specialization: [],
     portfolio: [],
     certifications: [],
     languages: [],
@@ -400,20 +397,6 @@ export default function EditProfileScreen() {
         />
 
         <MemoizedArrayInputSection
-          field="specialization"
-          label="Spécialisation"
-          Icon={FileText}
-          items={formData.specialization}
-          newEntryValue={newEntries.specialization}
-          onAdd={() => addToArray('specialization')}
-          onRemove={(index) => removeFromArray('specialization', index)}
-          onEntryChange={(text) =>
-            setNewEntries((prev) => ({ ...prev, specialization: text }))
-          }
-          colors={colors}
-        />
-
-        <MemoizedArrayInputSection
           field="certifications"
           label="Certifications"
           Icon={FileText}
@@ -426,20 +409,6 @@ export default function EditProfileScreen() {
           }
           colors={colors}
         />
-
-        {/* <MemoizedArrayInputSection
-          field="education"
-          label="Formation"
-          Icon={FileText}
-          items={formData.education}
-          newEntryValue={newEntries.education}
-          onAdd={() => addToArray('education')}
-          onRemove={(index) => removeFromArray('education', index)}
-          onEntryChange={(text) =>
-            setNewEntries((prev) => ({ ...prev, education: text }))
-          }
-          colors={colors}
-        /> */}
 
         <MemoizedArrayInputSection
           field="languages"

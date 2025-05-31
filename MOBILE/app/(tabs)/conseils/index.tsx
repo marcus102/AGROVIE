@@ -9,10 +9,11 @@ import {
   Platform,
   FlatList,
   LogBox,
+  ActivityIndicator,
 } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import { useThemeStore } from '@/stores/theme';
-import { Search, BookOpen, FileText } from 'lucide-react-native';
+import { Search, BookOpen, FileText, RefreshCw } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { router } from 'expo-router';
 
@@ -41,6 +42,17 @@ export default function DocumentsScreen() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchDocuments();
+    } catch (error) {
+      console.error('Error refreshing documents:', error);
+    }
+    setRefreshing(false);
+  };
 
   // Fetch documents from Supabase
   const fetchDocuments = async () => {
@@ -148,17 +160,43 @@ export default function DocumentsScreen() {
     );
   }
 
+  const EmptyState = () => (
+    <View
+      style={[styles.emptyContainer, { backgroundColor: colors.background }]}
+    >
+      <View style={styles.emptyContent}>
+        <FileText size={48} color={colors.primary} />
+        <Text style={[styles.emptyTitle, { color: colors.primary }]}>
+          Aucune ressource disponible
+        </Text>
+        <Text style={[styles.emptyDescription, { color: colors.muted }]}>
+          {searchQuery
+            ? `Aucun document trouvé pour "${searchQuery}"`
+            : 'Revenez plus tard!'}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header]}>
-        {/* <Text style={[styles.title, { color: colors.text }]}>
-          Conseils Agricoles
-        </Text> */}
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           Ressources et guides pour une agriculture moderne
         </Text>
       </View>
       <View style={styles.resourcesList}>
+        <TouchableOpacity
+          style={[styles.refreshButton, { backgroundColor: colors.primary }]}
+          onPress={handleRefresh}
+          disabled={refreshing || loading}
+        >
+          {refreshing ? (
+            <ActivityIndicator size="small" color={colors.card} />
+          ) : (
+            <RefreshCw size={20} color={colors.card} />
+          )}
+        </TouchableOpacity>
         <View style={styles.searchContainer}>
           <View
             style={[
@@ -177,25 +215,31 @@ export default function DocumentsScreen() {
           </View>
         </View>
 
-        <FlatList
-          data={filteredDocuments}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <DocumentCard document={item} index={index} />
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <FileText size={48} color={colors.muted} />
-              <Text style={[styles.emptyStateText, { color: colors.muted }]}>
-                Aucune ressource trouvée
-              </Text>
-            </View>
-          }
-          contentContainerStyle={
-            filteredDocuments.length === 0 ? { flex: 1, justifyContent: 'center' } : undefined
-          }
-          showsVerticalScrollIndicator={false}
-        />
+        {filteredDocuments.length === 0 && !loading ? (
+          <EmptyState />
+        ) : (
+          <FlatList
+            data={filteredDocuments}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item, index }) => (
+              <DocumentCard document={item} index={index} />
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <FileText size={48} color={colors.muted} />
+                <Text style={[styles.emptyStateText, { color: colors.muted }]}>
+                  Aucune ressource trouvée
+                </Text>
+              </View>
+            }
+            contentContainerStyle={
+              filteredDocuments.length === 0
+                ? { flex: 1, justifyContent: 'center' }
+                : undefined
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        )}
       </View>
     </View>
   );
@@ -212,9 +256,6 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 24,
-    // paddingTop: Platform.OS === 'web' ? 24 : 48,
-    // borderBottomWidth: 1,
-    // borderBottomColor: '#e5e7eb',
   },
   title: {
     fontFamily: 'Inter-Bold',
@@ -327,4 +368,43 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     fontSize: 14,
   },
+  refreshButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  emptyContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    maxWidth: 300,
+  },
+  emptyTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyDescription: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  }
 });
