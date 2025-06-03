@@ -152,7 +152,6 @@ export default function EditProfileScreen() {
     availability_locations: [],
   });
   const [newEntries, setNewEntries] = useState<Record<string, string>>({
-    specialization: '',
     portfolio: '',
     certifications: '',
     languages: '',
@@ -169,9 +168,6 @@ export default function EditProfileScreen() {
         phone: profile.phone || '',
         actual_location: profile.actual_location || '',
         bio: profile.bio || '',
-        specialization: Array.isArray(profile.specialization)
-          ? profile.specialization
-          : [],
         portfolio: Array.isArray(profile.portfolio) ? profile.portfolio : [],
         certifications: Array.isArray(profile.certifications)
           ? profile.certifications

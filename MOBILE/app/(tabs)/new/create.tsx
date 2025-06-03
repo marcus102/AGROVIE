@@ -43,17 +43,17 @@ import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 
 const SURFACE_UNITS = [
-  { id: 'm²', label: 'mètres carrés (m²)' },
+  { id: 'square_meters', label: 'mètres carrés (m²)' },
   { id: 'hectares', label: 'hectares' },
   { id: 'acres', label: 'acres' },
-  { id: 'km²', label: 'kilomètres carrés (km²)' },
+  { id: 'square_kilometers', label: 'kilomètres carrés (km²)' },
 ];
 
 const SURFACE_UNIT_CONVERSION = {
-  'm²': 1,
+  'square_meters': 1,
   hectares: 10000,
   acres: 4046.86,
-  'km²': 1000000,
+  'square_kilometers': 1000000,
 };
 
 type Step =

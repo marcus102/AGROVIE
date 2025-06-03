@@ -8,6 +8,7 @@ import {
   Image,
   Platform,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
@@ -20,6 +21,9 @@ import {
   Tag,
   AlertCircle,
   CreditCard,
+  RotateCcw,
+  X,
+  Trash,
 } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useThemeStore } from '@/stores/theme';
@@ -83,20 +87,65 @@ const workerCategories = [
 function MissionDetailScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useThemeStore();
-  const { fetchMissionByIDWithImages } = useMissionStore();
+  const {
+    fetchMissionByIDWithImages,
+    updateMission,
+    deleteMission,
+    loading,
+    error,
+  } = useMissionStore();
   const [mission, setMission] = useState<Mission | null>(null);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
+  // const [isCancelled, setIsCancelled] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchMission = async () => {
       if (id) {
         const fetchedMission = await fetchMissionByIDWithImages(id as string);
         setMission(fetchedMission);
-        setLoading(false);
+        // setLoading(false);
       }
     };
     fetchMission();
   }, [id]);
+
+  const handleCancelMission = async () => {
+    try {
+      if (mission) {
+        await updateMission(mission.id, { status: 'removed' });
+
+        const fetchedMission = await fetchMissionByIDWithImages(id as string);
+        setMission(fetchedMission);
+      }
+    } catch (error) {
+      console.error('Error cancelling mission:', error);
+    }
+  };
+
+  const handleReverseCancellation = async () => {
+    try {
+      if (mission) {
+        await updateMission(mission.id, { status: 'in_review' });
+
+        const fetchedMission = await fetchMissionByIDWithImages(id as string);
+        setMission(fetchedMission);
+      }
+    } catch (error) {
+      console.error('Error reversing cancellation:', error);
+    }
+  };
+
+  const handleDeleteMission = async () => {
+    try {
+      if (mission) {
+        await deleteMission(mission.id);
+        router.back();
+      }
+    } catch (error) {
+      console.error('Error deleting mission:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -255,6 +304,63 @@ function MissionDetailScreen() {
               {parseInt(mission.final_price).toLocaleString()} FCFA
             </Text>
           </View>
+
+          {/* NEW: Cancel/Reverse buttons */}
+          {(mission.status === ('in_review' as MissionStatus) ||
+            mission.status === ('accepted' as MissionStatus) ||
+            mission.status === ('removed' as MissionStatus)) && (
+            <Animated.View
+              entering={FadeInDown}
+              style={styles.cancelButtonContainer}
+            >
+              {mission.status !== ('removed' as MissionStatus) ? (
+                <TouchableOpacity
+                  style={[
+                    styles.cancelButton,
+                    { backgroundColor: colors.error + '20' },
+                  ]}
+                  onPress={handleCancelMission}
+                >
+                  <X size={20} color={colors.error} />
+                  <Text
+                    style={[styles.cancelButtonText, { color: colors.error }]}
+                  >
+                    {loading ? 'Annulation en cours...' : 'Annuler la mission'}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.reverseButton,
+                    { backgroundColor: colors.success + '20' },
+                  ]}
+                  onPress={handleReverseCancellation}
+                >
+                  <RotateCcw size={20} color={colors.success} />
+                  <Text
+                    style={[
+                      styles.reverseButtonText,
+                      { color: colors.success },
+                    ]}
+                  >
+                    {loading
+                      ? 'Restauration en cours...'
+                      : 'Rétablir la mission'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[styles.deleteButton, { backgroundColor: colors.error }]}
+                onPress={() => setIsModalVisible(true)}
+              >
+                <Trash size={20} color={'#fff'} />
+                <Text style={[styles.reverseButtonText, { color: '#fff' }]}>
+                  {loading ? 'Suppression en cours...' : 'Supprimer la mission'}
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
 
           {/* Quick Info Grid */}
           <View style={styles.infoGrid}>
@@ -419,6 +525,35 @@ function MissionDetailScreen() {
           </Section>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={isModalVisible}
+        // onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>
+            Voullez vous vraiment supprimer la mission ?
+          </Text>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: colors.primary }]}
+              onPress={handleDeleteMission}
+            >
+              <Text style={[styles.modalButtonText, { color: colors.card }]}>
+                Oui
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: colors.card }]}
+              onPress={() => setIsModalVisible(false)}
+            >
+              <Text style={[styles.modalButtonText, { color: colors.primary }]}>
+                Non
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -684,6 +819,81 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: 16,
     fontStyle: 'italic',
+  },
+  // NEW STYLES
+  cancelButtonContainer: {
+    marginBottom: 20,
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  cancelButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  reverseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  reverseButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  deleteButton: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 24,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  modalText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+  },
+  modalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
   },
 });
 

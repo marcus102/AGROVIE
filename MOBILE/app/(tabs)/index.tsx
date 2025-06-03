@@ -25,7 +25,7 @@ import { NotificationsModal } from '@/components/modals/NotificationsModal';
 import { useThemeStore } from '@/stores/theme';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { AgroLogo} from './components/AgroLogo';
+import AgroLogo from '../../components/AgroLogo';
 import { useNotificationStore } from '@/stores/notification';
 
 const testimonials = [
@@ -224,25 +224,6 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       </View>
-
-      {/* Stats Section */}
-      {/* <View style={styles.statsContainer}>
-        {stats.map((stat, index) => (
-          <Animated.View
-            key={stat.label}
-            entering={FadeInDown.delay(index * 100)}
-            style={[styles.statCard, { backgroundColor: colors.card }]}
-          >
-            <stat.icon size={24} color={stat.color} />
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              {stat.value}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>
-              {stat.label}
-            </Text>
-          </Animated.View>
-        ))}
-      </View> */}
 
       {/* Features Section */}
       <View style={styles.featuresSection}>

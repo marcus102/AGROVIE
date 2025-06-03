@@ -69,7 +69,7 @@ export default function WorkerDashboard() {
     };
 
     fetchAuthenticatedUserMissions();
-  }, []);
+  }, [missions.length]);
 
   const handleRefresh = async () => {
     const {

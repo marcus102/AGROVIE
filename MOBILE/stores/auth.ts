@@ -524,6 +524,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { profile } = get();
       if (!profile) throw new Error('No profile found');
 
+
       const { data, error } = await supabase
         .from('profiles')
         .update({ ...profileData, updated_at: new Date().toISOString() })
@@ -532,6 +533,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .single();
 
       if (error) throw error;
+
+      
 
       set({ profile: data });
       return data;

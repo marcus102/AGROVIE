@@ -1,7 +1,7 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
-export function AgroLogo({ color = 'currentColor', size = 32 }) {
+export default function AgroLogo({ color = 'currentColor', size = 32 }) {
   return (
     <Svg
       width={size}

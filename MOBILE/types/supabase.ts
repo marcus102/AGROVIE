@@ -75,25 +75,6 @@ export interface Database {
             | 'in_review'
             | 'approved'
             | 'rejected';
-          specialization:
-            | 'precision_agriculture_technician'
-            | 'agricultural_equipment_technician'
-            | 'crop_and_soil_technician'
-            | 'research_and_laboratory_technician'
-            | 'livestock_and_airy_technician'
-            | 'food_safety_and_quality_technician'
-            | 'pest_management_and_environmental_technician'
-            | 'inspection_and_certification_technician'
-            | 'sales_and_support_technician'
-            | 'crop_production_worker'
-            | 'livestock_worker'
-            | 'mechanized_worker'
-            | 'processing_worker'
-            | 'specialized_worker'
-            | 'seasonal_worker'
-            | 'maintenance_worker'
-            | 'other';
-          other_specialization: string | null;
           created_at?: string;
           updated_at?: string;
         };

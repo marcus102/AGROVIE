@@ -165,7 +165,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     set({ loading: true, error: null });
     try {
 
-      console.log('Creating mission:', mission);
+      console.log('\nCreating mission:\n', mission);
       const { data, error } = await supabase
         .from('missions')
         .insert([
@@ -180,6 +180,8 @@ export const useMissionStore = create<MissionState>((set, get) => ({
           },
         ])
         .select('*');
+
+      console.log('\nCreated mission:\n', data, '\nError:\n', error);
       if (error) throw error;
       if (data) {
         set((state) => ({ missions: [data[0] as Mission, ...state.missions] }));

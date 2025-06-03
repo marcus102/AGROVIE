@@ -7,6 +7,7 @@ import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
 import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { addNotificationListener, addNotificationResponseListener } from '@/lib/notifications';
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -40,6 +41,21 @@ export default function RootLayout() {
     };
 
     initializeApp();
+
+     // Set up notification listeners
+    const notificationSubscription = addNotificationListener((notification) => {
+      console.log('Received notification:', notification);
+    });
+
+    const responseSubscription = addNotificationResponseListener((response) => {
+      console.log('Notification response:', response);
+      // Handle notification interaction here
+    });
+
+    return () => {
+      notificationSubscription.remove();
+      responseSubscription.remove();
+    };
   }, []);
 
   // Keep the splash screen visible while we fetch resources
