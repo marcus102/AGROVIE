@@ -1,3 +1,4 @@
+import { Json } from "./../../../MOBILE/types/supabase";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createClient, Session, User } from "@supabase/supabase-js";
@@ -7,9 +8,47 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-// const {
-//   data: { session },
-// } = await supabase.auth.getSession();
+
+export type ActorRank = "Worker" | "Technician" | "Entrepreneur";
+export type ActorSpecialization =
+  | "precision_agriculture_technician"
+  | "agricultural_equipment_technician"
+  | "crop_and_soil_technician"
+  | "research_and_laboratory_technician"
+  | "livestock_and_airy_technician"
+  | "food_safety_and_quality_technician"
+  | "pest_management_and_environmental_technician"
+  | "inspection_and_certification_technician"
+  | "sales_and_support_technician"
+  | "crop_production_worker"
+  | "livestock_worker"
+  | "mechanized_worker"
+  | "processing_worker"
+  | "specialized_worker"
+  | "seasonal_worker"
+  | "maintenance_worker"
+  | "other";
+
+export type ExperienceLevel = "starter" | "qualified" | "expert";
+export type SurfaceUnit = "hectares" | "acres";
+
+export interface DynamicPricing {
+  id: string;
+  actor_rank: ActorRank;
+  actor_specialization2: ActorSpecialization;
+  experience_level: ExperienceLevel;
+  surface_unit2: SurfaceUnit;
+  specialization_base_price: number;
+  experience_multiplier: number;
+  surface_unit_price: number;
+  price_per_kilometer: number;
+  price_per_hour: number;
+  equipments_price: number;
+  advantages_reduction: number;
+  metadata: Json;
+  created_at: Date;
+  updated_at: Date;
+}
 
 export type UserSuperRole =
   | "user"
@@ -184,7 +223,24 @@ export interface NotificationRead {
   created_at: string;
 }
 
+export type LinkItem = {
+  id: string;
+  link_title: string;
+  link_description: string;
+  link: string;
+  category: string;
+  metadata: Json;
+  is_active: boolean;
+  updated_at: string | null;
+  created_at: string;
+};
+
 interface AdminState {
+  links: LinkItem[];
+  dynamicPricings: DynamicPricing[];
+  currentPricing: DynamicPricing | null;
+  loadingPricing: boolean;
+  pricingError: string | null;
   session: Session | null;
   user: User | null;
   profile: Profile | null;
@@ -254,6 +310,18 @@ interface AdminState {
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   getUnreadCount: () => number;
+  fetchPricings: () => Promise<void>;
+  fetchPricingById: (id: string) => Promise<DynamicPricing | null>;
+  updatePricingById: (
+    id: string,
+    updates: Partial<DynamicPricing>
+  ) => Promise<DynamicPricing | null>;
+  fetchLinks: () => Promise<void>;
+  createLink: (
+    link: Omit<LinkItem, "id" | "created_at" | "updated_at">
+  ) => Promise<void>;
+  updateLink: (id: string, data: Partial<LinkItem>) => Promise<void>;
+  deleteLink: (id: string) => Promise<void>;
 }
 
 // Type guard for NotificationType
@@ -284,6 +352,11 @@ function transformNotification(
 export const useAdminStore = create<AdminState>()(
   persist(
     (set, get) => ({
+      links: [],
+      dynamicPricings: [],
+      currentPricing: null,
+      loadingPricing: false,
+      pricingError: null,
       user: null,
       session: null,
       profile: null,
@@ -1298,6 +1371,183 @@ export const useAdminStore = create<AdminState>()(
         const { notifications, readNotificationIds } = get();
         return notifications.filter((n) => !readNotificationIds.includes(n.id))
           .length;
+      },
+
+      // Dynamic Pricing Functions
+      fetchPricings: async () => {
+        set({ loadingPricing: true, pricingError: null });
+        try {
+          const { data, error } = await supabase
+            .from("dynamic_pricing")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          set({ dynamicPricings: data || [] });
+        } catch (error) {
+          set({
+            pricingError:
+              error instanceof Error
+                ? error.message
+                : "Failed to fetch pricing data",
+          });
+        } finally {
+          set({ loadingPricing: false });
+        }
+      },
+
+      fetchPricingById: async (id: string) => {
+        set({ loadingPricing: true, pricingError: null });
+        try {
+          const { data, error } = await supabase
+            .from("dynamic_pricing")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+          if (error) throw error;
+          set({ currentPricing: data });
+          return data;
+        } catch (error) {
+          set({
+            pricingError:
+              error instanceof Error
+                ? error.message
+                : "Failed to fetch pricing details",
+          });
+          return null;
+        } finally {
+          set({ loadingPricing: false });
+        }
+      },
+
+      updatePricingById: async (
+        id: string,
+        updates: Partial<DynamicPricing>
+      ) => {
+        set({ loadingPricing: true, pricingError: null });
+        try {
+          const fullUpdates = {
+            ...updates,
+            updated_at: new Date().toISOString(),
+          };
+
+          const { data, error } = await supabase
+            .from("dynamic_pricing")
+            .update(fullUpdates)
+            .eq("id", id)
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          set((state) => ({
+            dynamicPricings: state.dynamicPricings.map((p) =>
+              p.id === id ? data : p
+            ),
+            currentPricing: data,
+          }));
+
+          return data;
+        } catch (error) {
+          set({
+            pricingError:
+              error instanceof Error
+                ? error.message
+                : "Failed to update pricing rule",
+          });
+          return null;
+        } finally {
+          set({ loadingPricing: false });
+        }
+      },
+
+      // Link Management Functions
+      fetchLinks: async () => {
+        set({ loading: true, error: null });
+        try {
+          const { data: links, error } = await supabase
+            .from("Links")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          set({ links });
+        } catch (err) {
+          set({
+            error: err instanceof Error ? err.message : "Failed to fetch links",
+          });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      createLink: async (linkData) => {
+        set({ loading: true, error: null });
+        try {
+          const { data, error } = await supabase
+            .from("Links")
+            .insert([linkData])
+            .select();
+
+          console.log("Creating link with data:", data, error);
+
+          if (error) throw error;
+
+          set((state) => ({
+            links: [...(data || []), ...state.links],
+          }));
+        } catch (err) {
+          set({
+            error: err instanceof Error ? err.message : "Failed to create link",
+          });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      updateLink: async (id, updates) => {
+        set({ loading: true, error: null });
+        try {
+          const { error } = await supabase
+            .from("Links")
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq("id", id)
+            .select();
+
+          if (error) throw error;
+
+          set((state) => ({
+            links: state.links.map((link) =>
+              link.id === id ? { ...link, ...updates } : link
+            ),
+          }));
+        } catch (err) {
+          set({
+            error: err instanceof Error ? err.message : "Failed to update link",
+          });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      deleteLink: async (id) => {
+        set({ loading: true, error: null });
+        try {
+          const { error } = await supabase.from("Links").delete().eq("id", id);
+
+          if (error) throw error;
+
+          set((state) => ({
+            links: state.links.filter((link) => link.id !== id),
+          }));
+        } catch (err) {
+          set({
+            error: err instanceof Error ? err.message : "Failed to delete link",
+          });
+        } finally {
+          set({ loading: false });
+        }
       },
     }),
     {

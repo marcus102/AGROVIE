@@ -1,10 +1,10 @@
 import { Stack } from 'expo-router';
 import { useThemeStore } from '@/stores/theme';
-import { usePublicRoute } from '@/hooks/usePublicRoute';
+// import { usePublicRoute } from '@/hooks/usePublicRoute';
 
 export default function AuthLayout() {
   const { colors } = useThemeStore();
-  usePublicRoute();
+  // usePublicRoute();
 
   return (
     <Stack 

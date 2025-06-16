@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,83 +6,48 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Image,
+  Platform,
+  Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
+  ArrowLeft,
+  Camera,
   MapPin,
   Calendar,
   Users,
-  FileText,
-  Briefcase,
-  AlertCircle,
-  PenTool as Tool,
-  Info,
-  Truck,
-  Coffee,
-  Home,
-  Star,
+  DollarSign,
+  Plus,
+  X,
+  Check,
+  ChevronDown,
+  Upload,
 } from 'lucide-react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useMissionStore } from '@/stores/mission';
-import { usePermissions } from '@/hooks/usePermissions';
 import { useThemeStore } from '@/stores/theme';
-import {
-  Roles,
-  ExperienceLevel,
-  AdvantageType,
-  PriceStatus,
-  ActorSpecialization,
-  SurfaceUnit,
-} from '@/types/mission';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useMissionStore } from '@/stores/mission';
+import { useAuthStore } from '@/stores/auth';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useDynamicPricingStore } from '@/stores/dynamic_pricing';
+import { ActorRank } from '@/types/dynamic_pricing';
 
-const SURFACE_UNITS = [
-  { id: 'square_meters', label: 'mètres carrés (m²)' },
-  { id: 'hectares', label: 'hectares' },
-  { id: 'acres', label: 'acres' },
-  { id: 'square_kilometers', label: 'kilomètres carrés (km²)' },
-];
+// Types and constants
+type UserRole = 'worker' | 'technician' | 'entrepreneur';
+type ExperienceLevel = 'starter' | 'qualified' | 'expert';
+type AdvantageType =
+  | 'meal'
+  | 'accommodation'
+  | 'performance_bonus'
+  | 'transport'
+  | 'other';
+type SurfaceUnit = 'hectares' | 'acres';
 
-const SURFACE_UNIT_CONVERSION = {
-  'square_meters': 1,
-  hectares: 10000,
-  acres: 4046.86,
-  'square_kilometers': 1000000,
-};
-
-type Step =
-  | 'basics'
-  | 'logistics'
-  | 'requirements'
-  | 'pricing'
-  | 'review'
-  | 'images';
-
-const EXPERIENCE_LEVELS = [
-  { id: 'starter', label: 'Débutant', multiplier: 1.0 },
-  { id: 'qualified', label: 'Qualifié', multiplier: 1.2 },
-  { id: 'expert', label: 'Expert', multiplier: 1.5 },
-];
-
-const ADVANTAGES = [
-  { id: 'transport', label: 'Transport', icon: Truck, reduction: 5000 },
-  {
-    id: 'performance_bonus',
-    label: 'Primes de rendement',
-    icon: Star,
-    addition: 2000,
-  },
-  { id: 'meal', label: 'Repas fournis', icon: Coffee, reduction: 3000 },
-  { id: 'accommodation', label: 'Hébergement', icon: Home, reduction: 8000 },
-];
-
-const technicianCategories = [
+const technicianSpecializations = [
   {
     label: 'Techniciens en Agriculture de Précision',
     value: 'precision_agriculture_technician',
@@ -122,7 +87,7 @@ const technicianCategories = [
   { label: 'Autre', value: 'other' },
 ];
 
-const workerCategories = [
+const workerSpecializations = [
   { label: 'Ouvriers de Production Végétale', value: 'crop_production_worker' },
   { label: 'Ouvriers en Élevage', value: 'livestock_worker' },
   { label: 'Ouvriers Mécanisés', value: 'mechanized_worker' },
@@ -133,1482 +98,1468 @@ const workerCategories = [
   { label: 'Autre', value: 'other' },
 ];
 
-// Configuration for price calculation
-const PRICE_CONFIG = {
-  experienceMultipliers: {
-    starter: 1.0,
-    qualified: 1.2,
-    expert: 1.5,
-  },
-  operationalCosts: {
-    equipment: 5000, // Cost if equipment is not provided
-    surface: 2, // Cost per m²
-  },
-};
+const locationSuggestions = [
+  'Ouagadougou',
+  'Bobo-Dioulasso',
+  'Koudougou',
+  'Banfora',
+  'Ouahigouya',
+  'Pouytenga',
+  'Kaya',
+  'Tenkodogo',
+  "Fada N'Gourma",
+  'Gaoua',
+  'Dédougou',
+  'Réo',
+  'Manga',
+  'Ziniaré',
+  'Kombissiri',
+];
 
-function CreateJobScreen() {
-  const { canPostJob, isAdmin, isEntrepreneur, isTechnician } =
-    usePermissions();
-  const { draftMission, updateDraftMission, createMission, loading, error } =
-    useMissionStore();
+const advantageOptions = [
+  { label: 'Repas fournis', value: 'meal' },
+  { label: 'Logement', value: 'accommodation' },
+  { label: 'Prime de performance', value: 'performance_bonus' },
+  { label: 'Transport', value: 'transport' },
+  { label: 'Autre', value: 'other' },
+];
+
+interface FormData {
+  mission_title: string;
+  mission_description: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  needed_actor: UserRole;
+  actor_specialization: string;
+  other_actor_specialization: string;
+  needed_actor_amount: number;
+  required_experience_level: ExperienceLevel;
+  surface_area: number;
+  surface_unit: SurfaceUnit;
+  equipment: boolean;
+  proposed_advantages: AdvantageType[];
+  original_price: string;
+  adjustment_price: string;
+  final_price: string;
+  mission_images: string[];
+}
+
+interface FormErrors {
+  [key: string]: string;
+}
+
+export default function CreateMissionScreen() {
   const { colors } = useThemeStore();
-  const [currentStep, setCurrentStep] = useState<Step>('basics');
-  const [availableRoles, setAvailableRoles] = useState<Roles[]>(() => {
-    if (isAdmin()) return ['technician', 'worker', 'entrepreneur'];
-    return ['technician', 'worker'];
+  const { draftMission, createMission, loading } = useMissionStore();
+  const { fetchPricings, dynamicPricing, loadingPricing, errorPricing } =
+    useDynamicPricingStore();
+  const { user } = useAuthStore();
+
+  // Form state
+  const [formData, setFormData] = useState<FormData>({
+    mission_title: '',
+    mission_description: '',
+    location: '',
+    start_date: '',
+    end_date: '',
+    needed_actor: 'worker',
+    actor_specialization: '',
+    other_actor_specialization: '',
+    needed_actor_amount: 1,
+    required_experience_level: 'starter',
+    surface_area: 0,
+    surface_unit: 'hectares',
+    equipment: false,
+    proposed_advantages: [],
+    original_price: '',
+    adjustment_price: '0',
+    final_price: '',
+    mission_images: [],
   });
 
-  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(
-    draftMission?.required_experience_level || 'starter'
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [currentStep, setCurrentStep] = useState(1);
+  const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(
+    null
   );
-  const [providesEquipment, setProvidesEquipment] = useState(
-    draftMission?.equipment || false
-  );
-  const [selectedAdvantages, setSelectedAdvantages] = useState<AdvantageType>(
-    draftMission?.proposed_advantages || []
-  );
-  const [priceAdjustment, setPriceAdjustment] = useState(0);
-  const [adjustmentReason, setAdjustmentReason] = useState('');
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [showUnitPicker, setShowUnitPicker] = useState(false);
   const [showSpecializationModal, setShowSpecializationModal] = useState(false);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState<{
+    [key: string]: number;
+  }>({});
+  const [calculatingPrice, setCalculatingPrice] = useState(false);
 
-  const calculateBasePrice = () => {
-    const baseRate =
-      draftMission?.needed_actor === 'technician' ? 30000 : 20000;
-    const duration = calculateDuration();
-    const workers = draftMission?.needed_actor_amount || 1;
-    const experienceMultiplier =
-      PRICE_CONFIG.experienceMultipliers[experienceLevel];
-
-    return baseRate * duration * workers * experienceMultiplier;
-  };
-
-  const calculateDuration = () => {
-    if (!draftMission?.start_date || !draftMission?.end_date) return 1;
-
-    // Helper to parse date strings
-    const parseDate = (dateStr: string) => {
-      const [day, month, year] = dateStr.split('/');
-      const fullYear = year.length === 2 ? `20${year}` : year;
-      return new Date(`${fullYear}-${month}-${day}`);
-    };
-
-    const start = parseDate(draftMission.start_date);
-    const end = parseDate(draftMission.end_date);
-    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
-  };
-
-  const calculateAdjustments = () => {
-    let adjustment = 0;
-    const workers = draftMission?.needed_actor_amount || 1;
-
-    // Equipment cost
-    const equipmentCost = providesEquipment
-      ? 0
-      : PRICE_CONFIG.operationalCosts.equipment;
-    adjustment += equipmentCost;
-
-    // Surface cost
-    if (draftMission?.surface_area && draftMission?.surface_unit) {
-      const convertedSurface =
-        draftMission.surface_area *
-        SURFACE_UNIT_CONVERSION[
-          draftMission.surface_unit as keyof typeof SURFACE_UNIT_CONVERSION
+  // Load draft mission data
+  useEffect(() => {
+    if (draftMission) {
+      setFormData((prev) => {
+        // Only allow needed_actor values that are valid UserRole
+        const validUserRoles: UserRole[] = [
+          'worker',
+          'technician',
+          'entrepreneur',
         ];
-      adjustment += convertedSurface * PRICE_CONFIG.operationalCosts.surface;
+        const needed_actor: UserRole = validUserRoles.includes(
+          draftMission.needed_actor as UserRole
+        )
+          ? (draftMission.needed_actor as UserRole)
+          : 'worker';
+
+        // Only allow surface_unit values that are valid SurfaceUnit
+        const validSurfaceUnits: SurfaceUnit[] = ['hectares', 'acres'];
+        const surface_unit: SurfaceUnit = validSurfaceUnits.includes(
+          draftMission.surface_unit as SurfaceUnit
+        )
+          ? (draftMission.surface_unit as SurfaceUnit)
+          : 'hectares';
+
+        return {
+          ...prev,
+          ...draftMission,
+          needed_actor,
+          surface_unit,
+          start_date: draftMission.start_date || '',
+          end_date: draftMission.end_date || '',
+          original_price: draftMission.original_price?.price || '',
+          adjustment_price: draftMission.adjustment_price?.price || '0',
+          final_price: draftMission.final_price || '',
+          mission_images: draftMission.mission_images || [],
+        };
+      });
+    }
+  }, [draftMission]);
+
+  // useEffect(() => {
+  //   const fetchPricingData = async () => {
+  //     // Only fetch when all required parameters are available
+  //     // console.log('Fetching dynamic pricing with:', {
+  //     //   actor_rank: formData.needed_actor as ActorRank,
+  //     //   actor_specialization2: formData.actor_specialization,
+  //     //   experience_level: formData.required_experience_level,
+  //     //   surface_unit2: formData.surface_unit,
+  //     // });
+  //     if (
+  //       formData.needed_actor &&
+  //       formData.actor_specialization &&
+  //       formData.required_experience_level &&
+  //       formData.surface_unit
+  //     ) {
+  //       await fetchPricings({
+  //         actor_rank: formData.needed_actor as ActorRank,
+  //         actor_specialization2: formData.actor_specialization,
+  //         experience_level: formData.required_experience_level,
+  //         surface_unit2: formData.surface_unit,
+  //       });
+
+  //       console.log('Fetched dynamic pricing:', dynamicPricing);
+  //     }
+  //   };
+
+  //   fetchPricingData();
+  // }, [
+  //   formData.needed_actor,
+  //   formData.actor_specialization,
+  //   formData.required_experience_level,
+  //   formData.surface_unit,
+  //   fetchPricings,
+  // ]);
+
+  // // Updated price calculation useEffect
+  // useEffect(() => {
+  //   if (loadingPricing || !dynamicPricing || dynamicPricing.length === 0)
+  //     return;
+
+  //   const calculateBasePrice = () => {
+  //     // Find matching rule from fetched dynamicPricing
+  //     const rule = dynamicPricing.find(
+  //       (r) =>
+  //         r.actor_rank ===
+  //           formData.needed_actor.charAt(0).toUpperCase() +
+  //             formData.needed_actor.slice(1) &&
+  //         r.actor_specialization2 === formData.actor_specialization &&
+  //         r.experience_level === formData.required_experience_level &&
+  //         r.surface_unit2 === formData.surface_unit
+  //     );
+
+  //     if (!rule) return null;
+
+  //     // Calculate base price
+  //     let basePrice =
+  //       rule.specialization_base_price * rule.experience_multiplier;
+  //     basePrice += formData.surface_area * rule.surface_unit_price;
+
+  //     if (formData.equipment) {
+  //       basePrice += rule.equipments_price;
+  //     }
+
+  //     // Apply advantages reduction
+  //     if (formData.proposed_advantages.length > 0) {
+  //       basePrice *= 1 - rule.advantages_reduction / 100;
+  //     }
+
+  //     return Math.round(basePrice);
+  //   };
+
+  //   const basePrice = calculateBasePrice();
+  //   if (basePrice !== null && basePrice !== undefined) {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       original_price: basePrice.toString(),
+  //       final_price: (
+  //         basePrice + parseFloat(prev.adjustment_price || '0')
+  //       ).toString(),
+  //     }));
+  //   }
+  // }, [
+  //   formData.needed_actor,
+  //   formData.actor_specialization,
+  //   formData.required_experience_level,
+  //   formData.surface_area,
+  //   formData.surface_unit,
+  //   formData.equipment,
+  //   formData.proposed_advantages,
+  //   dynamicPricing,
+  //   loadingPricing,
+  // ]);
+
+  // Validation functions
+
+  // Effect to update final price when original or adjustment changes
+  useEffect(() => {
+    const original = parseFloat(formData.original_price) || 0;
+    const adjustment = parseFloat(formData.adjustment_price) || 0;
+    setFormData((prev) => ({
+      ...prev,
+      final_price: (original + adjustment).toString(),
+    }));
+  }, [formData.original_price, formData.adjustment_price]);
+
+  const calculatePrice = async () => {
+    setCalculatingPrice(true);
+    try {
+      await fetchPricings({
+        actor_rank: formData.needed_actor as ActorRank,
+        actor_specialization2: formData.actor_specialization,
+        experience_level: formData.required_experience_level,
+        surface_unit2: formData.surface_unit,
+      });
+
+      if (errorPricing) {
+        throw new Error(errorPricing);
+      }
+
+      if (!loadingPricing) {
+        if (!dynamicPricing || dynamicPricing.length === 0) {
+          throw new Error('No pricing rules found');
+        }
+
+        const rule = dynamicPricing[0];
+        let basePrice =
+          rule.specialization_base_price * rule.experience_multiplier;
+        basePrice += formData.surface_area * rule.surface_unit_price;
+
+        if (formData.equipment) {
+          basePrice += rule.equipments_price;
+        }
+
+        if (formData.proposed_advantages.length > 0) {
+          basePrice *= 1 - rule.advantages_reduction / 100;
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          original_price: Math.round(basePrice).toString(),
+        }));
+      }
+    } catch (error) {
+      Alert.alert(
+        'Erreur',
+        'Impossible de calculer le prix. Veuillez vérifier vos paramètres.'
+      );
+    } finally {
+      setCalculatingPrice(false);
+    }
+  };
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: FormErrors = {};
+
+    switch (step) {
+      case 1:
+        if (!formData.mission_title.trim())
+          newErrors.mission_title = 'Le titre est requis';
+        if (!formData.mission_description.trim())
+          newErrors.mission_description = 'La description est requise';
+        if (!formData.location.trim())
+          newErrors.location = 'La localisation est requise';
+        break;
+      case 2:
+        if (!formData.start_date)
+          newErrors.start_date = 'La date de début est requise';
+        if (!formData.end_date)
+          newErrors.end_date = 'La date de fin est requise';
+        if (
+          formData.start_date &&
+          formData.end_date &&
+          new Date(formData.start_date) >= new Date(formData.end_date)
+        ) {
+          newErrors.end_date =
+            'La date de fin doit être après la date de début';
+        }
+        break;
+      case 3:
+        if (!formData.actor_specialization)
+          newErrors.actor_specialization = 'La spécialisation est requise';
+        if (
+          formData.actor_specialization === 'other' &&
+          !formData.other_actor_specialization.trim()
+        ) {
+          newErrors.other_actor_specialization =
+            'Veuillez préciser la spécialisation';
+        }
+        if (formData.needed_actor_amount < 1)
+          newErrors.needed_actor_amount = 'Le nombre doit être supérieur à 0';
+        break;
+      case 4:
+        if (
+          !formData.original_price ||
+          parseFloat(formData.original_price) <= 0
+        ) {
+          newErrors.original_price = 'Le prix doit être supérieur à 0';
+        }
+        break;
     }
 
-    // Advantages
-    selectedAdvantages.forEach((advantageId) => {
-      const advantage = ADVANTAGES.find((a) => a.id === advantageId);
-      if (advantage) {
-        adjustment += (advantage.addition || 0) * workers;
-        adjustment -= (advantage.reduction || 0) * workers;
-      }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Image upload function
+  const uploadImage = async (uri: string): Promise<string | null> => {
+    try {
+      const fileExt = uri.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `missions/${user?.id}/${fileName}`;
+
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64',
+      });
+      const arrayBuffer = decode(base64);
+
+      const { error } = await supabase.storage
+        .from('images')
+        .upload(filePath, arrayBuffer, {
+          contentType: `image/${fileExt}`,
+          upsert: false,
+        });
+
+      if (error) throw error;
+      return filePath;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
+  // Handle image selection and upload
+  const handleImagePicker = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
     });
 
-    return adjustment;
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const uploadId = Date.now().toString();
+
+      setUploadingImages((prev) => ({ ...prev, [uploadId]: 0 }));
+
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadingImages((prev) => {
+          const currentProgress = prev[uploadId] || 0;
+          if (currentProgress >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return { ...prev, [uploadId]: currentProgress + 10 };
+        });
+      }, 200);
+
+      const uploadedPath = await uploadImage(asset.uri);
+
+      if (uploadedPath) {
+        setUploadingImages((prev) => ({ ...prev, [uploadId]: 100 }));
+        setTimeout(() => {
+          setUploadingImages((prev) => {
+            const newState = { ...prev };
+            delete newState[uploadId];
+            return newState;
+          });
+          setFormData((prev) => ({
+            ...prev,
+            mission_images: [...prev.mission_images, uploadedPath],
+          }));
+        }, 500);
+      } else {
+        setUploadingImages((prev) => {
+          const newState = { ...prev };
+          delete newState[uploadId];
+          return newState;
+        });
+        Alert.alert('Erreur', "Échec du téléchargement de l'image");
+      }
+    }
   };
 
-  const calculateFinalPrice = () => {
-    const basePrice = calculateBasePrice();
-    const adjustments = calculateAdjustments();
-    const manualAdjustment = basePrice * (priceAdjustment / 100);
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!validateStep(4)) return;
 
-    // Ensure final price never goes below 0
-    return Math.max(0, basePrice + adjustments + manualAdjustment);
+    try {
+      const missionData = {
+        ...formData,
+        actor_specialization: formData.actor_specialization as any, // Cast to correct union type if needed
+        original_price: {
+          price: formData.original_price.toString(),
+          status: 'current' as const,
+        },
+        adjustment_price: {
+          price: formData.adjustment_price.toString(),
+          status: 'not_current' as const,
+        },
+      };
+
+      const result = await createMission(missionData);
+      if (result) {
+        Alert.alert(
+          'Succès',
+          'Votre mission a été créée avec succès et est en cours de révision.',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Erreur',
+        'Une erreur est survenue lors de la création de la mission'
+      );
+    }
   };
 
-  const formatDateInput = (text: string) => {
-    // Remove all non-digit characters
-    const cleaned = text.replace(/\D/g, '');
-
-    // Apply formatting based on length
-    const match = cleaned.match(/^(\d{0,2})(\d{0,2})(\d{0,4})$/);
-    if (!match) return '';
-
-    let formatted = match[1];
-    if (match[2]) formatted += `/${match[2]}`;
-    if (match[3]) formatted += `/${match[3]}`;
-
-    return formatted;
+  // Date formatting
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   };
 
-  const renderSurfaceInput = () => {
-    return (
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>
-          Surface du terrain
-        </Text>
-        <View
-          style={[
-            styles.inputWrapper,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            value={draftMission?.surface_area?.toString() ?? ''}
-            onChangeText={(text) =>
-              updateDraftMission({ surface_area: parseFloat(text) || 0 })
-            }
-            keyboardType="numeric"
-            placeholder="Ex: 100"
-            placeholderTextColor={colors.muted}
-          />
+  // Get specialization options based on role
+  const getSpecializationOptions = () => {
+    return formData.needed_actor === 'technician'
+      ? technicianSpecializations
+      : workerSpecializations;
+  };
 
-          <TouchableOpacity
-            style={styles.unitSelector}
-            onPress={() => setShowUnitPicker(true)}
-          >
-            <Text style={[styles.unitText, { color: colors.text }]}>
-              {draftMission?.surface_unit || 'Sélectionner unité'}
+  // Filter location suggestions
+  const filteredLocationSuggestions = locationSuggestions.filter((location) =>
+    location.toLowerCase().includes(formData.location.toLowerCase())
+  );
+
+  // Render step content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>
+              Informations générales
             </Text>
-          </TouchableOpacity>
 
-          {showUnitPicker && (
-            <Modal
-              transparent
-              visible={showUnitPicker}
-              onRequestClose={() => setShowUnitPicker(false)}
-            >
-              <View style={[styles.modalOverlay]}>
-                <View style={[styles.modalContent]}>
-                  {SURFACE_UNITS.map((unit) => (
-                    <TouchableOpacity
-                      key={unit.id}
-                      style={[
-                        styles.modalItem,
-                        { borderBottomColor: colors.border },
-                      ]}
-                      onPress={() => {
-                        updateDraftMission({
-                          surface_unit: unit.id as SurfaceUnit,
-                        });
-                        setShowUnitPicker(false);
-                      }}
-                    >
-                      <Text
-                        style={[styles.modalItemText, { color: colors.text }]}
-                      >
-                        {unit.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </Modal>
-          )}
-        </View>
-      </View>
-    );
-  };
-
-  const renderBasicsStep = () => {
-    const currentRole = draftMission?.needed_actor;
-    const isTechnician = currentRole === 'technician';
-    const isWorker = currentRole === 'worker';
-    const categories = isTechnician
-      ? technicianCategories
-      : isWorker
-      ? workerCategories
-      : [];
-    const showOtherInput = draftMission?.actor_specialization === 'other';
-
-    return (
-      <Animated.View entering={FadeInDown}>
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Expertise Recherchée
-          </Text>
-          <View style={styles.roleButtons}>
-            {availableRoles.map((role) => (
-              <TouchableOpacity
-                key={role}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Titre de la mission *
+              </Text>
+              <TextInput
                 style={[
-                  styles.roleButton,
+                  styles.input,
                   {
                     backgroundColor: colors.card,
-                    borderColor:
-                      draftMission?.needed_actor === role
-                        ? colors.primary
-                        : colors.border,
-                  },
-                  draftMission?.needed_actor === role && {
-                    backgroundColor: colors.primary,
+                    color: colors.text,
+                    borderColor: errors.mission_title
+                      ? colors.error
+                      : colors.border,
                   },
                 ]}
-                onPress={() => updateDraftMission({ needed_actor: role })}
-              >
-                <Text
-                  style={[
-                    styles.roleButtonText,
-                    { color: colors.muted },
-                    draftMission?.needed_actor === role && {
-                      color: colors.card,
-                    },
-                  ]}
-                >
-                  {role === 'technician'
-                    ? 'Technicien'
-                    : role === 'worker'
-                    ? 'Ouvrier'
-                    : 'Entrepreneur'}
+                value={formData.mission_title}
+                onChangeText={(text) => {
+                  setFormData((prev) => ({ ...prev, mission_title: text }));
+                  if (errors.mission_title)
+                    setErrors((prev) => ({ ...prev, mission_title: '' }));
+                }}
+                placeholder="Ex: Récolte de maïs"
+                placeholderTextColor={colors.muted}
+              />
+              {errors.mission_title && (
+                <Text style={[styles.errorText, { color: colors.error }]}>
+                  {errors.mission_title}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+              )}
+            </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Spécialisation de l'acteur
-          </Text>
-
-          {isTechnician || isWorker ? (
-            <>
-              <TouchableOpacity
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Description détaillée *
+              </Text>
+              <TextInput
                 style={[
-                  styles.inputWrapper,
+                  styles.textArea,
                   {
                     backgroundColor: colors.card,
-                    borderColor: colors.border,
+                    color: colors.text,
+                    borderColor: errors.mission_description
+                      ? colors.error
+                      : colors.border,
+                  },
+                ]}
+                value={formData.mission_description}
+                onChangeText={(text) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    mission_description: text,
+                  }));
+                  if (errors.mission_description)
+                    setErrors((prev) => ({ ...prev, mission_description: '' }));
+                }}
+                placeholder="Décrivez en détail la mission, les tâches à accomplir, les conditions de travail..."
+                placeholderTextColor={colors.muted}
+                multiline
+                numberOfLines={4}
+              />
+              {errors.mission_description && (
+                <Text style={[styles.errorText, { color: colors.error }]}>
+                  {errors.mission_description}
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Localisation *
+              </Text>
+              <View style={styles.locationContainer}>
+                <View style={styles.locationInputContainer}>
+                  <MapPin size={20} color={colors.muted} />
+                  <TextInput
+                    style={[styles.locationInput, { color: colors.text }]}
+                    value={formData.location}
+                    onChangeText={(text) => {
+                      setFormData((prev) => ({ ...prev, location: text }));
+                      setShowLocationSuggestions(text.length > 0);
+                      if (errors.location)
+                        setErrors((prev) => ({ ...prev, location: '' }));
+                    }}
+                    onFocus={() =>
+                      setShowLocationSuggestions(formData.location.length > 0)
+                    }
+                    placeholder="Ville ou région"
+                    placeholderTextColor={colors.muted}
+                  />
+                </View>
+                {showLocationSuggestions &&
+                  filteredLocationSuggestions.length > 0 && (
+                    <View
+                      style={[
+                        styles.suggestionsContainer,
+                        { backgroundColor: colors.card },
+                      ]}
+                    >
+                      {filteredLocationSuggestions
+                        .slice(0, 5)
+                        .map((suggestion, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.suggestionItem}
+                            onPress={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                location: suggestion,
+                              }));
+                              setShowLocationSuggestions(false);
+                            }}
+                          >
+                            <Text
+                              style={[
+                                styles.suggestionText,
+                                { color: colors.text },
+                              ]}
+                            >
+                              {suggestion}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                    </View>
+                  )}
+              </View>
+              {errors.location && (
+                <Text style={[styles.errorText, { color: colors.error }]}>
+                  {errors.location}
+                </Text>
+              )}
+            </View>
+          </View>
+        );
+
+      case 2:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>
+              Dates et durée
+            </Text>
+
+            <View style={styles.dateRow}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Date de début *
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.dateInput,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: errors.start_date
+                        ? colors.error
+                        : colors.border,
+                    },
+                  ]}
+                  onPress={() => setShowDatePicker('start')}
+                >
+                  <Calendar size={20} color={colors.muted} />
+                  <Text
+                    style={[
+                      styles.dateText,
+                      {
+                        color: formData.start_date ? colors.text : colors.muted,
+                      },
+                    ]}
+                  >
+                    {formData.start_date
+                      ? formatDate(new Date(formData.start_date))
+                      : 'Sélectionner'}
+                  </Text>
+                </TouchableOpacity>
+                {errors.start_date && (
+                  <Text style={[styles.errorText, { color: colors.error }]}>
+                    {errors.start_date}
+                  </Text>
+                )}
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Date de fin *
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.dateInput,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: errors.end_date
+                        ? colors.error
+                        : colors.border,
+                    },
+                  ]}
+                  onPress={() => setShowDatePicker('end')}
+                >
+                  <Calendar size={20} color={colors.muted} />
+                  <Text
+                    style={[
+                      styles.dateText,
+                      { color: formData.end_date ? colors.text : colors.muted },
+                    ]}
+                  >
+                    {formData.end_date
+                      ? formatDate(new Date(formData.end_date))
+                      : 'Sélectionner'}
+                  </Text>
+                </TouchableOpacity>
+                {errors.end_date && (
+                  <Text style={[styles.errorText, { color: colors.error }]}>
+                    {errors.end_date}
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.surfaceRow}>
+              <View style={[styles.inputGroup, { flex: 2, marginRight: 8 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Surface (optionnel)
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.card,
+                      color: colors.text,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  value={formData.surface_area.toString()}
+                  onChangeText={(text) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      surface_area: parseFloat(text) || 0,
+                    }))
+                  }
+                  placeholder="0"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Unité
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    },
+                  ]}
+                  onPress={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      surface_unit:
+                        prev.surface_unit === 'hectares' ? 'acres' : 'hectares',
+                    }));
+                  }}
+                >
+                  <Text style={[{ color: colors.text }]}>
+                    {formData.surface_unit}
+                  </Text>
+                  <ChevronDown size={20} color={colors.muted} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={
+                  new Date(
+                    formData[
+                      showDatePicker === 'start' ? 'start_date' : 'end_date'
+                    ] || Date.now()
+                  )
+                }
+                mode="date"
+                display="default"
+                minimumDate={
+                  showDatePicker === 'start'
+                    ? new Date()
+                    : new Date(formData.start_date || Date.now())
+                }
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(null);
+                  if (selectedDate) {
+                    const field =
+                      showDatePicker === 'start' ? 'start_date' : 'end_date';
+                    setFormData((prev) => ({
+                      ...prev,
+                      [field]: selectedDate.toISOString().split('T')[0],
+                    }));
+                    if (errors[field])
+                      setErrors((prev) => ({ ...prev, [field]: '' }));
+                  }
+                }}
+              />
+            )}
+          </View>
+        );
+
+      case 3:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>
+              Profil recherché
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Type d'acteur
+              </Text>
+              <View style={styles.roleSelector}>
+                {(['worker', 'technician'] as UserRole[]).map((role) => (
+                  <TouchableOpacity
+                    key={role}
+                    style={[
+                      styles.roleOption,
+                      {
+                        backgroundColor:
+                          formData.needed_actor === role
+                            ? colors.primary
+                            : colors.card,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        needed_actor: role,
+                        actor_specialization: '',
+                      }));
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.roleText,
+                        {
+                          color:
+                            formData.needed_actor === role
+                              ? colors.card
+                              : colors.text,
+                        },
+                      ]}
+                    >
+                      {role === 'worker' ? 'Ouvrier' : 'Technicien'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Spécialisation *
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: errors.actor_specialization
+                      ? colors.error
+                      : colors.border,
+                    flexDirection: 'row',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
                   },
                 ]}
                 onPress={() => setShowSpecializationModal(true)}
               >
-                <Text style={[styles.input, { color: colors.text }]}>
-                  {draftMission?.actor_specialization
-                    ? categories.find(
-                        (cat) => cat.value === draftMission.actor_specialization
-                      )?.label || 'Sélectionner'
-                    : 'Sélectionner une spécialisation'}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color={colors.muted} />
-              </TouchableOpacity>
-
-              {showOtherInput && (
-                <View
+                <Text
                   style={[
-                    styles.inputWrapper,
                     {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                      marginTop: 8,
+                      color: formData.actor_specialization
+                        ? colors.text
+                        : colors.muted,
                     },
                   ]}
                 >
-                  <TextInput
-                    style={[styles.input, { color: colors.text }]}
-                    value={draftMission?.other_actor_specialization || ''}
-                    onChangeText={(text) =>
-                      updateDraftMission({ other_actor_specialization: text })
-                    }
-                    placeholder="Précisez la spécialisation..."
-                    placeholderTextColor={colors.muted}
-                  />
-                </View>
+                  {formData.actor_specialization
+                    ? getSpecializationOptions().find(
+                        (opt) => opt.value === formData.actor_specialization
+                      )?.label || 'Sélectionner'
+                    : 'Sélectionner une spécialisation'}
+                </Text>
+                <ChevronDown size={20} color={colors.muted} />
+              </TouchableOpacity>
+              {errors.actor_specialization && (
+                <Text style={[styles.errorText, { color: colors.error }]}>
+                  {errors.actor_specialization}
+                </Text>
               )}
-
-              <Modal
-                visible={showSpecializationModal}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setShowSpecializationModal(false)}
-              >
-                <View style={{ flex: 1, marginTop: 100 }}>
-                  <ScrollView
-                    style={[
-                      styles.modalContent,
-                      { backgroundColor: colors.card },
-                    ]}
-                  >
-                    {categories.map((category) => (
-                      <TouchableOpacity
-                        key={category.value}
-                        style={[
-                          styles.modalItem,
-                          {
-                            borderBottomColor: colors.border,
-                            backgroundColor:
-                              draftMission?.actor_specialization ===
-                              category.value
-                                ? colors.primary + '20'
-                                : 'transparent',
-                          },
-                        ]}
-                        onPress={() => {
-                          updateDraftMission({
-                            actor_specialization:
-                              category.value === 'other'
-                                ? (category.value as ActorSpecialization)
-                                : (category.value as ActorSpecialization),
-                            ...(category.value !== 'other' && {
-                              other_actor_specialization: undefined,
-                            }),
-                          });
-                          setShowSpecializationModal(false);
-                        }}
-                      >
-                        <Text
-                          style={[styles.modalItemText, { color: colors.text }]}
-                        >
-                          {category.label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              </Modal>
-            </>
-          ) : (
-            <View
-              style={[
-                styles.inputWrapper,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                value={draftMission?.actor_specialization}
-                onChangeText={(text) =>
-                  updateDraftMission({ other_actor_specialization: text })
-                }
-                placeholder="Ex: Technicien en récolte, plantation, etc..."
-                placeholderTextColor={colors.muted}
-              />
-            </View>
-          )}
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Titre de la mission
-          </Text>
-          <View
-            style={[
-              styles.inputWrapper,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <Briefcase
-              size={20}
-              color={colors.primary}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[styles.input, { color: colors.text }]}
-              value={draftMission?.mission_title}
-              onChangeText={(text) =>
-                updateDraftMission({ mission_title: text })
-              }
-              placeholder="Ex: Récolte de pommes bio"
-              placeholderTextColor={colors.muted}
-            />
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Description
-          </Text>
-          <View
-            style={[
-              styles.inputWrapper,
-              styles.textAreaWrapper,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <FileText
-              size={20}
-              color={colors.primary}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[styles.input, styles.textArea, { color: colors.text }]}
-              value={draftMission?.mission_description}
-              onChangeText={(text) =>
-                updateDraftMission({ mission_description: text })
-              }
-              placeholder="Décrivez la mission en détail..."
-              placeholderTextColor={colors.muted}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Nombre de personnes recherchées
-          </Text>
-          <View
-            style={[
-              styles.inputWrapper,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <Users size={20} color={colors.primary} style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, { color: colors.text }]}
-              value={draftMission?.needed_actor_amount?.toString()}
-              onChangeText={(text) =>
-                updateDraftMission({ needed_actor_amount: parseInt(text) || 0 })
-              }
-              keyboardType="numeric"
-              placeholder="Nombre de personnes"
-              placeholderTextColor={colors.muted}
-            />
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>{renderSurfaceInput()}</View>
-      </Animated.View>
-    );
-  };
-
-  const renderLogisticsStep = () => (
-    <Animated.View entering={FadeInDown}>
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>
-          Localisation(Commune)
-        </Text>
-        <View
-          style={[
-            styles.inputWrapper,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <MapPin size={20} color={colors.primary} style={styles.inputIcon} />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            value={draftMission?.location}
-            onChangeText={(text) =>
-              updateDraftMission({
-                location: text,
-              })
-            }
-            placeholder="Adresse de la mission"
-            placeholderTextColor={colors.muted}
-          />
-        </View>
-      </View>
-
-      <View style={styles.dateContainer}>
-        <View style={[styles.inputContainer, { flex: 1 }]}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Date de début
-          </Text>
-          <View
-            style={[
-              styles.inputWrapper,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <Calendar
-              size={20}
-              color={colors.primary}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[styles.input, { color: colors.text }]}
-              value={draftMission?.start_date}
-              onChangeText={(text) => {
-                const formatted = formatDateInput(text);
-                updateDraftMission({ start_date: formatted });
-              }}
-              placeholder="JJ/MM/AAAA"
-              placeholderTextColor={colors.muted}
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-        </View>
-
-        <View style={[styles.inputContainer, { flex: 1 }]}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Date de fin
-          </Text>
-          <View
-            style={[
-              styles.inputWrapper,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <Calendar
-              size={20}
-              color={colors.primary}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={[styles.input, { color: colors.text }]}
-              value={draftMission?.end_date}
-              onChangeText={(text) => {
-                const formatted = formatDateInput(text);
-                updateDraftMission({ end_date: formatted });
-              }}
-              placeholder="JJ/MM/AAAA"
-              placeholderTextColor={colors.muted}
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-        </View>
-      </View>
-    </Animated.View>
-  );
-
-  const renderRequirementsStep = () => (
-    <Animated.View entering={FadeInDown}>
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Niveau d'expérience requis
-        </Text>
-        <View style={styles.experienceLevels}>
-          {EXPERIENCE_LEVELS.map((level) => (
-            <TouchableOpacity
-              key={level.id}
-              style={[
-                styles.experienceButton,
-                {
-                  backgroundColor: colors.card,
-                  borderColor:
-                    experienceLevel === level.id
-                      ? colors.primary
-                      : colors.border,
-                },
-                experienceLevel === level.id && {
-                  backgroundColor: colors.primary,
-                },
-              ]}
-              onPress={() => {
-                setExperienceLevel(level.id as ExperienceLevel);
-                updateDraftMission({
-                  required_experience_level:
-                    (level.id as ExperienceLevel) || 'starter',
-                });
-              }}
-            >
-              <Text
-                style={[
-                  styles.experienceButtonText,
-                  { color: colors.muted },
-                  experienceLevel === level.id && { color: colors.card },
-                ]}
-              >
-                {level.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Équipement
-        </Text>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            {
-              backgroundColor: colors.card,
-              borderColor: providesEquipment ? colors.primary : colors.border,
-            },
-          ]}
-          onPress={() => {
-            const newValue = !providesEquipment;
-            setProvidesEquipment(newValue);
-            updateDraftMission({ equipment: newValue });
-          }}
-        >
-          <Tool
-            size={20}
-            color={providesEquipment ? colors.primary : colors.muted}
-          />
-          <Text
-            style={[
-              styles.toggleButtonText,
-              { color: providesEquipment ? colors.primary : colors.muted },
-            ]}
-          >
-            {providesEquipment ? 'Équipement fourni' : 'Équipement non fourni'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Avantages proposés
-        </Text>
-        <View style={styles.advantagesGrid}>
-          {ADVANTAGES.map((advantage) => (
-            <TouchableOpacity
-              key={advantage.id}
-              style={[
-                styles.advantageButton,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: selectedAdvantages.includes(
-                    advantage.id as AdvantageType[number]
-                  )
-                    ? colors.primary
-                    : colors.border,
-                },
-                selectedAdvantages.includes(
-                  advantage.id as AdvantageType[number]
-                ) && {
-                  backgroundColor: colors.primary + '20',
-                },
-              ]}
-              onPress={() => {
-                const newAdvantages = selectedAdvantages.includes(
-                  advantage.id as AdvantageType[number]
-                )
-                  ? selectedAdvantages.filter((id) => id !== advantage.id)
-                  : [
-                      ...selectedAdvantages,
-                      advantage.id as AdvantageType[number],
-                    ];
-                setSelectedAdvantages(newAdvantages);
-                updateDraftMission({ proposed_advantages: newAdvantages });
-              }}
-            >
-              <advantage.icon
-                size={24}
-                color={
-                  selectedAdvantages.includes(
-                    advantage.id as AdvantageType[number]
-                  )
-                    ? colors.primary
-                    : colors.muted
-                }
-              />
-              <Text
-                style={[
-                  styles.advantageButtonText,
-                  {
-                    color: selectedAdvantages.includes(
-                      advantage.id as AdvantageType[number]
-                    )
-                      ? colors.primary
-                      : colors.muted,
-                  },
-                ]}
-              >
-                {advantage.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    </Animated.View>
-  );
-
-  const renderPricingStep = () => {
-    const basePrice = calculateBasePrice();
-    const adjustments = calculateAdjustments();
-    const finalPrice = calculateFinalPrice();
-    const manualAdjustment = basePrice * (priceAdjustment / 100);
-
-    return (
-      <Animated.View entering={FadeInDown}>
-        <View style={[styles.priceCard, { backgroundColor: colors.card }]}>
-          <View style={styles.priceHeader}>
-            <Text style={[styles.priceTitle, { color: colors.text }]}>
-              Prix calculé
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.infoButton,
-                { backgroundColor: colors.primary + '20' },
-              ]}
-              onPress={() => {
-                // Show pricing info modal
-              }}
-            >
-              <Info size={20} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={[styles.finalPrice, { color: colors.primary }]}>
-            {finalPrice.toLocaleString()} FCFA
-          </Text>
-
-          <View style={styles.priceBreakdown}>
-            <View style={styles.priceRow}>
-              <Text style={[styles.priceLabel, { color: colors.muted }]}>
-                Coût de base
-              </Text>
-              <Text style={[styles.priceValue, { color: colors.text }]}>
-                {basePrice.toLocaleString()} FCFA
-              </Text>
             </View>
 
-            <View style={styles.priceRow}>
-              <Text style={[styles.priceLabel, { color: colors.muted }]}>
-                Coût opérationnel
-              </Text>
-              <Text style={[styles.priceValue, { color: colors.text }]}>
-                {adjustments.toLocaleString()} FCFA
-              </Text>
-            </View>
-
-            {priceAdjustment !== 0 && (
-              <View style={styles.priceRow}>
-                <Text style={[styles.priceLabel, { color: colors.muted }]}>
-                  Ajustement manuel
+            {formData.actor_specialization === 'other' && (
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Précisez la spécialisation *
                 </Text>
-                <Text style={[styles.priceValue, { color: colors.text }]}>
-                  {priceAdjustment}% ({manualAdjustment.toLocaleString()} FCFA)
-                </Text>
-              </View>
-            )}
-
-            <View style={[styles.priceRow, { marginTop: 16 }]}>
-              <Text style={[styles.priceLabel, { color: colors.primary }]}>
-                Prix total
-              </Text>
-              <Text style={[styles.priceValue, { color: colors.primary }]}>
-                {finalPrice.toLocaleString()} FCFA
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.adjustmentSection}>
-            <Text style={[styles.adjustmentLabel, { color: colors.text }]}>
-              Ajustement du prix ({priceAdjustment}%)
-            </Text>
-            <View style={[styles.slider, { backgroundColor: colors.border }]}>
-              <Animated.View
-                style={[
-                  styles.sliderFill,
-                  {
-                    backgroundColor: colors.primary,
-                    width: `${((priceAdjustment + 10) / 20) * 100}%`,
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.sliderLabels}>
-              <Text style={[styles.sliderLabel, { color: colors.muted }]}>
-                -10%
-              </Text>
-              <Text style={[styles.sliderLabel, { color: colors.muted }]}>
-                0%
-              </Text>
-              <Text style={[styles.sliderLabel, { color: colors.muted }]}>
-                +10%
-              </Text>
-            </View>
-
-            {priceAdjustment !== 0 && (
-              <View
-                style={[
-                  styles.inputWrapper,
-                  styles.textAreaWrapper,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-              >
-                <FileText
-                  size={20}
-                  color={colors.primary}
-                  style={styles.inputIcon}
-                />
                 <TextInput
                   style={[
                     styles.input,
-                    styles.textArea,
-                    { color: colors.text },
+                    {
+                      backgroundColor: colors.card,
+                      color: colors.text,
+                      borderColor: errors.other_actor_specialization
+                        ? colors.error
+                        : colors.border,
+                    },
                   ]}
-                  value={adjustmentReason}
-                  onChangeText={setAdjustmentReason}
-                  placeholder="Raison de l'ajustement..."
+                  value={formData.other_actor_specialization}
+                  onChangeText={(text) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      other_actor_specialization: text,
+                    }));
+                    if (errors.other_actor_specialization)
+                      setErrors((prev) => ({
+                        ...prev,
+                        other_actor_specialization: '',
+                      }));
+                  }}
+                  placeholder="Décrivez la spécialisation requise"
                   placeholderTextColor={colors.muted}
-                  multiline
-                  numberOfLines={2}
                 />
+                {errors.other_actor_specialization && (
+                  <Text style={[styles.errorText, { color: colors.error }]}>
+                    {errors.other_actor_specialization}
+                  </Text>
+                )}
               </View>
             )}
-          </View>
-        </View>
-      </Animated.View>
-    );
-  };
 
-  // const renderReviewStep = () => (
-  //   <Animated.View
-  //     entering={FadeInDown}
-  //     style={[styles.reviewContainer, { backgroundColor: colors.card }]}
-  //   >
-  //     <Text style={[styles.reviewTitle, { color: colors.text }]}>
-  //       Récapitulatif de la mission
-  //     </Text>
-
-  //     <View style={styles.reviewSection}>
-  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-  //         Informations générales
-  //       </Text>
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>Type</Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {draftMission?.needed_actor === 'technician'
-  //           ? 'Technicien'
-  //           : draftMission?.needed_actor === 'worker'
-  //           ? 'Travailleur'
-  //           : 'Entrepreneur'}
-  //       </Text>
-
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>Titre</Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {draftMission?.mission_title}
-  //       </Text>
-
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Description
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {draftMission?.mission_description}
-  //       </Text>
-
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Spécialisation de l'acteur
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {draftMission?.actor_specialization}
-  //       </Text>
-  //     </View>
-
-  //     <View style={styles.reviewSection}>
-  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-  //         Détails
-  //       </Text>
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Localisation
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {draftMission?.location}
-  //       </Text>
-
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Période
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         Du {draftMission?.start_date} au {draftMission?.end_date}
-  //       </Text>
-
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Personnes recherchées
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {draftMission?.needed_actor_amount}
-  //       </Text>
-
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Surface
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {draftMission?.surface_area} {draftMission?.surface_unit}
-  //       </Text>
-  //     </View>
-
-  //     <View style={styles.reviewSection}>
-  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-  //         Exigences et équipement
-  //       </Text>
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Niveau d'expérience
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {
-  //           EXPERIENCE_LEVELS.find((level) => level.id === experienceLevel)
-  //             ?.label
-  //         }
-  //       </Text>
-
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Équipement
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //         {providesEquipment ? "Fourni par l'employeur" : 'Non fourni'}
-  //       </Text>
-  //     </View>
-
-  //     <View style={styles.reviewSection}>
-  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-  //         Avantages
-  //       </Text>
-  //       {selectedAdvantages.map((advantageId) => {
-  //         const advantage = ADVANTAGES.find((a) => a.id === advantageId);
-  //         return (
-  //           <Text
-  //             key={advantageId}
-  //             style={[styles.reviewValue, { color: colors.text }]}
-  //           >
-  //             • {advantage?.label}
-  //           </Text>
-  //         );
-  //       })}
-  //     </View>
-
-  //     <View style={styles.reviewSection}>
-  //       <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-  //         Rémunération
-  //       </Text>
-  //       <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //         Prix final
-  //       </Text>
-  //       <Text style={[styles.reviewValue, { color: colors.primary }]}>
-  //         {calculateFinalPrice().toLocaleString()} FCFA
-  //       </Text>
-
-  //       {priceAdjustment !== 0 && (
-  //         <>
-  //           <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-  //             Ajustement manuel
-  //           </Text>
-  //           <Text style={[styles.reviewValue, { color: colors.text }]}>
-  //             {priceAdjustment}% - {adjustmentReason}
-  //           </Text>
-  //         </>
-  //       )}
-  //     </View>
-  //   </Animated.View>
-  // );
-
-  const renderReviewStep = () => {
-    // Helper function to get the display label for actor specialization
-    const getSpecializationLabel = () => {
-      const specialization = draftMission?.actor_specialization;
-      const role = draftMission?.needed_actor;
-
-      if (role === 'technician') {
-        const category = technicianCategories.find(
-          (cat) => cat.value === specialization
-        );
-        if (specialization === 'other') {
-          return draftMission?.other_actor_specialization || 'Autre (spécifié)';
-        }
-        return category?.label || specialization;
-      } else if (role === 'worker') {
-        const category = workerCategories.find(
-          (cat) => cat.value === specialization
-        );
-        if (specialization === 'other') {
-          return draftMission?.other_actor_specialization || 'Autre (spécifié)';
-        }
-        return category?.label || specialization;
-      }
-      return specialization; // For entrepreneur or other roles
-    };
-
-    return (
-      <Animated.View
-        entering={FadeInDown}
-        style={[styles.reviewContainer, { backgroundColor: colors.card }]}
-      >
-        <Text style={[styles.reviewTitle, { color: colors.text }]}>
-          Récapitulatif de la mission
-        </Text>
-
-        <View style={styles.reviewSection}>
-          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-            Informations générales
-          </Text>
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Type
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {draftMission?.needed_actor === 'technician'
-              ? 'Technicien'
-              : draftMission?.needed_actor === 'worker'
-              ? 'Travailleur'
-              : 'Entrepreneur'}
-          </Text>
-
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Titre
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {draftMission?.mission_title}
-          </Text>
-
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Description
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {draftMission?.mission_description}
-          </Text>
-
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Spécialisation de l'acteur
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {getSpecializationLabel()}
-          </Text>
-        </View>
-
-        {/* Rest of the review step remains unchanged */}
-        <View style={styles.reviewSection}>
-          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-            Détails
-          </Text>
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Localisation
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {draftMission?.location}
-          </Text>
-
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Période
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            Du {draftMission?.start_date} au {draftMission?.end_date}
-          </Text>
-
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Personnes recherchées
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {draftMission?.needed_actor_amount}
-          </Text>
-
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Surface
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {draftMission?.surface_area} {draftMission?.surface_unit}
-          </Text>
-        </View>
-
-        <View style={styles.reviewSection}>
-          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-            Exigences et équipement
-          </Text>
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Niveau d'expérience
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {
-              EXPERIENCE_LEVELS.find((level) => level.id === experienceLevel)
-                ?.label
-            }
-          </Text>
-
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Équipement
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.text }]}>
-            {providesEquipment ? "Fourni par l'employeur" : 'Non fourni'}
-          </Text>
-        </View>
-
-        <View style={styles.reviewSection}>
-          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-            Avantages
-          </Text>
-          {selectedAdvantages.map((advantageId) => {
-            const advantage = ADVANTAGES.find((a) => a.id === advantageId);
-            return (
-              <Text
-                key={advantageId}
-                style={[styles.reviewValue, { color: colors.text }]}
-              >
-                • {advantage?.label}
-              </Text>
-            );
-          })}
-        </View>
-
-        <View style={styles.reviewSection}>
-          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
-            Rémunération
-          </Text>
-          <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-            Prix final
-          </Text>
-          <Text style={[styles.reviewValue, { color: colors.primary }]}>
-            {calculateFinalPrice().toLocaleString()} FCFA
-          </Text>
-
-          {priceAdjustment !== 0 && (
-            <>
-              <Text style={[styles.reviewLabel, { color: colors.muted }]}>
-                Ajustement manuel
-              </Text>
-              <Text style={[styles.reviewValue, { color: colors.text }]}>
-                {priceAdjustment}% - {adjustmentReason}
-              </Text>
-            </>
-          )}
-        </View>
-      </Animated.View>
-    );
-  };
-
-  const renderImageUploadStep = () => {
-    const handleImageSelection = async () => {
-      try {
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsMultipleSelection: true,
-          selectionLimit: 4,
-          quality: 1,
-        });
-
-        if (!result.canceled) {
-          const selectedImages = result.assets;
-
-          if (selectedImages.length > 4) {
-            alert("Vous pouvez choisir jusqu'à 4 images.");
-            return;
-          }
-
-          const newImageUris = selectedImages.map((image) => image.uri);
-          setUploadedImages(newImageUris); // Store URIs for preview and later upload
-        }
-      } catch (error) {
-        console.error('Error selecting images:', error);
-        alert('An error occurred while selecting images.');
-      }
-    };
-
-    return (
-      <Animated.View entering={FadeInDown}>
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Téléchargez des images
-          </Text>
-          <Text style={[styles.label, { color: colors.muted }]}>
-            Ajoutez des images de la mission (taille maximale: 5MB par image).
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.uploadButton, { backgroundColor: colors.primary }]}
-            onPress={handleImageSelection}
-          >
-            <Text style={[styles.uploadButtonText, { color: colors.card }]}>
-              Choisir des images
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.imagePreviewContainer}>
-            {uploadedImages.map((uri, index) => (
-              <View key={index} style={styles.imagePreview}>
-                <Image source={{ uri }} style={styles.image} />
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Nombre de personnes *
+                </Text>
+                <View style={styles.numberInputContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.numberButton,
+                      { backgroundColor: colors.border },
+                    ]}
+                    onPress={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        needed_actor_amount: Math.max(
+                          1,
+                          prev.needed_actor_amount - 1
+                        ),
+                      }))
+                    }
+                  >
+                    <Text
+                      style={[styles.numberButtonText, { color: colors.text }]}
+                    >
+                      -
+                    </Text>
+                  </TouchableOpacity>
+                  <Text style={[styles.numberValue, { color: colors.text }]}>
+                    {formData.needed_actor_amount}
+                  </Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.numberButton,
+                      { backgroundColor: colors.border },
+                    ]}
+                    onPress={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        needed_actor_amount: prev.needed_actor_amount + 1,
+                      }))
+                    }
+                  >
+                    <Text
+                      style={[styles.numberButtonText, { color: colors.text }]}
+                    >
+                      +
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                {errors.needed_actor_amount && (
+                  <Text style={[styles.errorText, { color: colors.error }]}>
+                    {errors.needed_actor_amount}
+                  </Text>
+                )}
               </View>
-            ))}
-          </View>
-        </View>
-      </Animated.View>
-    );
-  };
 
-  const renderCurrentStep = () => {
-    switch (currentStep) {
-      case 'basics':
-        return renderBasicsStep();
-      case 'logistics':
-        return renderLogisticsStep();
-      case 'requirements':
-        return renderRequirementsStep();
-      case 'pricing':
-        return renderPricingStep();
-      case 'review':
-        return renderReviewStep();
-      case 'images':
-        return renderImageUploadStep();
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Niveau d'expérience
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    },
+                  ]}
+                  onPress={() => {
+                    const levels: ExperienceLevel[] = [
+                      'starter',
+                      'qualified',
+                      'expert',
+                    ];
+                    const currentIndex = levels.indexOf(
+                      formData.required_experience_level
+                    );
+                    const nextIndex = (currentIndex + 1) % levels.length;
+                    setFormData((prev) => ({
+                      ...prev,
+                      required_experience_level: levels[nextIndex],
+                    }));
+                  }}
+                >
+                  <Text style={[{ color: colors.text }]}>
+                    {formData.required_experience_level === 'starter'
+                      ? 'Débutant'
+                      : formData.required_experience_level === 'qualified'
+                      ? 'Qualifié'
+                      : 'Expert'}
+                  </Text>
+                  <ChevronDown size={20} color={colors.muted} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Équipement fourni
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.checkboxContainer,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+                onPress={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    equipment: !prev.equipment,
+                  }))
+                }
+              >
+                <View
+                  style={[
+                    styles.checkbox,
+                    {
+                      backgroundColor: formData.equipment
+                        ? colors.primary
+                        : 'transparent',
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  {formData.equipment && (
+                    <Check size={16} color={colors.card} />
+                  )}
+                </View>
+                <Text style={[styles.checkboxLabel, { color: colors.text }]}>
+                  Nous fournissons l'équipement nécessaire
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Avantages proposés
+              </Text>
+              <View style={styles.advantagesGrid}>
+                {advantageOptions.map((advantage) => (
+                  <TouchableOpacity
+                    key={advantage.value}
+                    style={[
+                      styles.advantageOption,
+                      {
+                        backgroundColor: formData.proposed_advantages.includes(
+                          advantage.value as AdvantageType
+                        )
+                          ? colors.primary + '20'
+                          : colors.card,
+                        borderColor: formData.proposed_advantages.includes(
+                          advantage.value as AdvantageType
+                        )
+                          ? colors.primary
+                          : colors.border,
+                      },
+                    ]}
+                    onPress={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        proposed_advantages: prev.proposed_advantages.includes(
+                          advantage.value as AdvantageType
+                        )
+                          ? prev.proposed_advantages.filter(
+                              (a) => a !== advantage.value
+                            )
+                          : [
+                              ...prev.proposed_advantages,
+                              advantage.value as AdvantageType,
+                            ],
+                      }));
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.advantageText,
+                        {
+                          color: formData.proposed_advantages.includes(
+                            advantage.value as AdvantageType
+                          )
+                            ? colors.primary
+                            : colors.text,
+                        },
+                      ]}
+                    >
+                      {advantage.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        );
+
+      case 4:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>
+              Prix et images
+            </Text>
+
+            <View style={styles.priceRow}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Prix de base (calculé) *
+                </Text>
+                <View style={styles.priceInputContainer}>
+                  {/* <DollarSign size={20} color={colors.muted} /> */}
+                  <TextInput
+                    style={[styles.priceInput, { color: colors.text }]}
+                    value={formData.original_price}
+                    placeholder="0"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="numeric"
+                    editable={false} // Make field read-only
+                  />
+                </View>
+                {errors.original_price && (
+                  <Text style={[styles.errorText, { color: colors.error }]}>
+                    {errors.original_price}
+                  </Text>
+                )}
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                  Ajustement (FCFA)
+                </Text>
+                <View style={styles.priceInputContainer}>
+                  <Plus size={20} color={colors.muted} />
+                  <TextInput
+                    style={[styles.priceInput, { color: colors.text }]}
+                    value={formData.adjustment_price}
+                    onChangeText={(text) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        adjustment_price: text,
+                      }))
+                    }
+                    placeholder="0"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.finalPriceContainer,
+                { backgroundColor: colors.primary + '20' },
+              ]}
+            >
+              <Text style={[styles.finalPriceLabel, { color: colors.primary }]}>
+                Prix final
+              </Text>
+              <Text style={[styles.finalPriceValue, { color: colors.primary }]}>
+                {parseInt(formData.final_price || '0').toLocaleString()} FCFA
+              </Text>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Images de la mission
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.imageUploadButton,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+                onPress={handleImagePicker}
+              >
+                <Camera size={24} color={colors.primary} />
+                <Text
+                  style={[styles.imageUploadText, { color: colors.primary }]}
+                >
+                  Ajouter des images
+                </Text>
+              </TouchableOpacity>
+
+              {/* Upload progress indicators */}
+              {Object.entries(uploadingImages).map(([id, progress]) => (
+                <View
+                  key={id}
+                  style={[
+                    styles.uploadProgress,
+                    { backgroundColor: colors.card },
+                  ]}
+                >
+                  <Upload size={20} color={colors.primary} />
+                  <View style={styles.progressInfo}>
+                    <Text style={[styles.progressText, { color: colors.text }]}>
+                      Téléchargement en cours...
+                    </Text>
+                    <View
+                      style={[
+                        styles.progressBar,
+                        { backgroundColor: colors.border },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            backgroundColor: colors.primary,
+                            width: `${progress}%`,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                  <Text
+                    style={[
+                      styles.progressPercentage,
+                      { color: colors.primary },
+                    ]}
+                  >
+                    {progress}%
+                  </Text>
+                </View>
+              ))}
+
+              {/* Uploaded images */}
+              <View style={styles.uploadedImages}>
+                {formData.mission_images.map((image, index) => (
+                  <View key={index} style={styles.uploadedImageContainer}>
+                    <View
+                      style={[
+                        styles.uploadedImagePlaceholder,
+                        { backgroundColor: colors.success + '20' },
+                      ]}
+                    >
+                      <Check size={20} color={colors.success} />
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.removeImageButton,
+                        { backgroundColor: colors.error },
+                      ]}
+                      onPress={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          mission_images: prev.mission_images.filter(
+                            (_, i) => i !== index
+                          ),
+                        }));
+                      }}
+                    >
+                      <X size={16} color={colors.card} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        );
+
       default:
         return null;
     }
   };
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 'basics':
-        return !!(
-          draftMission?.needed_actor &&
-          draftMission?.mission_title &&
-          draftMission?.mission_description &&
-          draftMission?.needed_actor_amount &&
-          draftMission?.actor_specialization &&
-          draftMission?.surface_area &&
-          draftMission?.surface_unit
-        );
-      case 'logistics':
-        return !!(
-          draftMission?.location &&
-          draftMission?.start_date &&
-          draftMission?.end_date
-        );
-      case 'requirements':
-        return true; // No validation needed for this step
-      case 'pricing':
-        return true; // Pricing step always allows proceeding
-      case 'review':
-        return true; // Add review step validation if needed
-      case 'images':
-        return true; // Add image upload step validation if needed
-      default:
-        return false;
-    }
-  };
-
-  const handleNext = () => {
-    if (currentStep === 'review') {
-      handleCreate();
-    } else {
-      // Existing step progression logic
-      switch (currentStep) {
-        case 'basics':
-          setCurrentStep('logistics');
-          break;
-        case 'logistics':
-          setCurrentStep('requirements');
-          break;
-        case 'requirements':
-          setCurrentStep('pricing');
-          break;
-        case 'pricing':
-          setCurrentStep('images');
-          break;
-        case 'images':
-          setCurrentStep('review');
-          break;
-      }
-    }
-  };
-
-  const handleBack = () => {
-    switch (currentStep) {
-      case 'logistics':
-        setCurrentStep('basics');
-        break;
-      case 'requirements':
-        setCurrentStep('logistics');
-        break;
-      case 'pricing':
-        setCurrentStep('requirements');
-        break;
-      case 'images':
-        setCurrentStep('pricing');
-        break;
-      case 'review':
-        setCurrentStep('images');
-        break;
-    }
-  };
-
-  const uploadToStorage = async (
-    fileUri: string,
-    path: string,
-    contentType: string
-  ) => {
-    const base64 = await FileSystem.readAsStringAsync(fileUri, {
-      encoding: 'base64',
-    });
-    const arrayBuffer = decode(base64);
-
-    const { data, error } = await supabase.storage
-      .from('images')
-      .upload(path, arrayBuffer, {
-        contentType,
-        upsert: false,
-      });
-
-    if (error) throw error;
-    return data.path;
-  };
-
-  const handleCreate = async () => {
-    if (!draftMission) return;
-
-    const formatDateForDB = (dateStr: string) => {
-      const [day, month, year] = dateStr.split('/');
-      const fullYear = year.length === 2 ? `20${year}` : year;
-      return `${fullYear}-${month}-${day}`;
-    };
-
-    try {
-      // Upload images to Supabase storage
-      const uploadedPaths = [];
-      for (const uri of uploadedImages) {
-        const fileExt = uri.split('.').pop();
-        const fileName = uri.split('/').pop();
-        const path = `images/${Date.now()}-${fileName}`;
-        const contentType = `image/${fileExt}`;
-        const uploadedPath = await uploadToStorage(uri, path, contentType);
-        uploadedPaths.push(uploadedPath);
-      }
-
-      // Calculate prices
-      const basePrice = calculateBasePrice();
-      const adjustments = calculateAdjustments();
-      const manualAdjustment = basePrice * (priceAdjustment / 100);
-      const finalPrice = calculateFinalPrice();
-
-      const job = {
-        ...draftMission,
-        start_date: formatDateForDB(draftMission?.start_date || ''),
-        end_date: formatDateForDB(draftMission?.end_date || ''),
-        mission_images: uploadedPaths, // Store uploaded image paths
-        original_price: {
-          price: basePrice.toString(),
-          status: 'current' as PriceStatus,
-        },
-        adjustment_price: {
-          price: adjustments.toString() + manualAdjustment.toString(),
-          status: 'current' as PriceStatus,
-        },
-        final_price: finalPrice.toString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      console.log('Submitting job with images and prices:', {
-        images: job.mission_images,
-        original: job.original_price,
-        adjustment: job.adjustment_price,
-        final: job.final_price,
-      });
-
-      const createdJob = await createMission(job);
-      if (createdJob) router.replace('/');
-    } catch (error) {
-      console.error('Failed to create job:', error);
-      alert('An error occurred while creating the job.');
-    }
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView style={styles.content}>
-        {error && (
-          <View
-            style={[
-              styles.errorContainer,
-              { backgroundColor: colors.error + '20' },
-            ]}
-          >
-            <AlertCircle size={20} color={colors.error} />
-            <Text style={[styles.errorText, { color: colors.error }]}>
-              {error}
-            </Text>
-          </View>
-        )}
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.card }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <ArrowLeft size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Créer une mission
+        </Text>
+        <View style={styles.headerRight} />
+      </View>
 
-        <View style={styles.progress}>
-          <View
-            style={[styles.progressBar, { backgroundColor: colors.border }]}
-          >
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${
-                    ((currentStep === 'basics'
-                      ? 1
-                      : currentStep === 'logistics'
-                      ? 2
-                      : currentStep === 'requirements'
-                      ? 3
-                      : currentStep === 'pricing'
-                      ? 4
-                      : currentStep === 'images'
-                      ? 5
-                      : 6) /
-                      6) *
-                    100
-                  }%`,
-                  backgroundColor: colors.primary,
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.progressText, { color: colors.muted }]}>
-            Étape{' '}
-            {currentStep === 'basics'
-              ? '1'
-              : currentStep === 'logistics'
-              ? '2'
-              : currentStep === 'requirements'
-              ? '3'
-              : currentStep === 'pricing'
-              ? '4'
-              : currentStep === 'images'
-              ? '5'
-              : '6'}{' '}
-            sur 6
-          </Text>
+      {/* Progress indicator */}
+      <View
+        style={[styles.progressContainer, { backgroundColor: colors.card }]}
+      >
+        <View style={styles.progressSteps}>
+          {[1, 2, 3, 4].map((step) => (
+            <View key={step} style={styles.progressStep}>
+              <View
+                style={[
+                  styles.progressCircle,
+                  {
+                    backgroundColor:
+                      step <= currentStep ? colors.primary : colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.progressNumber,
+                    { color: step <= currentStep ? colors.card : colors.muted },
+                  ]}
+                >
+                  {step}
+                </Text>
+              </View>
+              {step < 4 && (
+                <View
+                  style={[
+                    styles.progressLine,
+                    {
+                      backgroundColor:
+                        step < currentStep ? colors.primary : colors.border,
+                    },
+                  ]}
+                />
+              )}
+            </View>
+          ))}
         </View>
+        <Text style={[styles.progressText, { color: colors.muted }]}>
+          Étape {currentStep} sur 4
+        </Text>
+      </View>
 
-        {renderCurrentStep()}
+      {/* Content */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {renderStepContent()}
       </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          {
-            backgroundColor: colors.card,
-            borderTopColor: colors.border,
-          },
-        ]}
-      >
-        {currentStep !== 'basics' && (
+      {/* Footer */}
+      <View style={[styles.footer, { backgroundColor: colors.card }]}>
+        <View style={styles.footerButtons}>
+          {currentStep > 1 && (
+            <TouchableOpacity
+              style={[
+                styles.footerButton,
+                styles.backFooterButton,
+                { borderColor: colors.border },
+              ]}
+              onPress={() => setCurrentStep((prev) => prev - 1)}
+            >
+              <Text style={[styles.backButtonText, { color: colors.text }]}>
+                Précédent
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={[
-              styles.button,
-              styles.backButton,
-              { backgroundColor: colors.border },
+              styles.footerButton,
+              styles.nextFooterButton,
+              { backgroundColor: colors.primary },
+              (loading || calculatingPrice) && styles.disabledButton,
             ]}
-            onPress={handleBack}
+            onPress={async () => {
+              if (currentStep < 4) {
+                if (validateStep(currentStep)) {
+                  // Calculate price when moving to step 4
+                  if (currentStep === 3) {
+                    await calculatePrice();
+                  }
+                  setCurrentStep((prev) => prev + 1);
+                }
+              } else {
+                handleSubmit();
+              }
+            }}
+            disabled={loading || calculatingPrice}
           >
-            <Text style={[styles.buttonText, { color: colors.text }]}>
-              Retour
-            </Text>
+            {loading || calculatingPrice ? (
+              <ActivityIndicator color={colors.card} />
+            ) : (
+              <Text style={[styles.nextButtonText, { color: colors.card }]}>
+                {currentStep === 4 ? 'Créer la mission' : 'Suivant'}
+              </Text>
+            )}
           </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[
-            styles.button,
-            styles.nextButton,
-            { backgroundColor: colors.primary },
-            (!canProceed() || loading) && styles.buttonDisabled,
-          ]}
-          onPress={handleNext}
-          disabled={!canProceed() || loading}
-        >
-          <Text style={[styles.buttonText, { color: colors.card }]}>
-            {currentStep === 'review'
-              ? loading
-                ? 'Création...'
-                : 'Créer'
-              : 'Suivant'}
-          </Text>
-        </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Specialization Modal */}
+      <Modal
+        visible={showSpecializationModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSpecializationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Choisir une spécialisation
+              </Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowSpecializationModal(false)}
+              >
+                <X size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalScroll}>
+              {getSpecializationOptions().map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.modalOption,
+                    {
+                      backgroundColor:
+                        formData.actor_specialization === option.value
+                          ? colors.primary + '20'
+                          : 'transparent',
+                    },
+                  ]}
+                  onPress={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      actor_specialization: option.value,
+                    }));
+                    setShowSpecializationModal(false);
+                    if (errors.actor_specialization)
+                      setErrors((prev) => ({
+                        ...prev,
+                        actor_specialization: '',
+                      }));
+                  }}
+                >
+                  <Text
+                    style={[styles.modalOptionText, { color: colors.text }]}
+                  >
+                    {option.label}
+                  </Text>
+                  {formData.actor_specialization === option.value && (
+                    <Check size={20} color={colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1617,34 +1568,320 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+  },
+  headerRight: {
+    width: 40,
+  },
+  progressContainer: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  progressSteps: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  progressStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressNumber: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+  },
+  progressLine: {
+    width: 40,
+    height: 2,
+    marginHorizontal: 8,
+  },
+  // progressText: {
+  //   fontFamily: 'Inter-Regular',
+  //   fontSize: 14,
+  //   textAlign: 'center',
+  // },
   content: {
     flex: 1,
-    padding: 16,
   },
-  errorContainer: {
+  stepContent: {
+    padding: 24,
+  },
+  stepTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 24,
+    marginBottom: 24,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+  },
+  textArea: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  errorText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  locationContainer: {
+    position: 'relative',
+  },
+  locationInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
+  },
+  locationInput: {
+    flex: 1,
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    marginTop: 4,
+    maxHeight: 200,
+    zIndex: 1000,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  suggestionText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+  },
+  dateRow: {
+    flexDirection: 'row',
+  },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  dateText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+  },
+  surfaceRow: {
+    flexDirection: 'row',
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  roleOption: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  roleText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+  },
+  row: {
+    flexDirection: 'row',
+  },
+  numberInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+  },
+  numberButton: {
+    width: 40,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  numberButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+  },
+  numberValue: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderWidth: 1,
+    borderRadius: 12,
+    gap: 12,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxLabel: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    flex: 1,
+  },
+  advantagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  advantageOption: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  advantageText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+  },
+  priceRow: {
+    flexDirection: 'row',
+  },
+  priceInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
+  },
+  priceInput: {
+    flex: 1,
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  finalPriceContainer: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  finalPriceLabel: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  finalPriceValue: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 24,
+  },
+  imageUploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 16,
+  },
+  imageUploadText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+  },
+  uploadProgress: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 8,
+    gap: 12,
   },
-  errorText: {
+  progressInfo: {
+    flex: 1,
+  },
+  progressText: {
     fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    marginLeft: 8,
-  },
-  progress: {
-    marginBottom: 24,
-  },
-  backButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  nextButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
+    fontSize: 12,
+    marginBottom: 4,
   },
   progressBar: {
     height: 4,
@@ -1655,294 +1892,111 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 2,
   },
-  progressText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    marginTop: 8,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
+  progressPercentage: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
-    marginBottom: 16,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  label: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-  },
-  textAreaWrapper: {
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    paddingVertical: 12,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  roleButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  roleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  roleButtonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-  },
-  experienceLevels: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  experienceButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  experienceButtonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-  },
-  toggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
-  toggleButtonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-  },
-  advantagesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  advantageButton: {
-    flex: 1,
-    minWidth: '45%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
-  advantageButtonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-  },
-  priceCard: {
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
-  },
-  priceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  priceTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
-  },
-  infoButton: {
-    padding: 8,
-    borderRadius: 20,
-  },
-  finalPrice: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 36,
-    marginBottom: 24,
-  },
-  priceBreakdown: {
-    marginBottom: 24,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  priceLabel: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-  },
-  priceValue: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-  },
-  adjustmentSection: {
-    marginTop: 24,
-  },
-  adjustmentLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  slider: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  sliderFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  sliderLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  sliderLabel: {
-    fontFamily: 'Inter-Regular',
     fontSize: 12,
   },
-  reviewContainer: {
-    borderRadius: 16,
-    padding: 20,
-  },
-  reviewTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 20,
-    marginBottom: 24,
-  },
-  reviewSection: {
-    marginBottom: 24,
-  },
-  reviewSectionTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  reviewLabel: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  reviewValue: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  footer: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 16,
-    borderTopWidth: 1,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-  },
-  uploadButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  uploadButtonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-  },
-  imagePreviewContainer: {
+  uploadedImages: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 16,
-    gap: 12,
+    gap: 8,
   },
-  imagePreview: {
+  uploadedImageContainer: {
+    position: 'relative',
+  },
+  uploadedImagePlaceholder: {
     width: 80,
     height: 80,
     borderRadius: 8,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  image: {
-    width: '100%',
-    height: '100%',
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  unitSelector: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
   },
-  unitText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
+  footerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  footerButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backFooterButton: {
+    borderWidth: 1,
+  },
+  nextFooterButton: {
+    // backgroundColor set dynamically
+  },
+  backButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  nextButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    marginHorizontal: 20,
-    borderRadius: 12,
-    maxHeight: '60%',
-    backgroundColor: '#fff',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
   },
-  modalItem: {
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  modalTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalScroll: {
+    maxHeight: 400,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
   },
-  modalItemText: {
+  modalOptionText: {
     fontFamily: 'Inter-Regular',
-    fontSize: 16,
+    fontSize: 14,
+    flex: 1,
   },
 });
-
-export default CreateJobScreen;

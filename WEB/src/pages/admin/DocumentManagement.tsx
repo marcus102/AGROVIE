@@ -4,32 +4,21 @@ import "react-medium-image-zoom/dist/styles.css";
 import {
   FileText,
   Search,
-  // Upload,
-  // Download,
-  // Trash2,
-  // Eye,
   X,
   Check,
-  // ChevronDown,
-  // ChevronUp,
   Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import {
-  // Document,
   DocumentStatus,
   useAdminStore,
 } from "../../store/adminStore";
-import { u } from "framer-motion/client";
 
 export function DocumentManagement() {
   const [selectedStatus, setSelectedStatus] = useState<DocumentStatus | "All">(
     "All"
   );
   const [searchTerm, setSearchTerm] = useState("");
-  // const [selectedDocument, setSelectedDocument] = useState<Document | null>(
-  //   null
-  // );
 
   const { documents, updateDocument, fetchDocumentsWithSignedUrls, loading } =
     useAdminStore();
@@ -65,11 +54,6 @@ export function DocumentManagement() {
       console.error("Error rejecting document:", error);
     }
   };
-
-  // const handleImageClick = (imagePath: string) => {
-  //   setSelectedImage(imagePath);
-  //   setIsImageModalOpen(true);
-  // };
 
   const filteredDocuments = useMemo(() => {
     return documents.filter((doc) => {

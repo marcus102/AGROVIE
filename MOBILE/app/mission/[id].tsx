@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Image,
   Platform,
-  ActivityIndicator,
   Modal,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -29,6 +28,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useThemeStore } from '@/stores/theme';
 import { useMissionStore } from '@/stores/mission';
 import { Mission, MissionStatus } from '@/types/mission';
+import { Toast, ToastType } from '@/components/Toast';
 
 const technicianCategories = [
   {
@@ -95,31 +95,46 @@ function MissionDetailScreen() {
     error,
   } = useMissionStore();
   const [mission, setMission] = useState<Mission | null>(null);
-  // const [loading, setLoading] = useState(true);
-  // const [isCancelled, setIsCancelled] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>('success');
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     const fetchMission = async () => {
       if (id) {
         const fetchedMission = await fetchMissionByIDWithImages(id as string);
-        setMission(fetchedMission);
-        // setLoading(false);
+        if (!loading && !error && fetchedMission) {
+          setMission(fetchedMission);
+        }
       }
     };
     fetchMission();
   }, [id]);
 
+  const showToast = (type: ToastType, message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
+
+  const hideToast = () => {
+    setToastVisible(false);
+  };
+
   const handleCancelMission = async () => {
     try {
       if (mission) {
         await updateMission(mission.id, { status: 'removed' });
-
         const fetchedMission = await fetchMissionByIDWithImages(id as string);
         setMission(fetchedMission);
+        showToast('success', 'Mission annulée avec succès');
       }
     } catch (error) {
       console.error('Error cancelling mission:', error);
+      showToast('error', "Erreur lors de l'annulation de la mission");
     }
   };
 
@@ -127,40 +142,34 @@ function MissionDetailScreen() {
     try {
       if (mission) {
         await updateMission(mission.id, { status: 'in_review' });
-
         const fetchedMission = await fetchMissionByIDWithImages(id as string);
         setMission(fetchedMission);
+        showToast('success', 'Mission rétablie avec succès');
       }
     } catch (error) {
       console.error('Error reversing cancellation:', error);
+      showToast('error', 'Erreur lors du rétablissement de la mission');
     }
   };
 
   const handleDeleteMission = async () => {
     try {
-      if (mission) {
-        await deleteMission(mission.id);
-        router.back();
-      }
+      await deleteMission(mission?.id as string);
+      setIsModalVisible(false);
+      showToast('success', 'Mission supprimée avec succès');
+
+      // Navigate after a short delay to allow the toast to be seen
+      setTimeout(() => {
+        router.push('/profile');
+      }, 1500);
     } catch (error) {
       console.error('Error deleting mission:', error);
+      setIsModalVisible(false);
+      showToast('error', 'Erreur lors de la suppression de la mission');
     }
   };
 
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.loadingContainer,
-          { backgroundColor: colors.background },
-        ]}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
-  if (!mission) {
+  if (!loading && !mission) {
     return (
       <View
         style={[styles.errorContainer, { backgroundColor: colors.background }]}
@@ -277,11 +286,20 @@ function MissionDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Toast Notification */}
+      <Toast
+        visible={toastVisible}
+        type={toastType}
+        message={toastMessage}
+        onHide={hideToast}
+        duration={3000}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Cover Image */}
         <View style={styles.coverImageContainer}>
           <Image
-            source={{ uri: mission.mission_images[0] }}
+            source={{ uri: mission?.mission_images[0] }}
             style={styles.coverImage}
           />
           <TouchableOpacity
@@ -296,101 +314,113 @@ function MissionDetailScreen() {
         <View style={styles.content}>
           {/* Header Section */}
           <View style={styles.header}>
-            <StatusBadge status={mission.status} />
+            {mission && <StatusBadge status={mission.status} />}
             <Text style={[styles.title, { color: colors.text }]}>
-              {mission.mission_title}
+              {mission?.mission_title}
             </Text>
             <Text style={[styles.price, { color: colors.primary }]}>
-              {parseInt(mission.final_price).toLocaleString()} FCFA
+              {parseInt(mission?.final_price || '0').toLocaleString()} FCFA
             </Text>
           </View>
 
-          {/* NEW: Cancel/Reverse buttons */}
-          {(mission.status === ('in_review' as MissionStatus) ||
-            mission.status === ('accepted' as MissionStatus) ||
-            mission.status === ('removed' as MissionStatus)) && (
-            <Animated.View
-              entering={FadeInDown}
-              style={styles.cancelButtonContainer}
-            >
-              {mission.status !== ('removed' as MissionStatus) ? (
-                <TouchableOpacity
-                  style={[
-                    styles.cancelButton,
-                    { backgroundColor: colors.error + '20' },
-                  ]}
-                  onPress={handleCancelMission}
-                >
-                  <X size={20} color={colors.error} />
-                  <Text
-                    style={[styles.cancelButtonText, { color: colors.error }]}
-                  >
-                    {loading ? 'Annulation en cours...' : 'Annuler la mission'}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    styles.reverseButton,
-                    { backgroundColor: colors.success + '20' },
-                  ]}
-                  onPress={handleReverseCancellation}
-                >
-                  <RotateCcw size={20} color={colors.success} />
-                  <Text
-                    style={[
-                      styles.reverseButtonText,
-                      { color: colors.success },
-                    ]}
-                  >
-                    {loading
-                      ? 'Restauration en cours...'
-                      : 'Rétablir la mission'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                style={[styles.deleteButton, { backgroundColor: colors.error }]}
-                onPress={() => setIsModalVisible(true)}
+          {/* Cancel/Reverse buttons */}
+          {mission &&
+            (mission.status === ('in_review' as MissionStatus) ||
+              mission.status === ('accepted' as MissionStatus) ||
+              mission.status === ('removed' as MissionStatus)) && (
+              <Animated.View
+                entering={FadeInDown}
+                style={styles.cancelButtonContainer}
               >
-                <Trash size={20} color={'#fff'} />
-                <Text style={[styles.reverseButtonText, { color: '#fff' }]}>
-                  {loading ? 'Suppression en cours...' : 'Supprimer la mission'}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
+                {mission.status !== ('removed' as MissionStatus) ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.cancelButton,
+                      { backgroundColor: colors.error + '20' },
+                    ]}
+                    onPress={handleCancelMission}
+                    disabled={loading}
+                  >
+                    <X size={20} color={colors.error} />
+                    <Text
+                      style={[styles.cancelButtonText, { color: colors.error }]}
+                    >
+                      {loading
+                        ? 'Annulation en cours...'
+                        : 'Annuler la mission'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[
+                      styles.reverseButton,
+                      { backgroundColor: colors.success + '20' },
+                    ]}
+                    onPress={handleReverseCancellation}
+                    disabled={loading}
+                  >
+                    <RotateCcw size={20} color={colors.success} />
+                    <Text
+                      style={[
+                        styles.reverseButtonText,
+                        { color: colors.success },
+                      ]}
+                    >
+                      {loading
+                        ? 'Restauration en cours...'
+                        : 'Rétablir la mission'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                  style={[
+                    styles.deleteButton,
+                    { backgroundColor: colors.error },
+                  ]}
+                  onPress={() => setIsModalVisible(true)}
+                  disabled={loading}
+                >
+                  <Trash size={20} color={'#fff'} />
+                  <Text style={[styles.reverseButtonText, { color: '#fff' }]}>
+                    Supprimer la mission
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
 
           {/* Quick Info Grid */}
           <View style={styles.infoGrid}>
             <InfoCard
               icon={MapPin}
               label="Localisation"
-              value={mission.location}
+              value={mission?.location ?? ''}
             />
             <InfoCard
               icon={Calendar}
               label="Période"
-              value={`${mission.start_date} - ${mission.end_date}`}
+              value={`${mission?.start_date ?? ''} - ${
+                mission?.end_date ?? ''
+              }`}
             />
             <InfoCard
               icon={Users}
               label="Postes"
-              value={`${mission.needed_actor_amount} ${mission.needed_actor}(s)`}
+              value={`${mission?.needed_actor_amount ?? ''} ${
+                mission?.needed_actor ?? ''
+              }(s)`}
             />
             <InfoCard
               icon={Clock}
               label="Expérience"
-              value={mission.required_experience_level}
+              value={mission?.required_experience_level ?? ''}
             />
           </View>
 
           {/* Description */}
           <Section title="Description">
             <Text style={[styles.description, { color: colors.text }]}>
-              {' '}
-              {mission.mission_description}{' '}
+              {mission?.mission_description ?? ''}
             </Text>
           </Section>
 
@@ -419,10 +449,9 @@ function MissionDetailScreen() {
                 Surface
               </Text>
               <Text style={[styles.surfaceValue, { color: colors.text }]}>
-                {' '}
-                {mission.surface_area
+                {mission && mission.surface_area
                   ? `${mission.surface_area} ${mission.surface_unit || ''}`
-                  : 'Non spécifié'}{' '}
+                  : 'Non spécifié'}
               </Text>
             </View>
           </Section>
@@ -432,16 +461,15 @@ function MissionDetailScreen() {
             <View style={styles.equipmentContainer}>
               <Tool size={24} color={colors.primary} />
               <Text style={[styles.equipmentText, { color: colors.text }]}>
-                {' '}
-                {mission.equipment
+                {mission && mission.equipment
                   ? 'Équipement fourni'
-                  : 'Équipement non fourni'}{' '}
+                  : 'Équipement non fourni'}
               </Text>
             </View>
           </Section>
 
           {/* Advantages */}
-          {mission.proposed_advantages.length > 0 && (
+          {mission && mission.proposed_advantages.length > 0 && (
             <Section title="Avantages">
               <View style={styles.advantagesGrid}>
                 {mission.proposed_advantages.map((advantage, index) => (
@@ -473,10 +501,10 @@ function MissionDetailScreen() {
                   Prix initial
                 </Text>
                 <Text style={[styles.priceValue, { color: colors.text }]}>
-                  {' '}
                   {parseInt(
-                    mission.original_price.price
-                  ).toLocaleString()} FCFA{' '}
+                    mission?.original_price?.price || '0'
+                  ).toLocaleString()}{' '}
+                  FCFA
                 </Text>
               </View>
               <View style={styles.priceRow}>
@@ -484,11 +512,13 @@ function MissionDetailScreen() {
                   Ajustements
                 </Text>
                 <Text style={[styles.priceValue, { color: colors.text }]}>
-                  {' '}
-                  {parseInt(
-                    mission.adjustment_price.price
-                  ).toLocaleString()}{' '}
-                  FCFA{' '}
+                  {mission &&
+                  mission.adjustment_price &&
+                  mission.adjustment_price.price
+                    ? parseInt(
+                        mission.adjustment_price.price
+                      ).toLocaleString() + ' FCFA'
+                    : '0 FCFA'}
                 </Text>
               </View>
               <View style={[styles.priceRow, styles.finalPriceRow]}>
@@ -498,12 +528,13 @@ function MissionDetailScreen() {
                 <Text
                   style={[styles.finalPriceValue, { color: colors.primary }]}
                 >
-                  {' '}
-                  {parseInt(mission.final_price).toLocaleString()} FCFA{' '}
+                  {mission && mission.final_price
+                    ? parseInt(mission.final_price).toLocaleString() + ' FCFA'
+                    : ''}
                 </Text>
               </View>
 
-              {mission.status === ('accepted' as MissionStatus) && (
+              {mission && mission.status === ('accepted' as MissionStatus) && (
                 <View style={styles.footer}>
                   <TouchableOpacity
                     style={[
@@ -526,31 +557,44 @@ function MissionDetailScreen() {
         </View>
       </ScrollView>
 
+      {/* Confirmation Modal */}
       <Modal
         visible={isModalVisible}
-        // onRequestClose={() => setIsModalVisible(false)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>
-            Voullez vous vraiment supprimer la mission ?
-          </Text>
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: colors.primary }]}
-              onPress={handleDeleteMission}
-            >
-              <Text style={[styles.modalButtonText, { color: colors.card }]}>
-                Oui
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: colors.card }]}
-              onPress={() => setIsModalVisible(false)}
-            >
-              <Text style={[styles.modalButtonText, { color: colors.primary }]}>
-                Non
-              </Text>
-            </TouchableOpacity>
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.modalContainer, { backgroundColor: colors.card }]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Confirmer la suppression
+            </Text>
+            <Text style={[styles.modalText, { color: colors.muted }]}>
+              Voulez-vous vraiment supprimer cette mission ? Cette action est
+              irréversible.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: colors.border }]}
+                onPress={() => setIsModalVisible(false)}
+                disabled={loading}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.text }]}>
+                  Annuler
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: colors.error }]}
+                onPress={handleDeleteMission}
+                disabled={loading}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.card }]}>
+                  {loading ? 'Suppression...' : 'Supprimer'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -742,19 +786,70 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
   },
-  applyButton: {
+  payButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
     paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center',
   },
-  applyButtonText: {
+  payButtonText: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  customSpecializationContainer: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  customSpecialization: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    fontStyle: 'italic',
+  },
+  cancelButtonContainer: {
+    marginBottom: 20,
+    gap: 12,
+  },
+  cancelButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  cancelButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  reverseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  reverseButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
   },
   errorContainer: {
     flex: 1,
@@ -797,99 +892,53 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: 16,
   },
-  payButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 16,
-    borderRadius: 12,
-  },
-  payButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-  },
-  customSpecializationContainer: {
-    marginTop: 8,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f9f9f9',
-  },
-  customSpecialization: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-    fontStyle: 'italic',
-  },
-  // NEW STYLES
-  cancelButtonContainer: {
-    marginBottom: 20,
-  },
-  cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-  },
-  cancelButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-  },
-  reverseButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-  },
-  reverseButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-  },
-  deleteButton: {
-    marginTop: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fca5a5',
-  },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  modalContainer: {
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   modalTitle: {
     fontFamily: 'Inter-Bold',
-    fontSize: 24,
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: 20,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   modalText: {
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 24,
+    lineHeight: 22,
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    width: '100%',
+    gap: 12,
   },
   modalButton: {
+    flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     borderRadius: 8,
+    alignItems: 'center',
   },
   modalButtonText: {
     fontFamily: 'Inter-SemiBold',

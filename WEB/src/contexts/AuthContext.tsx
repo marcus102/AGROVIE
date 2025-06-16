@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { useAdminStore } from "../store/adminStore";
-import { createClient } from "@supabase/supabase-js";
-import { se } from "date-fns/locale";
+import { createClient } from "@supabase/supabase-js"
 
 // Initialize the Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
@@ -34,35 +33,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const { session, user, isAuthenticated } = useAdminStore();
-
-  // Check if user is admin when authentication state changes
-  // useEffect(() => {
-  //   const checkAdminStatus = async () => {
-  //     if (user) {
-  //       try {
-  //         // Fetch the user's profile from the profiles table
-  //         const { data: profile, error } = await supabase
-  //           .from("profiles")
-  //           .select("super_role")
-  //           .eq("id", user.id)
-  //           .single();
-
-  //         if (!error && profile?.super_role === "admin") {
-  //           setIsAdmin(true);
-  //         } else {
-  //           setIsAdmin(false);
-  //         }
-  //       } catch (error) {
-  //         console.error("Error checking admin status:", error);
-  //         setIsAdmin(false);
-  //       }
-  //     } else {
-  //       setIsAdmin(false);
-  //     }
-  //   };
-
-  //   checkAdminStatus();
-  // }, [user]);
 
   const checkIsAdminStatus = async (currentUser: User | null) => {
     setIsLoading(true);

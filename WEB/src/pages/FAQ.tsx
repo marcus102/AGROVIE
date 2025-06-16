@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Search, MessageCircle } from "lucide-react";
+import { ChevronDown, Search, MessageCircle, HelpCircle, Users, Zap, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { fadeIn, staggerContainer, slideIn } from "../utils/animations";
 import { Layout } from "../components/Layout";
@@ -11,17 +11,17 @@ interface FaqProps {
   translations: Translations[Language];
 }
 
-export function FAQ({translations }: FaqProps) {
+export function FAQ({ translations }: FaqProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [openQuestions, setOpenQuestions] = useState<string[]>([]);
 
   const categories = [
-    { id: "all", name: translations.faq.tags[0] },
-    { id: "general", name: translations.faq.tags[1] },
-    { id: "farmers", name: translations.faq.tags[2] },
-    { id: "technicians", name: translations.faq.tags[3] },
-    { id: "entrepreneurs", name: translations.faq.tags[4] },
+    { id: "all", name: translations.faq.tags[0], icon: HelpCircle },
+    { id: "general", name: translations.faq.tags[1], icon: Star },
+    { id: "farmers", name: translations.faq.tags[2], icon: Users },
+    { id: "technicians", name: translations.faq.tags[3], icon: Zap },
+    { id: "entrepreneurs", name: translations.faq.tags[4], icon: MessageCircle },
   ];
 
   const faqs = [
@@ -89,33 +89,50 @@ export function FAQ({translations }: FaqProps) {
   );
 
   return (
-    <div className="bg-background-light dark:dark:bg-gray-900/80 min-h-screen">
+    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Hero Section */}
       <motion.div
-        className="relative bg-primary-DEFAULT py-16"
+        className="relative bg-gradient-to-br from-primary via-primary-dark to-green-900 py-32 overflow-hidden"
         initial="hidden"
         animate="visible"
         variants={fadeIn}
       >
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
+        
         <div className="absolute inset-0">
           <img
-            src="https://images.pexels.com/photos/21393/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+            src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1920&h=1080&fit=crop"
             alt="FAQ Background"
             className="w-full h-full object-cover opacity-20"
           />
-          <div className="absolute inset-0 bg-black opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary-dark/80" />
         </div>
+        
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={staggerContainer} className="text-center">
+            <motion.div
+              variants={slideIn}
+              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Get Your Questions Answered
+            </motion.div>
+            
             <motion.h1
               variants={slideIn}
-              className="text-4xl font-bold text-white font-montserrat mb-4"
+              className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white font-montserrat mb-8"
             >
               {translations.faq.title}
             </motion.h1>
+            
             <motion.p
               variants={slideIn}
-              className="text-lg text-gray-100 max-w-2xl mx-auto"
+              className="text-xl lg:text-2xl text-gray-100 max-w-4xl mx-auto mb-12 leading-relaxed"
             >
               {translations.faq.description}
             </motion.p>
@@ -125,46 +142,68 @@ export function FAQ({translations }: FaqProps) {
 
       <Layout>
         {/* Search Bar */}
-        <motion.div variants={fadeIn} className="max-w-2xl mx-auto mb-8">
-          <div className="relative ">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary" />
-            <input
-              type="text"
-              placeholder={translations.faq.searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm dark:bg-gray-900 text-gray-900 dark:text-white"
-            />
+        <motion.div 
+          variants={fadeIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="py-12"
+        >
+          <div className="max-w-2xl mx-auto">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-primary" />
+              <input
+                type="text"
+                placeholder={translations.faq.searchPlaceholder}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-6 py-4 text-lg border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-gray-900 dark:text-white transition-all duration-300 shadow-lg"
+              />
+            </div>
           </div>
         </motion.div>
 
         {/* Categories */}
         <motion.div
           variants={fadeIn}
-          className="flex flex-wrap justify-center gap-4 mb-12"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="pb-12"
         >
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 transform hover:scale-105 ${
-                activeCategory === category.id
-                  ? "bg-primary text-white shadow-lg dark:bg-primary-dark"
-                  : "bg-white text-gray-600 dark:text-gray-200 hover:bg-gray-50 shadow dark:bg-gray-900"
-              }`}
-            >
-              {category.name}
-            </button>
-          ))}
+          <div className="flex flex-wrap justify-center gap-4">
+            {categories.map((category) => {
+              const Icon = category.icon;
+              return (
+                <motion.button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`inline-flex items-center px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 ${
+                    activeCategory === category.id
+                      ? "bg-gradient-to-r from-primary to-primary-dark text-white shadow-lg"
+                      : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 mr-2" />
+                  {category.name}
+                </motion.button>
+              );
+            })}
+          </div>
         </motion.div>
 
         {/* FAQ List */}
         <motion.div
           variants={staggerContainer}
-          className="max-w-3xl mx-auto space-y-4"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="max-w-4xl mx-auto pb-24"
         >
           <AnimatePresence>
-            {filteredFaqs.map((faq) => (
+            {filteredFaqs.map((faq, index) => (
               <motion.div
                 key={faq.id}
                 variants={fadeIn}
@@ -172,37 +211,47 @@ export function FAQ({translations }: FaqProps) {
                 animate="visible"
                 exit="hidden"
                 layout
-                className="bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden transform transition-all duration-200 hover:shadow-md"
+                className="mb-6"
               >
-                <button
-                  onClick={() => toggleQuestion(faq.id)}
-                  className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  <span className="text-lg font-medium text-gray-900 dark:text-white">
-                    {faq.question}
-                  </span>
-                  <motion.div
-                    animate={{
-                      rotate: openQuestions.includes(faq.id) ? 180 : 0,
-                    }}
-                    transition={{ duration: 0.2 }}
+                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800 overflow-hidden">
+                  <motion.button
+                    onClick={() => toggleQuestion(faq.id)}
+                    whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+                    className="w-full px-8 py-6 text-left flex justify-between items-center"
                   >
-                    <ChevronDown className="h-5 w-5 text-gray-500" />
-                  </motion.div>
-                </button>
-                <AnimatePresence>
-                  {openQuestions.includes(faq.id) && (
+                    <span className="text-lg font-semibold text-gray-900 dark:text-white pr-4">
+                      {faq.question}
+                    </span>
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="px-6 py-4 bg-gray-50 dark:bg-gray-900"
+                      animate={{
+                        rotate: openQuestions.includes(faq.id) ? 180 : 0,
+                      }}
+                      transition={{ duration: 0.3 }}
+                      className="flex-shrink-0"
                     >
-                      <p className="text-gray-600 dark:text-gray-200">{faq.answer}</p>
+                      <ChevronDown className="h-6 w-6 text-primary" />
                     </motion.div>
-                  )}
-                </AnimatePresence>
+                  </motion.button>
+                  
+                  <AnimatePresence>
+                    {openQuestions.includes(faq.id) && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-8 pb-6 pt-2 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+                          <div className="w-12 h-1 bg-gradient-to-r from-primary to-primary-light rounded-full mb-4"></div>
+                          <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-lg">
+                            {faq.answer}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -210,31 +259,67 @@ export function FAQ({translations }: FaqProps) {
 
         {/* No Results */}
         {filteredFaqs.length === 0 && (
-          <motion.div variants={fadeIn} className="text-center mt-12 ">
-            <p className="text-gray-600 dark:text-gray-200">
+          <motion.div 
+            variants={fadeIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center py-16"
+          >
+            <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <HelpCircle className="w-12 h-12 text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              No Questions Found
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-8">
               {translations.faq.questionNotFound}
             </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setSearchTerm("");
+                setActiveCategory("all");
+              }}
+              className="inline-flex items-center px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition-colors duration-300"
+            >
+              Clear Filters
+            </motion.button>
           </motion.div>
         )}
 
         {/* Contact Support */}
         <motion.div
           variants={fadeIn}
-          className="text-center mt-16 bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="bg-gradient-to-br from-primary/5 to-primary-light/5 rounded-3xl p-12 text-center"
         >
-          <MessageCircle className="h-12 w-12 text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-            {translations.faq.stillHaveQuestions}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-200 mb-6">
-            {translations.faq.cannotFind}
-          </p>
-          <Link
-            to="/contact"
-            className="inline-flex items-center px-8 py-3 border border text-base text-gray-900 dark:text-white font-medium rounded-full bg-primary hover:bg-primary-dark transition-colors duration-200"
-          >
-            {translations.faq.contactSupportButton}
-          </Link>
+          <div className="max-w-3xl mx-auto">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center mx-auto mb-8">
+              <MessageCircle className="h-10 w-10 text-white" />
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-6">
+              {translations.faq.stillHaveQuestions}
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              {translations.faq.cannotFind}
+            </p>
+            <motion.div
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link
+                to="/contact"
+                className="inline-flex items-center px-8 py-4 text-lg font-semibold rounded-2xl text-white bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <MessageCircle className="w-6 h-6 mr-3" />
+                {translations.faq.contactSupportButton}
+              </Link>
+            </motion.div>
+          </div>
         </motion.div>
       </Layout>
     </div>

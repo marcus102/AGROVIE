@@ -14,11 +14,26 @@ export default function JobsLayout() {
       }}
     >
       <Stack.Screen 
+        name="index" 
+        options={{
+          headerShown: true,
+          title: 'Nouvelle mission',
+          headerStyle: {
+            backgroundColor: colors.card,
+          },
+          headerTintColor: colors.primary,
+          headerTitleStyle: {
+            fontFamily: 'Inter-SemiBold',
+            color: colors.text,
+          },
+        }}
+      />
+      <Stack.Screen 
         name="create" 
         options={{
           presentation: 'modal',
-          headerShown: true,
-          title: 'Créer une mission',
+          headerShown: false,
+          // title: 'Créer une mission',
           headerStyle: {
             backgroundColor: colors.card,
           },

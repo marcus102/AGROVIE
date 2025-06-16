@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { ArrowRight, Leaf, Users, Shield } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const slides = [
   {
@@ -42,15 +43,17 @@ export default function WelcomeScreen() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { width } = useWindowDimensions();
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
+      await AsyncStorage.setItem('hasVisitedBefore', 'true');
       router.replace('/(auth)/login');
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await AsyncStorage.setItem('hasVisitedBefore', 'true');
     router.replace('/(auth)/login');
   };
 
@@ -61,25 +64,27 @@ export default function WelcomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Background Image */}
       <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: slide.image }}
-          style={styles.backgroundImage}
+        <Image source={{ uri: slide.image }} style={styles.backgroundImage} />
+        <View
+          style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]}
         />
-        <View style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]} />
       </View>
 
       {/* Content */}
       <View style={styles.content}>
         {/* Logo and Icon */}
-        <Animated.View 
+        <Animated.View
           entering={FadeInDown.delay(200)}
-          style={[styles.logoContainer, { backgroundColor: colors.primary + '20' }]}
+          style={[
+            styles.logoContainer,
+            { backgroundColor: colors.primary + '20' },
+          ]}
         >
           <Icon size={48} color={colors.primary} />
         </Animated.View>
 
         {/* Text Content */}
-        <Animated.View 
+        <Animated.View
           entering={FadeInDown.delay(400)}
           style={styles.textContent}
         >
@@ -99,7 +104,10 @@ export default function WelcomeScreen() {
               style={[
                 styles.progressDot,
                 {
-                  backgroundColor: currentSlide === index ? colors.primary : colors.card + '60',
+                  backgroundColor:
+                    currentSlide === index
+                      ? colors.primary
+                      : colors.card + '60',
                   width: currentSlide === index ? 24 : 8,
                 },
               ]}
@@ -108,14 +116,8 @@ export default function WelcomeScreen() {
         </View>
 
         {/* Action Buttons */}
-        <Animated.View 
-          entering={FadeInDown.delay(600)}
-          style={styles.actions}
-        >
-          <TouchableOpacity
-            style={[styles.skipButton]}
-            onPress={handleSkip}
-          >
+        <Animated.View entering={FadeInDown.delay(600)} style={styles.actions}>
+          <TouchableOpacity style={[styles.skipButton]} onPress={handleSkip}>
             <Text style={[styles.skipButtonText, { color: colors.card }]}>
               Passer
             </Text>
@@ -133,7 +135,7 @@ export default function WelcomeScreen() {
         </Animated.View>
 
         {/* Sign In Link */}
-        <Animated.View 
+        <Animated.View
           entering={FadeInDown.delay(800)}
           style={styles.signInContainer}
         >

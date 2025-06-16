@@ -97,37 +97,6 @@ export function BlogManagement() {
     });
   }, [blogPosts, searchTerm, statusFilter, themeFilter]);
 
-  // const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (file) {
-  //     try {
-  //       const path = `blog-images/${crypto.randomUUID()}/${file.name}`;
-  //       const arrayBuffer = await file.arrayBuffer();
-  //       const contentType = file.type;
-
-  //       const { error } = await supabase.storage
-  //         .from("images")
-  //         .upload(path, arrayBuffer, {
-  //           contentType,
-  //           upsert: false,
-  //         });
-
-  //       if (error) {
-  //         console.error("Error uploading image:", error.message);
-  //         return;
-  //       }
-
-  //       const publicUrl = supabase.storage.from("images").getPublicUrl(path)
-  //         .data?.publicUrl;
-  //       if (publicUrl) {
-  //         setImages([publicUrl]); // Save the public URL in the `images` field
-  //       }
-  //     } catch (err) {
-  //       console.error("Unexpected error uploading image:", err);
-  //     }
-  //   }
-  // };
-
   const handleAddTag = () => {
     if (newTag && !tags.includes(newTag)) {
       setTags([...tags, newTag]);

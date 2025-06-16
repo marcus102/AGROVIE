@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { useThemeStore } from '@/stores/theme';
 import {
@@ -14,6 +15,9 @@ import {
   CheckCircle,
   TrendingUp,
   RefreshCw,
+  BarChart3,
+  Shield,
+  Globe,
 } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { StatCard } from '@/components/StatCard';
@@ -21,6 +25,10 @@ import { SectionHeader } from '@/components/SectionHeader';
 import * as Linking from 'expo-linking';
 import { useAuthStore } from '@/stores/auth';
 import { useMissionStore } from '@/stores/mission';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+
+const { width } = Dimensions.get('window');
 
 export default function AdminDashboardScreen() {
   const { colors } = useThemeStore();
@@ -54,12 +62,7 @@ export default function AdminDashboardScreen() {
 
   if (refreshing && profiles.length === 0 && missions.length === 0) {
     return (
-      <View
-        style={[
-          styles.centeredContainer,
-          { backgroundColor: colors.background },
-        ]}
-      >
+      <View style={[styles.centeredContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -82,14 +85,10 @@ export default function AdminDashboardScreen() {
       : '0%';
 
   const stats = [
-    { title: 'Utilisateurs totaux', value: totalUsers, icon: Users },
-    { title: 'Missions actives', value: activeMissions, icon: Briefcase },
-    {
-      title: 'Missions terminées',
-      value: completedMissions,
-      icon: CheckCircle,
-    },
-    { title: 'Taux de succès', value: successRate, icon: TrendingUp },
+    { title: 'Utilisateurs totaux', value: totalUsers, icon: Users, color: '#3b82f6' },
+    { title: 'Missions actives', value: activeMissions, icon: Briefcase, color: '#10b981' },
+    { title: 'Missions terminées', value: completedMissions, icon: CheckCircle, color: '#f59e0b' },
+    { title: 'Taux de succès', value: successRate, icon: TrendingUp, color: '#8b5cf6' },
   ];
 
   // Calculate user breakdown by role
@@ -103,7 +102,6 @@ export default function AdminDashboardScreen() {
 
   // Prepare chart data based on mission creation dates
   const chartData = useMemo(() => {
-    // Group missions by month of creation
     const monthlyData = missions.reduce((acc, mission) => {
       if (!mission.created_at) return acc;
 
@@ -116,21 +114,10 @@ export default function AdminDashboardScreen() {
       return acc;
     }, {} as Record<string, number>);
 
-    // Get last 6 months
     const months = [];
     const monthNames = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     const now = new Date();
 
@@ -142,7 +129,7 @@ export default function AdminDashboardScreen() {
       const key = `${year}-${month}`;
 
       months.push({
-        name: `${monthNames[month]} ${year.toString().slice(2)}`,
+        name: `${monthNames[month]}`,
         count: monthlyData[key] || 0,
       });
     }
@@ -158,12 +145,24 @@ export default function AdminDashboardScreen() {
   }, [missions]);
 
   const RoleBreakdown = () => (
-    <View style={[styles.section, { backgroundColor: colors.card }]}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Répartition des utilisateurs
-      </Text>
+    <Animated.View 
+      entering={FadeInDown.delay(600)} 
+      style={[styles.section, { backgroundColor: colors.card }]}
+    >
+      <View style={styles.sectionHeaderWithIcon}>
+        <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '15' }]}>
+          <Users size={24} color={colors.primary} />
+        </View>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Répartition des utilisateurs
+        </Text>
+      </View>
       {Object.entries(userBreakdown).map(([role, count], index) => (
-        <View key={role} style={styles.roleItem}>
+        <Animated.View 
+          key={role} 
+          entering={FadeInDown.delay(700 + index * 100)}
+          style={styles.roleItem}
+        >
           <View style={styles.roleInfo}>
             <Text style={[styles.roleName, { color: colors.text }]}>
               {role.charAt(0).toUpperCase() + role.slice(1)}
@@ -172,7 +171,7 @@ export default function AdminDashboardScreen() {
               {count} utilisateurs
             </Text>
           </View>
-          <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
             <View
               style={[
                 styles.progressBar,
@@ -183,16 +182,24 @@ export default function AdminDashboardScreen() {
               ]}
             />
           </View>
-        </View>
+        </Animated.View>
       ))}
-    </View>
+    </Animated.View>
   );
 
   const EngagementMetrics = () => (
-    <View style={[styles.section, { backgroundColor: colors.card }]}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Métriques d'engagement
-      </Text>
+    <Animated.View 
+      entering={FadeInDown.delay(800)} 
+      style={[styles.section, { backgroundColor: colors.card }]}
+    >
+      <View style={styles.sectionHeaderWithIcon}>
+        <View style={[styles.sectionIcon, { backgroundColor: '#10b981' + '15' }]}>
+          <BarChart3 size={24} color="#10b981" />
+        </View>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Métriques d'engagement
+        </Text>
+      </View>
       <View style={styles.engagementGrid}>
         <View style={styles.engagementItem}>
           <Text style={[styles.engagementValue, { color: colors.text }]}>
@@ -219,17 +226,25 @@ export default function AdminDashboardScreen() {
           </Text>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 
   const ActivityChart = () => (
-    <View style={[styles.section, { backgroundColor: colors.card }]}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Activité des utilisateurs (missions créées)
-      </Text>
+    <Animated.View 
+      entering={FadeInDown.delay(1000)} 
+      style={[styles.section, { backgroundColor: colors.card }]}
+    >
+      <View style={styles.sectionHeaderWithIcon}>
+        <View style={[styles.sectionIcon, { backgroundColor: '#8b5cf6' + '15' }]}>
+          <TrendingUp size={24} color="#8b5cf6" />
+        </View>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Activité des utilisateurs
+        </Text>
+      </View>
       <LineChart
         data={chartData}
-        width={350}
+        width={width - 80}
         height={220}
         chartConfig={{
           backgroundColor: colors.card,
@@ -245,77 +260,86 @@ export default function AdminDashboardScreen() {
         bezier
         style={styles.chart}
       />
-    </View>
+    </Animated.View>
   );
 
   return (
-    <View style={{ flex: 1 }}>
-      <TouchableOpacity
-        style={[styles.refreshButton, { backgroundColor: colors.primary }]}
-        onPress={handleRefresh}
-        disabled={refreshing}
-      >
-        {refreshing ? (
-          <ActivityIndicator size="small" color={colors.card} />
-        ) : (
-          <RefreshCw size={20} color={colors.card} />
-        )}
-      </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Header with Gradient */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[colors.primary, colors.primary + 'CC']}
+          style={styles.gradientHeader}
+        >
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <RefreshCw size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
+
+          <Animated.View entering={FadeInUp.delay(200)} style={styles.headerContent}>
+            <View style={styles.headerIcon}>
+              <Shield size={32} color="#fff" />
+            </View>
+            <Text style={styles.headerTitle}>Dashboard Admin</Text>
+            <Text style={styles.headerSubtitle}>
+              Vue d'ensemble de la plateforme
+            </Text>
+          </Animated.View>
+        </LinearGradient>
+      </View>
 
       <FlatList
         data={[
+          { type: 'webButton' },
           { type: 'stats' },
           { type: 'roleBreakdown' },
           { type: 'engagementMetrics' },
           { type: 'activityChart' },
         ]}
         keyExtractor={(item, index) => `${item.type}-${index}`}
-        ListHeaderComponent={
-          <View>
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.primary,
-                padding: 12,
-                borderRadius: 8,
-                alignItems: 'center',
-                margin: 12,
-              }}
-              onPress={() => Linking.openURL('http://localhost:5173/admin')}
-            >
-              <Text
-                style={{
-                  color: '#fff',
-                  fontFamily: 'Inter-SemiBold',
-                  fontSize: 16,
-                }}
-              >
-                Aller au dashboard web admin
-              </Text>
-            </TouchableOpacity>
-
-            {refreshing && (
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-                style={{ marginBottom: 10 }}
-              />
-            )}
-          </View>
-        }
         renderItem={({ item }) => {
-          if (item.type === 'stats') {
+          if (item.type === 'webButton') {
+            return (
+              <Animated.View entering={FadeInDown.delay(300)} style={styles.webButtonContainer}>
+                <TouchableOpacity
+                  style={[styles.webButton, { backgroundColor: colors.primary }]}
+                  onPress={() => Linking.openURL('http://localhost:5173/admin')}
+                >
+                  <Globe size={24} color="#fff" />
+                  <Text style={styles.webButtonText}>
+                    Dashboard Web Admin
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          } else if (item.type === 'stats') {
             return (
               <>
                 <SectionHeader title="Statistiques" colors={colors} />
                 <View style={styles.statsGrid}>
                   {stats.map((stat, index) => (
-                    <StatCard
+                    <Animated.View 
                       key={index}
-                      icon={stat.icon}
-                      title={stat.title}
-                      value={stat.value}
-                      colors={colors}
-                    />
+                      entering={FadeInDown.delay(400 + index * 100)}
+                      style={styles.statCardContainer}
+                    >
+                      <StatCard
+                        icon={stat.icon}
+                        title={stat.title}
+                        value={stat.value}
+                        colors={{
+                          ...colors,
+                          primary: stat.color,
+                        }}
+                      />
+                    </Animated.View>
                   ))}
                 </View>
               </>
@@ -329,56 +353,147 @@ export default function AdminDashboardScreen() {
           }
           return null;
         }}
-        contentContainerStyle={{
-          padding: 12,
-          backgroundColor: colors.background,
-        }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerContainer: {
+    marginBottom: 20,
+  },
+  gradientHeader: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  refreshButton: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    zIndex: 10,
+  },
+  headerContent: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  headerIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#fff',
+    opacity: 0.9,
+    textAlign: 'center',
+  },
+  scrollContent: {
+    paddingHorizontal: 12,
+    paddingBottom: 30,
+  },
+  webButtonContainer: {
+    paddingHorizontal: 12,
+    marginBottom: 20,
+  },
+  webButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  webButtonText: {
+    color: '#fff',
+    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+  },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     padding: 12,
-    gap: 12,
+    gap: 5,
+  },
+  statCardContainer: {
+    minWidth: (width - 60) / 2,
   },
   section: {
     margin: 12,
-    padding: 16,
-    borderRadius: 16,
-    elevation: 2,
+    padding: 20,
+    borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionHeaderWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  sectionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
   },
   sectionTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
-    marginBottom: 16,
+    fontFamily: 'Inter-Bold',
+    fontSize: 20,
   },
   roleItem: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   roleInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   roleName: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
   },
   roleCount: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
   },
   progressBarContainer: {
     height: 8,
-    backgroundColor: '#f3f4f6',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -392,40 +507,21 @@ const styles = StyleSheet.create({
   },
   engagementItem: {
     alignItems: 'center',
+    flex: 1,
   },
   engagementValue: {
     fontFamily: 'Inter-Bold',
-    fontSize: 24,
-    marginBottom: 4,
+    fontSize: 28,
+    marginBottom: 8,
   },
   engagementLabel: {
     fontFamily: 'Inter-Regular',
     fontSize: 12,
     textAlign: 'center',
+    lineHeight: 16,
   },
   chart: {
     marginVertical: 8,
     borderRadius: 16,
-  },
-  refreshButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  centeredContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

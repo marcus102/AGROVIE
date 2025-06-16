@@ -2,6 +2,8 @@ import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
+import { ScrollToTop } from "./components/ScrollToTop";
+import { useScrollToTop } from "./hooks/useScrollToTop";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Services } from "./pages/Services";
@@ -12,7 +14,6 @@ import { BlogPost } from "./pages/BlogPost";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { TermsOfService } from "./pages/TermsOfService";
 import { ProfilePage } from "./pages/Profile";
-import { Register } from "./pages/Register";
 import { Login } from "./pages/Login";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { PasswordReset } from "./components/PasswordReset";
@@ -26,6 +27,8 @@ import { DocumentManagement } from "./pages/admin/DocumentManagement";
 import { BlogManagement } from "./pages/admin/BlogManagement";
 import { PaymentManagement } from "./pages/admin/PaymentManagement";
 import { NotificationManagement } from "./pages/admin/NotificationManagement";
+import { DynamicPricing } from "./pages/admin/DynamicPricing";
+import { LinksManagement } from "./pages/admin/LinksManagement";
 import { translations } from "./constants";
 import { Language } from "./types";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -37,6 +40,12 @@ import "@fontsource/montserrat/700.css";
 import "@fontsource/open-sans/400.css";
 import "@fontsource/open-sans/600.css";
 import { Outlet } from "react-router-dom";
+
+// Component to handle scroll to top on route change
+function ScrollToTopOnRouteChange() {
+  useScrollToTop();
+  return null;
+}
 
 function App() {
   const [language, setLanguage] = useState<Language>(() => {
@@ -52,6 +61,7 @@ function App() {
     <AuthProvider>
       <ThemeProvider>
         <Router>
+          <ScrollToTopOnRouteChange />
           <Routes>
             {/* Main App Routes with Header and Footer */}
             <Route
@@ -69,6 +79,7 @@ function App() {
                     language={language}
                     translations={translations[language]}
                   />
+                  <ScrollToTop />
                 </div>
               }
             >
@@ -154,15 +165,7 @@ function App() {
                   />
                 }
               />
-              <Route
-                path="/register"
-                element={
-                  <Register
-                    language={language}
-                    translations={translations[language]}
-                  />
-                }
-              />
+
               <Route
                 path="/login"
                 element={
@@ -212,6 +215,11 @@ function App() {
                 path="notifications"
                 element={<NotificationManagement />}
               />
+              <Route
+                path="dynamic-pricing"
+                element={<DynamicPricing />}
+              />
+              <Route path="links" element={<LinksManagement />} />
             </Route>
           </Routes>
         </Router>

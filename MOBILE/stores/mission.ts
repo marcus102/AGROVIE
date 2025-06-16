@@ -164,8 +164,6 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   createMission: async (mission: Partial<Mission>): Promise<Mission | null> => {
     set({ loading: true, error: null });
     try {
-
-      console.log('\nCreating mission:\n', mission);
       const { data, error } = await supabase
         .from('missions')
         .insert([
@@ -181,7 +179,8 @@ export const useMissionStore = create<MissionState>((set, get) => ({
         ])
         .select('*');
 
-      console.log('\nCreated mission:\n', data, '\nError:\n', error);
+        console.log('createMission data:', data, 'error:', error);
+
       if (error) throw error;
       if (data) {
         set((state) => ({ missions: [data[0] as Mission, ...state.missions] }));

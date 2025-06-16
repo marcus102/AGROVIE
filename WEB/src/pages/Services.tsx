@@ -8,8 +8,11 @@ import {
   ShieldCheck,
   Handshake,
   BarChart3,
-  ArrowRight,
   Check,
+  ArrowRight,
+  Star,
+  Zap,
+  Globe,
 } from "lucide-react";
 import {
   fadeIn,
@@ -33,36 +36,54 @@ export function Services({ translations }: ServiceProps) {
       name: translations.services.service1.name,
       description: translations.services.service1.description,
       features: translations.services.service1.features,
+      gradient: "from-blue-500 to-blue-600",
+      image:
+        "https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=600&h=400&fit=crop",
     },
     {
       icon: Sprout,
       name: translations.services.service2.name,
       description: translations.services.service2.description,
       features: translations.services.service2.features,
+      gradient: "from-green-500 to-green-600",
+      image:
+        "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=600&h=400&fit=crop",
     },
     {
       icon: Handshake,
       name: translations.services.service3.name,
       description: translations.services.service3.description,
       features: translations.services.service3.features,
+      gradient: "from-purple-500 to-purple-600",
+      image:
+        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=400&fit=crop",
     },
     {
       icon: ShieldCheck,
       name: translations.services.service4.name,
       description: translations.services.service4.description,
       features: translations.services.service4.features,
+      gradient: "from-emerald-500 to-emerald-600",
+      image:
+        "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=400&fit=crop",
     },
     {
       icon: BarChart3,
       name: translations.services.service5.name,
       description: translations.services.service5.description,
       features: translations.services.service5.features,
+      gradient: "from-orange-500 to-orange-600",
+      image:
+        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop",
     },
     {
       icon: TrendingUp,
       name: translations.services.service6.name,
       description: translations.services.service6.description,
       features: translations.services.service6.features,
+      gradient: "from-red-500 to-red-600",
+      image:
+        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop",
     },
   ];
 
@@ -74,6 +95,7 @@ export function Services({ translations }: ServiceProps) {
       role: "Farm Owner",
       image:
         "https://images.pexels.com/photos/5717277/pexels-photo-5717277.jpeg",
+      rating: 5,
     },
     {
       quote:
@@ -82,6 +104,7 @@ export function Services({ translations }: ServiceProps) {
       role: "Agricultural Consultant",
       image:
         "https://images.pexels.com/photos/8851637/pexels-photo-8851637.jpeg",
+      rating: 5,
     },
     {
       quote:
@@ -90,57 +113,78 @@ export function Services({ translations }: ServiceProps) {
       role: "Agribusiness Manager",
       image:
         "https://images.pexels.com/photos/5717526/pexels-photo-5717526.jpeg",
+      rating: 5,
     },
   ];
 
   return (
-    <div className="bg-background-light dark:dark:bg-gray-900/80">
+    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Hero Section */}
       <motion.div
-        className="relative bg-primary-DEFAULT"
+        className="relative bg-gradient-to-br from-primary via-primary-dark to-green-900 overflow-hidden"
         initial="hidden"
         animate="visible"
         variants={fadeIn}
       >
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          />
+        </div>
+
         <div className="absolute inset-0">
           <img
-            src="https://images.pexels.com/photos/2132171/pexels-photo-2132171.jpeg"
+            src="https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Onions%20and%20groundnuts%20burkina%20faso.%20Cheick%20Omar%20Bandaogo.webp"
             alt="Agricultural landscape"
             className="w-full h-full object-cover opacity-20"
           />
-          <div className="absolute inset-0 bg-black opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary-dark/80" />
         </div>
-        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+
+        <div className="relative max-w-7xl mx-auto py-32 px-4 sm:py-40 sm:px-6 lg:px-8">
           <motion.div variants={staggerContainer} className="text-center">
+            <motion.div
+              variants={slideIn}
+              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Comprehensive Agricultural Solutions
+            </motion.div>
+
             <motion.h1
               variants={slideIn}
-              className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl font-montserrat"
+              className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white font-montserrat mb-8"
             >
               {translations.services.title}
             </motion.h1>
+
             <motion.p
               variants={slideIn}
-              className="mt-6 text-xl text-gray-100 max-w-3xl mx-auto"
+              className="text-xl lg:text-2xl text-gray-100 max-w-4xl mx-auto mb-12 leading-relaxed"
             >
               {translations.services.description}
             </motion.p>
+
             <motion.div
               variants={slideIn}
-              className="mt-10 flex justify-center gap-x-6"
+              className="flex flex-col sm:flex-row gap-6 justify-center"
             >
-              {/* <Link
-                to="/register"
-                className="inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-full text-primary-DEFAULT bg-white hover:bg-gray-50 transition-colors duration-200"
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
-                {translations.services.getStarted}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link> */}
-              <Link
-                to="/contact"
-                className="inline-flex items-center px-8 py-4 border-2 border-white text-base font-medium rounded-full text-white hover:bg-white hover:text-primary transition-colors duration-200"
-              >
-                {translations.services.contactSales}
-              </Link>
+                <Link
+                  to="/contact"
+                  className="inline-flex items-center px-8 py-4 text-lg font-semibold rounded-2xl text-white border-2 border-white/30 hover:border-white hover:bg-white/10 backdrop-blur-sm transition-all duration-300"
+                >
+                  {translations.services.contactSales}
+                  <ArrowRight className="ml-3 h-6 w-6" />
+                </Link>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
@@ -153,46 +197,87 @@ export function Services({ translations }: ServiceProps) {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="py-16"
+          className="py-24"
         >
-          <motion.div variants={fadeIn} className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white font-montserrat">
+          <motion.div variants={fadeIn} className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Sprout className="w-4 h-4 mr-2" />
+              Our Services
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.services.solutionsForEveryNeed}
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-200">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.services.solutionsForEveryNeedDescription}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((service) => {
+            {services.map((service, index) => {
               const Icon = service.icon;
               return (
                 <motion.div
                   key={service.name}
                   variants={fadeIn}
                   whileHover={cardHover}
-                  className="bg-white dark:dark:bg-gray-900 rounded-2xl p-8 shadow-lg"
+                  className="group bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-800"
                 >
-                  <div className="flex justify-center">
-                    <div className="bg-primary-light/10 p-4 rounded-full">
-                      <Icon className="h-8 w-8 text-primary" />
+                  {/* Service Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    <motion.img
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.6 }}
+                      src={service.image}
+                      alt={service.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-t ${service.gradient} opacity-60`}
+                    ></div>
+                    <div className="absolute top-4 left-4">
+                      <div
+                        className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm`}
+                      >
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
                     </div>
                   </div>
-                  <h3 className="mt-6 text-xl font-semibold text-gray-900 text-center">
-                    {service.name}
-                  </h3>
-                  <p className="mt-4 text-gray-600 dark:text-gray-400 text-center">
-                    {service.description}
-                  </p>
-                  <ul className="mt-8 space-y-4">
-                    {service.features.map((feature) => (
-                      <li key={feature} className="flex items-start">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mr-3" />
-                        <span className="text-gray-600 dark:text-gray-400">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  <div className="p-8">
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-primary transition-colors duration-300">
+                      {service.name}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                      {service.description}
+                    </p>
+
+                    <ul className="space-y-3">
+                      {service.features.map((feature, i) => (
+                        <motion.li
+                          key={feature}
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.1 }}
+                          className="flex items-start"
+                        >
+                          <div
+                            className={`w-2 h-2 rounded-full bg-gradient-to-r ${service.gradient} mt-2 mr-3 flex-shrink-0`}
+                          ></div>
+                          <span className="text-gray-600 dark:text-gray-300 text-sm">
+                            {feature}
+                          </span>
+                        </motion.li>
+                      ))}
+                    </ul>
+
+                    <motion.button
+                      whileHover={{ x: 5 }}
+                      className="mt-6 inline-flex items-center text-primary font-semibold group"
+                    >
+                      Learn More
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+                    </motion.button>
+                  </div>
                 </motion.div>
               );
             })}
@@ -200,67 +285,77 @@ export function Services({ translations }: ServiceProps) {
         </motion.div>
 
         {/* Testimonials Section */}
-        {/* <motion.div
+        <motion.div
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="py-16"
+          className="py-24 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-3xl"
         >
-          <motion.div variants={fadeIn} className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white font-montserrat">
+          <motion.div variants={fadeIn} className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Star className="w-4 h-4 mr-2" />
+              Client Success Stories
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.services.whatOurUsersSay}
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.services.whatOurUsersSayDescription}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial) => (
+            {testimonials.map((testimonial, index) => (
               <motion.div
                 key={testimonial.author}
                 variants={fadeIn}
                 whileHover={cardHover}
-                className="bg-white dark:dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden"
+                className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-800 p-8"
               >
-                <div className="p-8">
-                  <div className="relative">
-                    <svg
-                      className="absolute top-0 left-0 transform -translate-x-3 -translate-y-2 h-8 w-8 text-primary"
-                      fill="currentColor"
-                      viewBox="0 0 32 32"
-                      aria-hidden="true"
-                    >
-                      <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
-                    </svg>
-                    <p className="relative text-lg text-gray-600 dark:text-gray-400 italic">
-                      {testimonial.quote}
-                    </p>
+                <div className="relative mb-6">
+                  <div className="text-6xl text-primary/20 font-serif absolute -top-2 -left-2">
+                    "
                   </div>
-                  <div className="mt-8 flex items-center">
-                    <img
-                      className="h-12 w-12 rounded-full object-cover"
-                      src={testimonial.image}
-                      alt={testimonial.author}
+                  <p className="relative text-gray-600 dark:text-gray-300 italic leading-relaxed text-lg">
+                    {testimonial.quote}
+                  </p>
+                </div>
+
+                {/* Rating */}
+                <div className="flex items-center mb-6">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-5 h-5 text-yellow-400 fill-current"
                     />
-                    <div className="ml-4">
-                      <div className="text-base font-medium text-gray-900 dark:text-white">
-                        {testimonial.author}
-                      </div>
-                      <div className="text-sm text-primary">
-                        {testimonial.role}
-                      </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center">
+                  <img
+                    className="h-12 w-12 rounded-full object-cover"
+                    src={testimonial.image}
+                    alt={testimonial.author}
+                  />
+                  <div className="ml-4">
+                    <div className="text-base font-semibold text-gray-900 dark:text-white">
+                      {testimonial.author}
+                    </div>
+                    <div className="text-sm text-primary">
+                      {testimonial.role}
                     </div>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
-        </motion.div> */}
+        </motion.div>
 
         {/* CTA Section */}
-        <CtaSection translations={translations} />
+        <div className="py-24">
+          <CtaSection translations={translations} />
+        </div>
       </Layout>
     </div>
   );

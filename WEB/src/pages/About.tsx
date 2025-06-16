@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Users, Target, Sprout, Award } from "lucide-react";
+import { Users, Target, Sprout, Award, ArrowRight, Quote, MapPin, Calendar, Mail } from "lucide-react";
 import { fadeIn, staggerContainer, slideIn } from "../utils/animations";
 import { Layout } from "../components/Layout";
 import { Language, Translations } from "../types";
@@ -15,32 +15,31 @@ export function About({ translations }: AboutProps) {
     {
       name: "Aymard P. SAWADOGO",
       role: "PDG & Co-Fondateur",
-      image:
-        "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Eymar.jpg",
+      image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Eymar.jpg",
       bio: "15 years of experience in AgTech",
+      social: { email: "aymard@agronetwork.com", location: "Ouagadougou, BF" }
     },
     {
       name: "Marcus W. SAWADOGO",
       role: "Developpeur & Co-Fondateur",
-      image:
-        "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Marcus.jpg",
+      image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Marcus.jpg",
       bio: "15 years of experience in AgTech",
+      social: { email: "marcus@agronetwork.com", location: "Ouagadougou, BF" }
     },
     {
       name: "Razack A. NIKIEMA",
       role: "Responsable des Partenariats",
-      image:
-        "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/WhatsApp%20Image%202025-05-17%20at%2020.18.58_1ae41512.jpg",
+      image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/WhatsApp%20Image%202025-05-17%20at%2020.18.58_1ae41512.jpg",
       bio: "Expert in agricultural partnerships",
+      social: { email: "razack@agronetwork.com", location: "Ouagadougou, BF" }
     },
     {
-      name: " Ariane P. SAWADOGO",
+      name: "Ariane P. SAWADOGO",
       role: "Responsable de la Communication",
-      image:
-        "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Ariane.jpg",
+      image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Ariane.jpg",
       bio: "Former lead engineer at AgriTech Solutions",
+      social: { email: "ariane@agronetwork.com", location: "Ouagadougou, BF" }
     },
-    
   ];
 
   const values = [
@@ -48,74 +47,94 @@ export function About({ translations }: AboutProps) {
       icon: Users,
       title: translations.about.communityFirst,
       description: translations.about.communityFirstDescription,
+      gradient: "from-blue-500 to-blue-600",
     },
     {
       icon: Target,
       title: translations.about.innovationDriven,
       description: translations.about.innovationDrivenDescription,
+      gradient: "from-green-500 to-green-600",
     },
     {
       icon: Sprout,
       title: translations.about.sustainabilityFocused,
       description: translations.about.sustainabilityFocusedDescription,
+      gradient: "from-emerald-500 to-teal-600",
     },
     {
       icon: Award,
       title: translations.about.excellence,
       description: translations.about.excellenceDescription,
+      gradient: "from-purple-500 to-purple-600",
     },
   ];
 
-  // const milestones = [
-  //   {
-  //     year: "January 2025",
-  //     title: "Idea Was Born",
-  //     description:
-  //       "The concept of AgroNetwork was envisioned to revolutionize agriculture.",
-  //   },
-  //   {
-  //     year: "February 2025 - April 2025",
-  //     title: "Software Development",
-  //     description:
-  //       "The team worked tirelessly to develop the foundation of the platform.",
-  //   },
-  //   {
-  //     year: "June 2025",
-  //     title: "Software Prototype Launch",
-  //     description:
-  //       "Released the first prototype to gather feedback and refine the platform.",
-  //   },
-  //   // Add more milestones as needed
-  // ];
+  const milestones = [
+    {
+      year: "January 2025",
+      title: "Idea Was Born",
+      description: "The concept of AgroNetwork was envisioned to revolutionize agriculture.",
+      icon: "💡"
+    },
+    {
+      year: "February - April 2025",
+      title: "Software Development",
+      description: "The team worked tirelessly to develop the foundation of the platform.",
+      icon: "⚡"
+    },
+    {
+      year: "June 2025",
+      title: "Software Prototype Launch",
+      description: "Released the first prototype to gather feedback and refine the platform.",
+      icon: "🚀"
+    },
+  ];
 
   return (
-    <div className="bg-background-light dark:dark:bg-gray-900/80">
+    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Hero Section */}
       <motion.div
-        className="relative bg-primary-DEFAULT py-24 sm:py-32"
+        className="relative bg-gradient-to-br from-primary via-primary-dark to-green-900 py-32 overflow-hidden"
         initial="hidden"
         animate="visible"
         variants={fadeIn}
       >
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
+        
         <div className="absolute inset-0 overflow-hidden">
           <img
-            src="https://images.pexels.com/photos/440731/pexels-photo-440731.jpeg"
+            src="https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/agriculture-riz-ghana.webp"
             alt="Agriculture background"
             className="w-full h-full object-cover opacity-20"
           />
-          <div className="absolute inset-0 bg-black opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary-dark/80" />
         </div>
+        
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={staggerContainer} className="text-center">
+            <motion.div
+              variants={slideIn}
+              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8"
+            >
+              <Quote className="w-4 h-4 mr-2" />
+              Building the Future of Agriculture
+            </motion.div>
+            
             <motion.h1
               variants={slideIn}
-              className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl font-montserrat"
+              className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white font-montserrat mb-8"
             >
-              {translations.about.title}
+              <span className="block">{translations.about.title}</span>
             </motion.h1>
+            
             <motion.p
               variants={slideIn}
-              className="mt-6 text-xl text-gray-100 max-w-3xl mx-auto"
+              className="text-xl lg:text-2xl text-gray-100 max-w-4xl mx-auto leading-relaxed"
             >
               {translations.about.description}
             </motion.p>
@@ -130,19 +149,53 @@ export function About({ translations }: AboutProps) {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="py-16"
+          className="py-24"
         >
-          <motion.div
-            variants={fadeIn}
-            className="text-center max-w-3xl mx-auto"
-          >
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white font-montserrat">
-              {translations.about.mission}
-            </h2>
-            <p className="mt-6 text-lg text-gray-600 dark:text-gray-200">
-              {translations.about.missionDescription}
-            </p>
-          </motion.div>
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <motion.div variants={fadeIn}>
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+                <Target className="w-4 h-4 mr-2" />
+                Our Purpose
+              </div>
+              <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-8">
+                {translations.about.mission}
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-8">
+                {translations.about.missionDescription}
+              </p>
+              {/* <motion.button
+                whileHover={{ scale: 1.05, x: 5 }}
+                className="inline-flex items-center text-primary font-semibold text-lg group"
+              >
+                {translations.about.learnMore}
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+              </motion.button> */}
+            </motion.div>
+            
+            <motion.div 
+              variants={fadeIn}
+              className="relative"
+            >
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                <img
+                  src="https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/agriculture-riz-ghana.webp"
+                  alt="Agricultural innovation"
+                  className="w-full h-96 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent"></div>
+              </div>
+              {/* Floating Stats */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="absolute -bottom-8 -left-8 bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl border border-gray-100 dark:border-gray-800"
+              >
+                <div className="text-3xl font-bold text-primary mb-1">Make</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Happy Farmers</div>
+              </motion.div>
+            </motion.div>
+          </div>
         </motion.div>
 
         {/* Values Section */}
@@ -151,13 +204,17 @@ export function About({ translations }: AboutProps) {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="py-16"
+          className="py-24 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-3xl"
         >
-          <motion.div variants={fadeIn} className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white font-montserrat">
+          <motion.div variants={fadeIn} className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Award className="w-4 h-4 mr-2" />
+              Core Values
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.about.ourValue}
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-200">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.about.ourValueDescription}
             </p>
           </motion.div>
@@ -169,17 +226,16 @@ export function About({ translations }: AboutProps) {
                 <motion.div
                   key={value.title}
                   variants={fadeIn}
-                  className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg transform transition-all duration-200 hover:scale-105"
+                  whileHover={{ y: -10, scale: 1.02 }}
+                  className="group bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-800 text-center"
                 >
-                  <div className="flex justify-center">
-                    <div className="bg-primary-light/10 p-4 rounded-full">
-                      <Icon className="h-8 w-8 text-primary" />
-                    </div>
+                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${value.gradient} mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="mt-6 text-xl font-semibold text-gray-900 dark:text-white text-center">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-primary transition-colors duration-300">
                     {value.title}
                   </h3>
-                  <p className="mt-4 text-gray-600 dark:text-gray-400 text-center">
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                     {value.description}
                   </p>
                 </motion.div>
@@ -188,58 +244,56 @@ export function About({ translations }: AboutProps) {
           </div>
         </motion.div>
 
-        {/* Timeline Section */}
-        {/* <motion.div
+        {/* Journey Section */}
+        <motion.div
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="py-16"
+          className="py-24"
         >
-          <motion.div variants={fadeIn} className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white font-montserrat">
+          <motion.div variants={fadeIn} className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Calendar className="w-4 h-4 mr-2" />
+              Our Journey
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.about.ourJourney}
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.about.ourJourneyDescription}
             </p>
           </motion.div>
 
           <div className="relative">
-            <div className="absolute left-1/2 transform -translate-x-px h-full w-0.5 bg-gray-200" />
-            <div className="space-y-12">
+            {/* Timeline Line */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-primary to-primary-dark rounded-full"></div>
+            
+            <div className="space-y-16">
               {milestones.map((milestone, index) => (
                 <motion.div
-                  key={milestone.year}
+                  key={index}
                   variants={fadeIn}
-                  className={`relative ${
-                    index % 2 === 0
-                      ? "lg:ml-auto lg:pl-8"
-                      : "lg:mr-auto lg:pr-8"
-                  } lg:w-1/2`}
+                  className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
                 >
-                  <div className="flex items-center">
-                    <div className="flex flex-col items-center">
-                      <div className="bg-primary-DEFAULT w-4 h-4 rounded-full" />
-                      <div className="h-full w-0.5 bg-primary-DEFAULT" />
-                    </div>
-                    <div className="ml-6 bg-white rounded-lg shadow-lg p-6 transform transition-all duration-200 hover:scale-105">
-                      <span className="text-sm font-semibold text-primary-DEFAULT">
-                        {milestone.year}
-                      </span>
-                      <h3 className="mt-2 text-lg font-semibold text-gray-900">
-                        {milestone.title}
-                      </h3>
-                      <p className="mt-2 text-gray-600">
-                        {milestone.description}
-                      </p>
+                  <div className={`w-1/2 ${index % 2 === 0 ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-xl border border-gray-100 dark:border-gray-800">
+                      <div className="text-4xl mb-4">{milestone.icon}</div>
+                      <div className="text-primary font-semibold mb-2">{milestone.year}</div>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{milestone.title}</h3>
+                      <p className="text-gray-600 dark:text-gray-300">{milestone.description}</p>
                     </div>
                   </div>
+                  
+                  {/* Timeline Dot */}
+                  <div className="relative z-10 w-6 h-6 bg-primary rounded-full border-4 border-white dark:border-gray-900 shadow-lg"></div>
+                  
+                  <div className="w-1/2"></div>
                 </motion.div>
               ))}
             </div>
           </div>
-        </motion.div> */}
+        </motion.div>
 
         {/* Team Section */}
         <motion.div
@@ -247,41 +301,57 @@ export function About({ translations }: AboutProps) {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="py-16"
+          className="py-24 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-3xl"
         >
-          <motion.div variants={fadeIn} className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white font-montserrat">
+          <motion.div variants={fadeIn} className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Users className="w-4 h-4 mr-2" />
+              Meet the Team
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.about.ourTeam}
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-200">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.about.ourTeamDescription}
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {team.map((member) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {team.map((member, index) => (
               <motion.div
                 key={member.name}
                 variants={fadeIn}
-                className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-lg flex flex-col items-center p-8 transition-all duration-200 hover:scale-105"
+                whileHover={{ y: -10, scale: 1.02 }}
+                className="group bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-800"
               >
-                <div className="flex flex-col items-center">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary-DEFAULT shadow-lg mb-6">
+                <div className="relative">
+                  <div className="aspect-square overflow-hidden">
                     <img
                       src={member.image}
                       alt={member.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white text-center">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary transition-colors duration-300">
                     {member.name}
                   </h3>
-                  <p className="text-primary-light text-center mb-2">
-                    {member.role}
-                  </p>
-                  {/* <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
-                    {member.bio}
-                  </p> */}
+                  <p className="text-primary font-medium mb-3">{member.role}</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">{member.bio}</p>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                      <Mail className="w-4 h-4 mr-2" />
+                      {member.social.email}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {member.social.location}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             ))}

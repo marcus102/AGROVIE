@@ -7,11 +7,12 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
   MapPin,
-  Edit,
+  FileEdit as Edit,
   User,
   Briefcase,
   GraduationCap,
@@ -19,9 +20,18 @@ import {
   Folder,
   RefreshCw,
   Info,
+  Star,
+  Award,
+  Calendar,
+  Phone,
+  Mail,
 } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+
+const { width } = Dimensions.get('window');
 
 const technicianCategories = [
   {
@@ -94,7 +104,12 @@ export default function ProfileScreen() {
 
   if (loading && !profile) {
     return (
-      <View style={styles.centeredContainer}>
+      <View
+        style={[
+          styles.centeredContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -103,17 +118,14 @@ export default function ProfileScreen() {
   const translateSpecialization = (value?: string | null) => {
     if (!value) return null;
 
-    // Check technician categories
     const techCategory = technicianCategories.find(
       (cat) => cat.value === value
     );
     if (techCategory) return techCategory.label;
 
-    // Check worker categories
     const workerCategory = workerCategories.find((cat) => cat.value === value);
     if (workerCategory) return workerCategory.label;
 
-    // Return original value if not found in categories
     return value;
   };
 
@@ -137,13 +149,11 @@ export default function ProfileScreen() {
   const formatValue = (value?: string | null | number) => {
     if (value === null || value === undefined) return null;
 
-    // Convert to string and clean up
     const stringValue = String(value)
-      .replace(/[\[\]']+/g, '') // Remove brackets
-      .replace(/([a-z])([A-Z])/g, '$1, $2') // Split camelCase
+      .replace(/[\[\]']+/g, '')
+      .replace(/([a-z])([A-Z])/g, '$1, $2')
       .trim();
 
-    // Special handling for experience numbers
     if (!isNaN(Number(stringValue))) {
       return stringValue;
     }
@@ -157,7 +167,6 @@ export default function ProfileScreen() {
   ) => {
     const formattedValue = formatValue(value);
 
-    // Handle empty values
     if (!formattedValue) {
       return (
         <Text style={[styles.emptyValue, { color: colors.muted }]}>
@@ -166,7 +175,6 @@ export default function ProfileScreen() {
       );
     }
 
-    // Special handling for professional experience
     if (
       label === 'Expérience Professionnelle' &&
       !isNaN(Number(formattedValue))
@@ -178,7 +186,6 @@ export default function ProfileScreen() {
       );
     }
 
-    // Handle array-like values
     if (typeof formattedValue === 'string' && formattedValue.includes(',')) {
       return (
         <View style={styles.tagsContainer}>
@@ -220,80 +227,110 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
-      >
-        {/* Header Section */}
-        <View style={[styles.header, { backgroundColor: colors.card }]}>
-          <TouchableOpacity
-            style={[styles.refreshButton, { backgroundColor: colors.primary }]}
-            onPress={handleRefresh}
-            disabled={loading}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header with Gradient Background */}
+        <View style={styles.headerContainer}>
+          <LinearGradient
+            colors={[colors.primary, colors.primary + 'CC']}
+            style={styles.gradientHeader}
           >
-            {loading ? (
-              <ActivityIndicator size="small" color={colors.card} />
-            ) : (
-              <RefreshCw size={20} color={colors.card} />
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.headerContent}>
-            <View style={styles.profileImageContainer}>
-              {profile?.profile_picture ? (
-                <Image
-                  source={{ uri: profile.profile_picture }}
-                  style={styles.profileImage}
-                />
+            <TouchableOpacity
+              style={[
+                styles.refreshButton,
+                { backgroundColor: 'rgba(255,255,255,0.2)' },
+              ]}
+              onPress={handleRefresh}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <View
-                  style={[
-                    styles.userIconContainer,
-                    { backgroundColor: colors.muted },
-                  ]}
-                >
-                  <User size={50} color={colors.card} />
-                </View>
+                <RefreshCw size={20} color="#fff" />
               )}
-              <TouchableOpacity
-                style={[styles.editButton, { backgroundColor: colors.primary }]}
-                onPress={() => router.push('/profile/edit')}
-              >
-                <Edit size={20} color={colors.card} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={[styles.name, { color: colors.text }]}>
-                {profile?.full_name || 'Nom Inconnu'}
-              </Text>
-              <View
-                style={[
-                  styles.roleBadge,
-                  { backgroundColor: colors.primary + '20' },
-                ]}
-              >
-                <Text style={[styles.role, { color: colors.primary }]}>
-                  {profile?.role === 'worker'
-                    ? 'Ouvrier'
-                    : profile?.role === 'technician'
-                    ? 'Technicien'
-                    : profile?.role === 'entrepreneur'
-                    ? 'Entrepreneur'
-                    : 'Inconnu'}
-                </Text>
+            </TouchableOpacity>
+
+            <Animated.View
+              entering={FadeInUp.delay(200)}
+              style={styles.profileSection}
+            >
+              <View style={styles.profileImageContainer}>
+                {profile?.profile_picture ? (
+                  <Image
+                    source={{ uri: profile.profile_picture }}
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.userIconContainer,
+                      { backgroundColor: 'rgba(255,255,255,0.2)' },
+                    ]}
+                  >
+                    <User size={50} color="#fff" />
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => router.push('/profile/edit')}
+                >
+                  <Edit size={16} color={colors.primary} />
+                </TouchableOpacity>
               </View>
-              <View style={styles.locationContainer}>
-                <MapPin size={16} color={colors.muted} />
-                <Text style={[styles.location, { color: colors.muted }]}>
-                  {profile?.actual_location || 'Localisation Inconnue'}
+
+              <View style={styles.profileInfo}>
+                <Text style={styles.name}>
+                  {profile?.full_name || 'Nom Inconnu'}
                 </Text>
+                <View style={styles.roleBadge}>
+                  <Text style={styles.role}>
+                    {profile?.role === 'worker'
+                      ? 'Ouvrier'
+                      : profile?.role === 'technician'
+                      ? 'Technicien'
+                      : profile?.role === 'entrepreneur'
+                      ? 'Entrepreneur'
+                      : 'Inconnu'}
+                  </Text>
+                </View>
+                <View style={styles.locationContainer}>
+                  <MapPin size={16} color="#fff" />
+                  <Text style={styles.location}>
+                    {profile?.actual_location || 'Localisation Inconnue'}
+                  </Text>
+                </View>
               </View>
-            </View>
-          </View>
+            </Animated.View>
+
+            {/* Quick Stats */}
+            <Animated.View
+              entering={FadeInUp.delay(400)}
+              style={styles.statsContainer}
+            >
+              <View style={styles.statItem}>
+                <Star size={20} color="#fff" />
+                <Text style={styles.statValue}>4.8</Text>
+                <Text style={styles.statLabel}>Note</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Award size={20} color="#fff" />
+                <Text style={styles.statValue}>12</Text>
+                <Text style={styles.statLabel}>Missions</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Calendar size={20} color="#fff" />
+                <Text style={styles.statValue}>2</Text>
+                <Text style={styles.statLabel}>Années</Text>
+              </View>
+            </Animated.View>
+          </LinearGradient>
         </View>
 
         {/* Dashboard Button */}
-        <View style={styles.footer}>
+        <Animated.View
+          entering={FadeInDown.delay(200)}
+          style={styles.dashboardSection}
+        >
           <TouchableOpacity
             style={[
               styles.dashboardButton,
@@ -306,13 +343,12 @@ export default function ProfileScreen() {
               }
             }}
           >
-            <Text style={[styles.dashboardButtonText, { color: colors.card }]}>
-              Tableau De Bord
-            </Text>
+            <Briefcase size={24} color="#fff" />
+            <Text style={styles.dashboardButtonText}>Tableau De Bord</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
-        {/* Profile Details Section */}
+        {/* Profile Details */}
         <View style={styles.detailsContainer}>
           <ProfileSection
             title="À Propos"
@@ -325,7 +361,23 @@ export default function ProfileScreen() {
             ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
+            delay={300}
           />
+
+          <ProfileSection
+            title="Contact"
+            icon={<Phone size={20} color={colors.primary} />}
+            details={[
+              {
+                label: 'Téléphone',
+                value: profile?.phone,
+              },
+            ]}
+            colors={colors}
+            renderDetailValue={renderDetailValue}
+            delay={400}
+          />
+
           <ProfileSection
             title="Compétences et Expérience"
             icon={<Briefcase size={20} color={colors.primary} />}
@@ -351,6 +403,7 @@ export default function ProfileScreen() {
             ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
+            delay={500}
           />
 
           <ProfileSection
@@ -366,6 +419,7 @@ export default function ProfileScreen() {
             ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
+            delay={600}
           />
 
           <ProfileSection
@@ -381,6 +435,7 @@ export default function ProfileScreen() {
             ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
+            delay={700}
           />
 
           <ProfileSection
@@ -396,7 +451,9 @@ export default function ProfileScreen() {
             ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
+            delay={800}
           />
+
           <ProfileSection
             title="Zone de disponibilité"
             icon={<MapPin size={20} color={colors.primary} />}
@@ -410,6 +467,7 @@ export default function ProfileScreen() {
             ]}
             colors={colors}
             renderDetailValue={renderDetailValue}
+            delay={900}
           />
         </View>
       </ScrollView>
@@ -423,20 +481,25 @@ function ProfileSection({
   details,
   colors,
   renderDetailValue,
+  delay = 0,
 }: {
   title: string;
   icon: JSX.Element;
   details: { label: string; value?: string | null }[];
   colors: any;
   renderDetailValue: (value?: string | null, label?: string) => JSX.Element;
+  delay?: number;
 }) {
   return (
-    <View style={[styles.card, { backgroundColor: colors.card }]}>
+    <Animated.View
+      entering={FadeInDown.delay(delay)}
+      style={[styles.card, { backgroundColor: colors.card }]}
+    >
       <View style={styles.cardHeader}>
         <View
           style={[
             styles.iconContainer,
-            { backgroundColor: colors.primary + '20' },
+            { backgroundColor: colors.primary + '15' },
           ]}
         >
           {icon}
@@ -449,7 +512,9 @@ function ProfileSection({
             key={index}
             style={[
               styles.detailItem,
-              index === details.length - 1 ? styles.lastDetailItem : null,
+              index === details.length - 1
+                ? styles.lastDetailItem
+                : { borderBottomColor: colors.border },
             ]}
           >
             <Text style={[styles.detailLabel, { color: colors.muted }]}>
@@ -459,7 +524,7 @@ function ProfileSection({
           </View>
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -467,43 +532,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
   centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    padding: 24,
-    paddingBottom: 32,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+  headerContainer: {
+    marginBottom: 20,
   },
-  headerContent: {
-    flexDirection: 'row',
+  gradientHeader: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  refreshButton: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  profileSection: {
+    alignItems: 'center',
+    marginTop: 20,
   },
   profileImageContainer: {
     position: 'relative',
+    marginBottom: 16,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
     borderColor: '#fff',
   },
   userIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
+    borderWidth: 4,
     borderColor: '#fff',
   },
   editButton: {
@@ -513,6 +589,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -522,144 +599,160 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   profileInfo: {
-    marginLeft: 20,
-    flex: 1,
+    alignItems: 'center',
   },
   name: {
-    fontSize: 24,
-    fontWeight: '800',
-    marginBottom: 4,
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   roleBadge: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    marginBottom: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginBottom: 12,
   },
   role: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+    color: '#fff',
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
   },
   location: {
-    marginLeft: 6,
     fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#fff',
+    opacity: 0.9,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 30,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.2)',
+  },
+  statItem: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    color: '#fff',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#fff',
+    opacity: 0.8,
+  },
+  dashboardSection: {
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  dashboardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  dashboardButtonText: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#fff',
   },
   detailsContainer: {
-    padding: 16,
+    paddingHorizontal: 24,
+    gap: 16,
+    paddingBottom: 30,
   },
   card: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: 10,
     elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Inter-Bold',
   },
   detailsContent: {
-    gap: 12,
+    gap: 16,
+  },
+  detailItem: {
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  lastDetailItem: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
   },
   detailLabel: {
     fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontFamily: 'Inter-Medium',
+    marginBottom: 8,
     opacity: 0.8,
   },
-  footer: {
-    padding: 24,
-    paddingTop: 0,
-    marginTop: 10,
+  detailValue: {
+    fontSize: 15,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 22,
   },
-  dashboardButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  emptyValue: {
+    fontSize: 15,
+    fontFamily: 'Inter-Regular',
+    fontStyle: 'italic',
+    opacity: 0.7,
   },
-  dashboardButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  tagText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    textTransform: 'capitalize',
   },
   errorText: {
     fontSize: 16,
     textAlign: 'center',
-  },
-  detailValue: {
-    fontSize: 15,
-    fontWeight: '500',
-    lineHeight: 22,
-    flexShrink: 1,
-  },
-  emptyValue: {
-    fontSize: 15,
-    fontStyle: 'italic',
-    opacity: 0.7,
-  },
-  tag: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  tagText: {
-    fontSize: 14,
-    fontWeight: '500',
-    textTransform: 'capitalize',
-  },
-  detailItem: {
-    paddingBottom: 12,
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  lastDetailItem: {
-    borderBottomWidth: 0,
-    marginBottom: 0,
-    paddingBottom: 0,
-  },
-  refreshButton: {
-    position: 'absolute',
-    top: 24,
-    right: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    fontFamily: 'Inter-Regular',
   },
 });

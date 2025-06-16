@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { useThemeStore } from '@/stores/theme';
 import {
@@ -15,6 +16,8 @@ import {
   DollarSign,
   TrendingUp,
   RefreshCw,
+  Users,
+  Clock,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { StatCard } from '@/components/StatCard';
@@ -24,6 +27,10 @@ import { FilterBar } from '@/components/FilterBar';
 import { useMissionStore } from '@/stores/mission';
 import { supabase } from '@/lib/supabase';
 import { Mission } from '@/types/mission';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+
+const { width } = Dimensions.get('window');
 
 export default function WorkerDashboard() {
   const { colors } = useThemeStore();
@@ -69,7 +76,7 @@ export default function WorkerDashboard() {
     };
 
     fetchAuthenticatedUserMissions();
-  }, [missions.length]);
+  }, []);
 
   const handleRefresh = async () => {
     const {
@@ -88,63 +95,91 @@ export default function WorkerDashboard() {
     }
   };
 
-  // Filter missions based on the selected filter
   const filteredMissions = missions.filter((mission) => {
     if (selectedFilter === 'All') return true;
     return mission.status === selectedFilter;
   });
 
-  // Define stats
+  const completedMissions = missions.filter(
+    (mission) => mission.status === 'completed'
+  ).length;
+
   const STATS = [
     {
       title: 'Note',
-      value: '4.5/5', // Replace with dynamic value if available
+      value: '4.5/5',
       icon: Star,
+      color: '#f59e0b',
     },
     {
       title: 'Missions',
-      value: missions.length, // Total missions created
+      value: missions.length,
       icon: Briefcase,
+      color: '#3b82f6',
     },
     {
       title: 'Succès',
-      value: missions.filter((mission) => mission.status === 'completed')
-        .length, // Successful missions
+      value: completedMissions,
       icon: CheckCircle2,
+      color: '#10b981',
     },
     {
       title: 'Candidatures',
-      value: '0', // Replace with dynamic value if available
-      icon: Briefcase,
+      value: '0',
+      icon: Users,
+      color: '#8b5cf6',
     },
     {
-      title: 'Dépenses',
-      value: '0.00 FCFA', // Replace with dynamic value if available
-      icon: DollarSign,
+      title: 'Heures travaillées',
+      value: completedMissions * 8,
+      icon: Clock,
+      color: '#ef4444',
     },
     {
       title: 'Revenu',
-      value: '0.00 FCFA', // Replace with dynamic value if available
+      value: `${(completedMissions * 2500).toLocaleString()} FCFA`,
       icon: TrendingUp,
+      color: '#06b6d4',
     },
   ];
 
   return (
-    <View style={{ flex: 1 }}>
-      <TouchableOpacity
-        style={[styles.refreshButton, { backgroundColor: colors.primary }]}
-        onPress={handleRefresh}
-        disabled={refreshing || loading}
-      >
-        {refreshing ? (
-          <ActivityIndicator size="small" color={colors.card} />
-        ) : (
-          <RefreshCw size={20} color={colors.card} />
-        )}
-      </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Header with Gradient */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[colors.primary, colors.primary + 'CC']}
+          style={styles.gradientHeader}
+        >
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleRefresh}
+            disabled={refreshing || loading}
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <RefreshCw size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
+
+          <Animated.View
+            entering={FadeInUp.delay(200)}
+            style={styles.headerContent}
+          >
+            <View style={styles.headerIcon}>
+              <Users size={32} color="#fff" />
+            </View>
+            <Text style={styles.headerTitle}>Dashboard Ouvrier</Text>
+            <Text style={styles.headerSubtitle}>
+              Suivez votre activité professionnelle
+            </Text>
+          </Animated.View>
+        </LinearGradient>
+      </View>
 
       <FlatList
-        data={[{ type: 'stats' }, { type: 'missions' }]} // Define sections
+        data={[{ type: 'stats' }, { type: 'missions' }]}
         keyExtractor={(item, index) => `${item.type}-${index}`}
         renderItem={({ item }) => {
           if (item.type === 'stats') {
@@ -153,13 +188,21 @@ export default function WorkerDashboard() {
                 <SectionHeader title="Statistiques" colors={colors} />
                 <View style={styles.statsGrid}>
                   {STATS.map((stat, index) => (
-                    <StatCard
+                    <Animated.View
                       key={index}
-                      icon={stat.icon}
-                      title={stat.title}
-                      value={stat.value}
-                      colors={colors}
-                    />
+                      entering={FadeInDown.delay(300 + index * 100)}
+                      style={styles.statCardContainer}
+                    >
+                      <StatCard
+                        icon={stat.icon}
+                        title={stat.title}
+                        value={stat.value}
+                        colors={{
+                          ...colors,
+                          primary: stat.color,
+                        }}
+                      />
+                    </Animated.View>
                   ))}
                 </View>
               </>
@@ -182,81 +225,174 @@ export default function WorkerDashboard() {
                   onFilterChange={setSelectedFilter}
                   colors={colors}
                 />
-                <View>
+                <Animated.View
+                  entering={FadeInDown.delay(600)}
+                  style={styles.missionsContainer}
+                >
                   {loading ? (
-                    <Text
-                      style={{
-                        color: colors.text,
-                        textAlign: 'center',
-                        marginTop: 20,
-                      }}
-                    >
-                      Loading missions...
-                    </Text>
+                    <ActivityIndicator
+                      size="large"
+                      color={colors.primary}
+                      style={styles.loader}
+                    />
                   ) : Array.isArray(filteredMissions) &&
                     filteredMissions.length > 0 ? (
                     filteredMissions.map((mission, index) => (
-                      <ListItem
+                      <Animated.View
                         key={mission.id}
-                        item={{
-                          ...mission,
-                          location: `${mission.location || 'Unknown Location'}`,
-                          needed_actor_amount:
-                            mission.needed_actor_amount.toString(),
-                        }}
-                        index={index}
-                        onPress={() => router.push(`/mission/${mission.id}`)}
-                        colors={colors}
-                      />
+                        entering={FadeInDown.delay(700 + index * 100)}
+                      >
+                        <ListItem
+                          item={{
+                            ...mission,
+                            location: `${
+                              mission.location || 'Unknown Location'
+                            }`,
+                            needed_actor_amount:
+                              mission.needed_actor_amount.toString(),
+                          }}
+                          index={index}
+                          onPress={() => router.push(`/mission/${mission.id}`)}
+                          colors={colors}
+                        />
+                      </Animated.View>
                     ))
                   ) : (
-                    <Text
-                      style={{
-                        color: colors.text,
-                        textAlign: 'center',
-                        marginTop: 20,
-                      }}
-                    >
-                      No missions found.
-                    </Text>
+                    <View style={styles.emptyState}>
+                      <Briefcase size={48} color={colors.muted} />
+                      <Text
+                        style={[styles.emptyStateText, { color: colors.text }]}
+                      >
+                        Aucune mission trouvée
+                      </Text>
+                      <Text
+                        style={[
+                          styles.emptyStateSubtext,
+                          { color: colors.muted },
+                        ]}
+                      >
+                        Commencez à postuler pour des missions
+                      </Text>
+                      <TouchableOpacity
+                        style={[
+                          styles.exploreButton,
+                          { backgroundColor: colors.primary },
+                        ]}
+                        onPress={() => router.push('/new')}
+                      >
+                        <Text style={styles.exploreButtonText}>
+                          Explorer les opportunités
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
-                </View>
+                </Animated.View>
               </>
             );
           }
           return null;
         }}
-        contentContainerStyle={{
-          padding: 12,
-          backgroundColor: colors.background,
-          paddingTop: 60,
-        }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-    gap: 12,
+  headerContainer: {
+    marginBottom: 20,
+  },
+  gradientHeader: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   refreshButton: {
     position: 'absolute',
-    top: 16,
-    right: 16,
+    top: 60,
+    right: 24,
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  },
+  headerContent: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  headerIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontFamily: 'Inter-Bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#fff',
+    opacity: 0.9,
+    textAlign: 'center',
+  },
+  scrollContent: {
+    paddingHorizontal: 12,
+    paddingBottom: 30,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 12,
+    gap: 5,
+  },
+  statCardContainer: {
+    minWidth: (width - 60) /2,
+  },
+  missionsContainer: {
+    paddingHorizontal: 12,
+  },
+  loader: {
+    marginTop: 40,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyStateText: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  exploreButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  exploreButtonText: {
+    color: '#fff',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
   },
 });

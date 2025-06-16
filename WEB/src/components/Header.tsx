@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Sun, Moon, ChevronDown, LogOut } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, User, Sun, Moon, ChevronDown, LogOut, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Language, Translations } from "../types";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
-// import { useAdminStore } from "../store/adminStore";
+import { ScrollToTopLink } from "./ScrollToTopLink";
 
 interface HeaderProps {
   language: Language;
@@ -63,135 +63,139 @@ export function Header({
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-md"
-          : "bg-white dark:bg-gray-900"
+          ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-xl border-b border-primary/10"
+          : "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg"
       }`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
-        <div className="w-full py-6 flex items-center justify-between">
+        <div className="w-full py-4 flex items-center justify-between">
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
+            <ScrollToTopLink to="/" className="flex items-center space-x-3 group">
               <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="w-10 h-10 rounded-lg bg-primary-DEFAULT flex items-center justify-center"
+                whileHover={{ scale: 1.05, rotate: 5 }}
+                className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-primary-light"
-                >
-                  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
-                  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
-                </svg>
+                <Sparkles className="w-6 h-6 text-white" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-light/20 to-transparent"></div>
               </motion.div>
-              <span className="text-2xl font-montserrat font-bold text-primary dark:text-primary-light">
-                Agro
-              </span>
-            </Link>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent font-montserrat">
+                  Agro
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Network
+                </span>
+              </div>
+            </ScrollToTopLink>
           </div>
 
           <div className="hidden lg:flex lg:items-center lg:space-x-8">
             {navigation.map((item) => (
-              <Link
+              <ScrollToTopLink
                 key={item.href}
                 to={item.href}
-                className={`relative text-base font-medium transition-colors duration-200 ${
+                className={`relative text-base font-medium transition-all duration-300 group ${
                   location.pathname === item.href
-                    ? "text-primary-DEFAULT dark:text-primary-light"
-                    : "text-gray-700 dark:text-gray-300 hover:text-primary-DEFAULT dark:hover:text-primary-light"
+                    ? "text-primary dark:text-primary-light"
+                    : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary-light"
                 }`}
               >
-                {item.name}
+                <span className="relative z-10">{item.name}</span>
                 {location.pathname === item.href && (
                   <motion.div
                     layoutId="navIndicator"
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary dark:bg-primary-light"
+                    className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary-dark rounded-full"
                     initial={false}
                     transition={{ type: "spring", stiffness: 350, damping: 30 }}
                   />
                 )}
-              </Link>
+                <div className="absolute inset-0 rounded-lg bg-primary/5 scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+              </ScrollToTopLink>
             ))}
 
-            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+            <div className="h-8 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent dark:via-gray-600" />
 
-            {/* Language Dropdown */}
+            {/* Enhanced Language Dropdown */}
             <div className="relative">
               <select
                 value={language}
                 onChange={(e) => handleLanguageChange(e.target.value)}
-                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-primary dark:hover:border-primary-light focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-light bg-transparent dark:bg-gray-900"
+                className="appearance-none bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-primary dark:hover:border-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-300 cursor-pointer"
               >
-                <option value="en">English</option>
-                <option value="fr">Français</option>
+                <option value="en">🇺🇸 EN</option>
+                <option value="fr">🇫🇷 FR</option>
               </select>
             </div>
 
-            <button
+            <motion.button
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-3 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-primary/10 hover:to-primary-light/10 transition-all duration-300 shadow-sm"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? (
-                <Sun className="h-5 w-5 text-gray-300" />
+                <Sun className="h-5 w-5 text-yellow-500" />
               ) : (
                 <Moon className="h-5 w-5 text-gray-600" />
               )}
-            </button>
+            </motion.button>
 
             {isAuthenticated ? (
               <div className="relative">
-                <button
+                <motion.button
                   onClick={() =>
                     setIsProfileDropdownOpen(!isProfileDropdownOpen)
                   }
-                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                  whileHover={{ scale: 1.02 }}
+                  className="flex items-center space-x-3 p-2 rounded-xl bg-gradient-to-r from-primary/10 to-primary-light/10 hover:from-primary/20 hover:to-primary-light/20 transition-all duration-300"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary dark:bg-primary-light flex items-center justify-center text-white">
-                    <User className="h-4 w-4" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white shadow-lg">
+                    <User className="h-5 w-5" />
                   </div>
                   <ChevronDown className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-                </button>
+                </motion.button>
 
                 <AnimatePresence>
                   {isProfileDropdownOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50"
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      className="absolute right-0 mt-3 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 py-2 z-50"
                     >
-                      {!hidden && <Link
-                        to="/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        {user.email}
-                      </Link>}
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {user?.email}
+                        </p>
+                      </div>
+                      {!hidden && (
+                        <ScrollToTopLink
+                          to="/profile"
+                          className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                           onClick={() => setIsProfileDropdownOpen(false)}
                         >
-                          Dashboard
-                        </Link>
+                          Profile Settings
+                        </ScrollToTopLink>
+                      )}
+                      {isAdmin && (
+                        <ScrollToTopLink
+                          to="/admin"
+                          className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                        >
+                          Admin Dashboard
+                        </ScrollToTopLink>
                       )}
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center transition-colors duration-200"
                       >
-                        <LogOut className="h-4 w-4 mr-2" />
+                        <LogOut className="h-4 w-4 mr-3" />
                         {translations.header.logout}
                       </button>
                     </motion.div>
@@ -199,30 +203,31 @@ export function Header({
                 </AnimatePresence>
               </div>
             ) : (
-              <>
+              <div className="flex items-center space-x-3">
                 {!hidden && (
-                  <Link
+                  <ScrollToTopLink
                     to="/register"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark dark:bg-primary-light dark:hover:bg-primary-DEFAULT transition-colors duration-200"
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   >
                     {translations.header.register}
-                  </Link>
+                  </ScrollToTopLink>
                 )}
-                <Link
+                <ScrollToTopLink
                   to="/login"
-                  className="inline-flex items-center px-4 py-2 border border-primary-DEFAULT dark:border-primary-light text-sm font-medium rounded-lg text-primary-DEFAULT dark:text-primary-light hover:bg-primary-light hover:text-white dark:hover:bg-primary-light dark:hover:text-white transition-colors duration-200"
+                  className="inline-flex items-center px-6 py-3 border-2 border-primary text-sm font-medium rounded-xl text-primary hover:bg-primary hover:text-white transition-all duration-300 transform hover:scale-105"
                 >
                   <User className="h-4 w-4 mr-2" />
                   {translations.header.login}
-                </Link>
-              </>
+                </ScrollToTopLink>
+              </div>
             )}
           </div>
 
           <div className="lg:hidden">
-            <button
+            <motion.button
               type="button"
-              className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-primary-DEFAULT dark:hover:text-primary-light transition-colors duration-200"
+              whileTap={{ scale: 0.95 }}
+              className="p-3 rounded-xl text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/10 transition-all duration-300"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <span className="sr-only">Open menu</span>
@@ -231,7 +236,7 @@ export function Header({
               ) : (
                 <Menu className="h-6 w-6" aria-hidden="true" />
               )}
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -241,96 +246,90 @@ export function Header({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden overflow-hidden"
+              className="lg:hidden overflow-hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl mt-2 shadow-2xl border border-gray-100 dark:border-gray-700"
             >
-              <div className="pt-2 pb-3 space-y-1">
+              <div className="px-4 py-6 space-y-4">
                 {navigation.map((item) => (
-                  <Link
+                  <ScrollToTopLink
                     key={item.href}
                     to={item.href}
-                    className={`block px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${
+                    className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-300 ${
                       location.pathname === item.href
-                        ? "bg-primary-light/10 text-primary-DEFAULT dark:text-primary-light"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-primary-DEFAULT dark:hover:text-primary-light"
+                        ? "bg-gradient-to-r from-primary/20 to-primary-light/20 text-primary"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
-                  </Link>
+                  </ScrollToTopLink>
                 ))}
 
-                {/* Mobile Language Selector */}
-                <div className="px-3 py-2">
-                  <select
-                    value={language}
-                    onChange={(e) => handleLanguageChange(e.target.value)}
-                    className="w-full p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-DEFAULT dark:focus:ring-primary-light bg-transparent"
-                  >
-                    <option value="en">English</option>
-                    <option value="fr">Français</option>
-                  </select>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="flex items-center justify-between px-4 py-2">
+                    <select
+                      value={language}
+                      onChange={(e) => handleLanguageChange(e.target.value)}
+                      className="flex-1 p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800"
+                    >
+                      <option value="en">🇺🇸 English</option>
+                      <option value="fr">🇫🇷 Français</option>
+                    </select>
+                    <button
+                      onClick={toggleTheme}
+                      className="ml-3 p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                    >
+                      {theme === "dark" ? (
+                        <Sun className="h-5 w-5" />
+                      ) : (
+                        <Moon className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  onClick={toggleTheme}
-                  className="w-full flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300"
-                >
-                  {theme === "dark" ? (
-                    <>
-                      <Sun className="h-5 w-5 mr-2" />
-                      Light Mode
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="h-5 w-5 mr-2" />
-                      Dark Mode
-                    </>
-                  )}
-                </button>
-
                 {isAuthenticated ? (
-                  <>
-                    <Link
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+                    <ScrollToTopLink
                       to="/profile"
-                      className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="block px-4 py-3 rounded-xl text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {translations.header.profile}
-                    </Link>
+                    </ScrollToTopLink>
                     {isAdmin && (
-                      <Link
+                      <ScrollToTopLink
                         to="/admin"
-                        className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        className="block px-4 py-3 rounded-xl text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        Dashboard
-                      </Link>
+                        Admin Dashboard
+                      </ScrollToTopLink>
                     )}
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center"
+                      className="w-full text-left px-4 py-3 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center"
                     >
-                      <LogOut className="h-5 w-5 mr-2" />
+                      <LogOut className="h-5 w-5 mr-3" />
                       {translations.header.logout}
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <Link
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+                    <ScrollToTopLink
                       to="/register"
-                      className="block px-3 py-2 rounded-lg text-base font-medium text-white bg-primary dark:bg-primary-light hover:bg-primary-dark dark:hover:bg-primary transition-colors duration-200"
+                      className="block px-4 py-3 rounded-xl text-base font-medium text-white bg-gradient-to-r from-primary to-primary-dark text-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {translations.header.register}
-                    </Link>
-                    <Link
+                    </ScrollToTopLink>
+                    <ScrollToTopLink
                       to="/login"
-                      className="block px-3 py-2 rounded-lg text-base font-medium text-primary-DEFAULT dark:text-primary-light hover:bg-primary-light hover:text-white dark:hover:bg-primary-DEFAULT transition-colors duration-200"
+                      className="block px-4 py-3 rounded-xl text-base font-medium text-primary border-2 border-primary text-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {translations.header.login}
-                    </Link>
-                  </>
+                    </ScrollToTopLink>
+                  </div>
                 )}
               </div>
             </motion.div>

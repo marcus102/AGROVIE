@@ -452,65 +452,6 @@ export function MissionManagement() {
           </button>
         </div>
       </div>
-
-      {/* <Modal
-        isOpen={isModalOpen}
-        onRequestClose={handleCloseModal}
-        contentLabel="Mission Details"
-        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-50"
-      >
-        <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg w-full">
-          {selectedMission && (
-            <>
-              <h2 className="text-xl font-semibold mb-4">
-                {selectedMission.mission_title}
-              </h2>
-              <p className="mb-2">
-                <strong>Description:</strong>{" "}
-                {selectedMission.mission_description}
-              </p>
-              <p className="mb-2">
-                <strong>Creator:</strong> {selectedMission.creator}
-              </p>
-              <p className="mb-2">
-                <strong>Location:</strong> {selectedMission.location}
-              </p>
-              <p className="mb-2">
-                <strong>Start Date:</strong>{" "}
-                {format(selectedMission.start_date, "MMM dd, yyyy")}
-              </p>
-              <p className="mb-2">
-                <strong>End Date:</strong>{" "}
-                {format(selectedMission.end_date, "MMM dd, yyyy")}
-              </p>
-              <p className="mb-2">
-                <strong>Status:</strong> {selectedMission.status}
-              </p>
-              <div className="flex justify-end space-x-4 mt-4">
-                <button
-                  onClick={() => handleApprove(selectedMission!)}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                >
-                  Aporve
-                </button>
-                <button
-                  onClick={() => handleReject(selectedMission!)}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                >
-                  Reject
-                </button>
-                <button
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </Modal> */}
       <Modal
         isOpen={isModalOpen}
         onRequestClose={handleCloseModal}
