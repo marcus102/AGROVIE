@@ -287,7 +287,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Testimonials */}
-        <View style={styles.testimonialsSection}>
+        {/* <View style={styles.testimonialsSection}>
           <Animated.View entering={FadeInDown.delay(1300)}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Ce que disent nos utilisateurs
@@ -341,7 +341,7 @@ export default function HomeScreen() {
               </Animated.View>
             ))}
           </ScrollView>
-        </View>
+        </View> */}
 
         {/* Contact Section */}
         <Animated.View

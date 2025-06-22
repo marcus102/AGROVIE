@@ -84,11 +84,11 @@ export function Header({
               </motion.div>
               <div className="flex flex-col">
                 <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent font-montserrat">
-                  Agro
+                  Agrrick
                 </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                {/* <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                   Network
-                </span>
+                </span> */}
               </div>
             </ScrollToTopLink>
           </div>

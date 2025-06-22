@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -9,22 +9,16 @@ import {
   User,
   Share2,
   BookOpen,
-  Eye,
-  Heart,
-  MessageCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAdminStore } from "../store/adminStore";
-import { fadeIn, slideIn } from "../utils/animations";
+import { fadeIn } from "../utils/animations";
 
 export function BlogPost() {
   const { id } = useParams();
   const { blogPosts } = useAdminStore();
   const [post, setPost] = useState(blogPosts.find((p) => p.id === id));
   const [isLoading, setIsLoading] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likes, setLikes] = useState(Math.floor(Math.random() * 100) + 50);
-  const [views] = useState(Math.floor(Math.random() * 1000) + 500);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,11 +27,6 @@ export function BlogPost() {
 
     return () => clearTimeout(timer);
   }, []);
-
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
-  };
 
   const handleShare = () => {
     if (navigator.share) {

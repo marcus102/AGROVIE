@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -8,11 +7,8 @@ import {
   ShieldCheck,
   Handshake,
   BarChart3,
-  Check,
   ArrowRight,
-  Star,
   Zap,
-  Globe,
 } from "lucide-react";
 import {
   fadeIn,
@@ -29,9 +25,10 @@ interface ServiceProps {
   translations: Translations[Language];
 }
 
-export function Services({ translations }: ServiceProps) {
+export function Services({ language, translations }: ServiceProps) {
   const services = [
     {
+      id: "network-building",
       icon: Users,
       name: translations.services.service1.name,
       description: translations.services.service1.description,
@@ -41,6 +38,7 @@ export function Services({ translations }: ServiceProps) {
         "https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=600&h=400&fit=crop",
     },
     {
+      id: "knowledge-exchange",
       icon: Sprout,
       name: translations.services.service2.name,
       description: translations.services.service2.description,
@@ -50,6 +48,7 @@ export function Services({ translations }: ServiceProps) {
         "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=600&h=400&fit=crop",
     },
     {
+      id: "partnership-facilitation",
       icon: Handshake,
       name: translations.services.service3.name,
       description: translations.services.service3.description,
@@ -59,6 +58,7 @@ export function Services({ translations }: ServiceProps) {
         "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=400&fit=crop",
     },
     {
+      id: "verified-expertise",
       icon: ShieldCheck,
       name: translations.services.service4.name,
       description: translations.services.service4.description,
@@ -68,6 +68,7 @@ export function Services({ translations }: ServiceProps) {
         "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=400&fit=crop",
     },
     {
+      id: "market-insights",
       icon: BarChart3,
       name: translations.services.service5.name,
       description: translations.services.service5.description,
@@ -77,6 +78,7 @@ export function Services({ translations }: ServiceProps) {
         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop",
     },
     {
+      id: "business-growth",
       icon: TrendingUp,
       name: translations.services.service6.name,
       description: translations.services.service6.description,
@@ -87,35 +89,35 @@ export function Services({ translations }: ServiceProps) {
     },
   ];
 
-  const testimonials = [
-    {
-      quote:
-        "AgroNetwork has transformed how we connect with agricultural experts. It's been invaluable for our farm's growth.",
-      author: "Sarah Thompson",
-      role: "Farm Owner",
-      image:
-        "https://images.pexels.com/photos/5717277/pexels-photo-5717277.jpeg",
-      rating: 5,
-    },
-    {
-      quote:
-        "The platform's market insights have helped us make better decisions and improve our yield significantly.",
-      author: "Michael Rodriguez",
-      role: "Agricultural Consultant",
-      image:
-        "https://images.pexels.com/photos/8851637/pexels-photo-8851637.jpeg",
-      rating: 5,
-    },
-    {
-      quote:
-        "Finding qualified agricultural technicians has never been easier. The verification system ensures quality partnerships.",
-      author: "Emma Chen",
-      role: "Agribusiness Manager",
-      image:
-        "https://images.pexels.com/photos/5717526/pexels-photo-5717526.jpeg",
-      rating: 5,
-    },
-  ];
+  // const testimonials = [
+  //   {
+  //     quote:
+  //       "AgroNetwork has transformed how we connect with agricultural experts. It's been invaluable for our farm's growth.",
+  //     author: "Sarah Thompson",
+  //     role: "Farm Owner",
+  //     image:
+  //       "https://images.pexels.com/photos/5717277/pexels-photo-5717277.jpeg",
+  //     rating: 5,
+  //   },
+  //   {
+  //     quote:
+  //       "The platform's market insights have helped us make better decisions and improve our yield significantly.",
+  //     author: "Michael Rodriguez",
+  //     role: "Agricultural Consultant",
+  //     image:
+  //       "https://images.pexels.com/photos/8851637/pexels-photo-8851637.jpeg",
+  //     rating: 5,
+  //   },
+  //   {
+  //     quote:
+  //       "Finding qualified agricultural technicians has never been easier. The verification system ensures quality partnerships.",
+  //     author: "Emma Chen",
+  //     role: "Agribusiness Manager",
+  //     image:
+  //       "https://images.pexels.com/photos/5717526/pexels-photo-5717526.jpeg",
+  //     rating: 5,
+  //   },
+  // ];
 
   return (
     <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -138,7 +140,7 @@ export function Services({ translations }: ServiceProps) {
 
         <div className="absolute inset-0">
           <img
-            src="https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Onions%20and%20groundnuts%20burkina%20faso.%20Cheick%20Omar%20Bandaogo.webp"
+            src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=1920&h=1080&fit=crop"
             alt="Agricultural landscape"
             className="w-full h-full object-cover opacity-20"
           />
@@ -152,7 +154,7 @@ export function Services({ translations }: ServiceProps) {
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8"
             >
               <Zap className="w-4 h-4 mr-2" />
-              Comprehensive Agricultural Solutions
+              {translations.services.agriculturalSolution}
             </motion.div>
 
             <motion.h1
@@ -200,13 +202,11 @@ export function Services({ translations }: ServiceProps) {
           className="py-24"
         >
           <motion.div variants={fadeIn} className="text-center mb-20">
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-lg font-bold mb-6">
               <Sprout className="w-4 h-4 mr-2" />
-              Our Services
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.services.solutionsForEveryNeed}
-            </h2>
+            </div>
+
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.services.solutionsForEveryNeedDescription}
             </p>
@@ -217,7 +217,7 @@ export function Services({ translations }: ServiceProps) {
               const Icon = service.icon;
               return (
                 <motion.div
-                  key={service.name}
+                  key={service.name + index}
                   variants={fadeIn}
                   whileHover={cardHover}
                   className="group bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-800"
@@ -251,8 +251,8 @@ export function Services({ translations }: ServiceProps) {
                       {service.description}
                     </p>
 
-                    <ul className="space-y-3">
-                      {service.features.map((feature, i) => (
+                    <ul className="space-y-3 mb-6">
+                      {service.features.slice(0, 3).map((feature, i) => (
                         <motion.li
                           key={feature}
                           initial={{ opacity: 0, x: -20 }}
@@ -270,13 +270,22 @@ export function Services({ translations }: ServiceProps) {
                       ))}
                     </ul>
 
-                    <motion.button
+                    <motion.div
                       whileHover={{ x: 5 }}
-                      className="mt-6 inline-flex items-center text-primary font-semibold group"
+                      className="flex items-center justify-between"
                     >
-                      Learn More
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-                    </motion.button>
+                      <Link
+                        to={`/services/${service.id}`}
+                        className="inline-flex items-center text-primary font-semibold group"
+                      >
+                        {translations.services.learnMoreButton}
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+                      </Link>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {service.features.length}{" "}
+                        {translations.services.feature}
+                      </div>
+                    </motion.div>
                   </div>
                 </motion.div>
               );
@@ -285,7 +294,7 @@ export function Services({ translations }: ServiceProps) {
         </motion.div>
 
         {/* Testimonials Section */}
-        <motion.div
+        {/* <motion.div
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
@@ -322,7 +331,7 @@ export function Services({ translations }: ServiceProps) {
                   </p>
                 </div>
 
-                {/* Rating */}
+               
                 <div className="flex items-center mb-6">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star
@@ -350,11 +359,11 @@ export function Services({ translations }: ServiceProps) {
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </motion.div> */}
 
         {/* CTA Section */}
         <div className="py-24">
-          <CtaSection translations={translations} />
+          <CtaSection language={language} translations={translations} />
         </div>
       </Layout>
     </div>

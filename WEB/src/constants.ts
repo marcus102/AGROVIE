@@ -98,6 +98,7 @@ export const translations = {
       downloadAndroid: "Disponible sur Google Play",
     },
     home: {
+      trusted: "Approuvé par les Professionnels de l'Agriculture",
       title: "Développez votre réseau agricole",
       subtitle:
         "Connectez-vous avec des professionnels agricoles, accédez à des connaissances expertes et découvrez des opportunités dans un réseau de confiance conçu pour l'avenir de l'agriculture.",
@@ -182,6 +183,7 @@ export const translations = {
       learnMore: "En savoir plus",
     },
     services: {
+      agriculturalSolution: "Solutions Agricoles Comprehensives",
       title: "Nos services",
       description:
         "Solutions complètes conçues pour soutenir et améliorer votre entreprise agricole.",
@@ -265,9 +267,231 @@ export const translations = {
       connect:
         "Connectez-vous avec des professionnels agricoles et développez votre activité.",
       createAccountButton: "Créer un compte",
+      learnMoreButton: "En savoir plus",
+      feature: "Fonctionnalité(s)",
       contactUsButton: "Contactez-nous",
     },
+    serviceDetail: {
+      serviceNotFound: {
+        title: "Service non trouvé",
+        description: "Le service que vous recherchez n'existe pas.",
+        backToServices: "Retour aux services",
+      },
+      professionalService: "Service Professionnel",
+      getStarted: "Commencer",
+      contactSales: "Contacter les ventes",
+      keyBenefits: {
+        title: "Avantages clés",
+        heading: "Pourquoi choisir ce service ?",
+        description:
+          "Découvrez les avantages puissants qui font de notre service le choix préféré des professionnels de l'agriculture dans le monde entier.",
+      },
+      useCases: {
+        title: "Cas d'utilisation",
+        heading: "Applications réelles",
+        description:
+          "Découvrez comment les professionnels de l'agriculture utilisent notre service pour résoudre des défis concrets et atteindre leurs objectifs.",
+      },
+      successStories: {
+        title: "Témoignages",
+        heading: "Ce que disent nos clients",
+        description:
+          "Écoutez les professionnels de l'agriculture qui ont transformé leurs opérations avec notre service.",
+      },
+      pricingPlans: {
+        title: "Plans tarifaires",
+        heading: "Choisissez votre plan",
+        description:
+          "Options tarifaires flexibles conçues pour évoluer avec votre entreprise agricole.",
+        mostPopular: "Le plus populaire",
+        free: "Gratuit",
+        custom: "Personnalisé",
+        perMonth: "/mois",
+        contactSales: "Contacter les ventes",
+      },
+      readyToGetStarted: {
+        heading: "Prêt à commencer ?",
+        description:
+          "Rejoignez des milliers de professionnels de l'agriculture qui bénéficient déjà de notre service {serviceName}.",
+        startFreeTrial: "Commencer l'essai gratuit",
+      },
+      networkBuilding: {
+        detailedDescription:
+          "Notre service de construction de réseau connecte les professionnels de l'agriculture du monde entier, créant un écosystème complet où agriculteurs, techniciens et entrepreneurs peuvent collaborer, partager des connaissances et grandir ensemble. Grâce à nos algorithmes de correspondance avancés et à nos profils professionnels vérifiés, nous assurons des connexions significatives qui génèrent des résultats commerciaux réels.",
+        benefits: [
+          "Accès à plus de 10 000 professionnels de l'agriculture vérifiés",
+          "Correspondance basée sur l'expertise et la localisation grâce à l'IA",
+          "Messagerie sécurisée et visioconférence",
+          "Système de vérification de profil professionnel",
+          "Événements de réseautage spécifiques à l'industrie",
+          "Support multilingue pour des connexions mondiales",
+        ],
+        useCases: [
+          {
+            title: "Partage d'équipement agricole",
+            description:
+              "Connectez-vous avec des agriculteurs à proximité pour partager du matériel coûteux et réduire les coûts opérationnels.",
+          },
+          {
+            title: "Consultation d'expert",
+            description:
+              "Trouvez et consultez des experts agricoles pour des défis spécifiques liés aux cultures ou au bétail.",
+          },
+          {
+            title: "Partenariats dans la chaîne d'approvisionnement",
+            description:
+              "Établissez des relations avec des fournisseurs et des distributeurs pour optimiser votre chaîne d'approvisionnement.",
+          },
+        ],
+      },
+      knowledgeExchange: {
+        detailedDescription:
+          "Notre plateforme d'échange de connaissances révolutionne la façon dont les connaissances agricoles sont partagées et accessibles. De la recherche de pointe aux pratiques agricoles éprouvées, notre plateforme garantit que des informations précieuses atteignent ceux qui en ont le plus besoin, quand ils en ont besoin.",
+        benefits: [
+          "Accès à plus de 5 000 articles de recherche et études de cas",
+          "Consultations d'experts en direct et sessions de questions-réponses",
+          "Ateliers interactifs et modules de formation",
+          "Communauté de partage des meilleures pratiques",
+          "Bibliothèque de contenu multilingue",
+          "Expérience d'apprentissage mobile-first",
+        ],
+        useCases: [
+          {
+            title: "Diagnostic des maladies des cultures",
+            description:
+              "Accédez instantanément à des outils d'identification des maladies et à des recommandations de traitement.",
+          },
+          {
+            title: "Pratiques agricoles durables",
+            description:
+              "Apprenez des méthodes agricoles respectueuses de l'environnement qui améliorent le rendement et réduisent l'impact environnemental.",
+          },
+          {
+            title: "Analyse des tendances du marché",
+            description:
+              "Restez informé des dernières tendances du marché et des informations sur les prix.",
+          },
+        ],
+      },
+      partnershipFacilitation: {
+        detailedDescription:
+          "Notre service de facilitation de partenariats sert de pont entre les parties prenantes agricoles, créant des alliances stratégiques qui stimulent l'innovation et la croissance. Nous utilisons des algorithmes de correspondance avancés et l'expertise humaine pour identifier et faciliter des partenariats qui créent une valeur mutuelle.",
+        benefits: [
+          "Système de correspondance de partenaires alimenté par l'IA",
+          "Services de soutien juridique et contractuel",
+          "Assistance en due diligence",
+          "Suivi de la réussite des partenariats",
+          "Soutien à la résolution des conflits",
+          "Opportunités de partenariats internationaux",
+        ],
+        useCases: [
+          {
+            title: "Intégration technologique",
+            description:
+              "Partenaires avec des entreprises technologiques pour mettre en œuvre des solutions d'agriculture intelligente.",
+          },
+          {
+            title: "Expansion du marché",
+            description:
+              "Trouvez des partenaires de distribution pour vous développer sur de nouveaux marchés géographiques.",
+          },
+          {
+            title: "Collaboration de recherche",
+            description:
+              "Collaborez avec des institutions de recherche sur des projets agricoles innovants.",
+          },
+        ],
+      },
+      verifiedExpertise: {
+        detailedDescription:
+          "Notre service d'expertise vérifiée garantit que vous vous connectez avec des professionnels agricoles authentiques et qualifiés. Grâce à notre processus de vérification rigoureux, nous validons les références, l'expérience et l'expertise pour instaurer la confiance dans notre communauté.",
+        benefits: [
+          "Processus de vérification à plusieurs niveaux",
+          "Validation des diplômes et certifications",
+          "Vérification de l'expérience par des références",
+          "Suivi continu des performances",
+          "Système de notation de confiance",
+          "Couverture d'assurance et de responsabilité",
+        ],
+        useCases: [
+          {
+            title: "Embauche d'experts",
+            description:
+              "Embauchez des consultants agricoles vérifiés en toute confiance dans leurs qualifications.",
+          },
+          {
+            title: "Validation des compétences",
+            description:
+              "Validez vos propres compétences et soyez reconnu comme un expert vérifié.",
+          },
+          {
+            title: "Assurance qualité",
+            description:
+              "Assurez-vous que tous les partenariats sont conclus avec des professionnels vérifiés et dignes de confiance.",
+          },
+        ],
+      },
+      marketInsights: {
+        detailedDescription:
+          "Notre service Market Insights fournit des données, des tendances et des analyses du marché agricole en temps réel pour vous aider à prendre des décisions commerciales éclairées. Des prix des matières premières aux modèles météorologiques, nous agrégeons des données provenant de multiples sources pour vous donner un avantage concurrentiel.",
+        benefits: [
+          "Suivi des prix des matières premières en temps réel",
+          "Intégration des données météorologiques et climatiques",
+          "Analyse des tendances du marché et prévisions",
+          "Analyse de l'offre et de la demande",
+          "Alertes et notifications personnalisées",
+          "Données historiques et analyse des tendances",
+        ],
+        useCases: [
+          {
+            title: "Optimisation des prix",
+            description:
+              "Optimisez les prix de vente en fonction des données et tendances du marché en temps réel.",
+          },
+          {
+            title: "Planification des cultures",
+            description:
+              "Planifiez la sélection des cultures en fonction des prévisions de demande du marché.",
+          },
+          {
+            title: "Gestion des risques",
+            description:
+              "Identifiez et atténuez les risques du marché grâce à des informations basées sur les données.",
+          },
+        ],
+      },
+      businessGrowth: {
+        detailedDescription:
+          "Notre service Business Growth fournit des outils et des ressources complets pour aider les entreprises agricoles à se développer et à réussir. De la planification commerciale aux opportunités de financement, nous soutenons votre parcours de croissance à chaque étape.",
+        benefits: [
+          "Modèles et outils de planification d'entreprise",
+          "Correspondance d'opportunités de financement",
+          "Consultation en stratégie de croissance",
+          "Suivi des performances et analyses",
+          "Programmes de mentorat",
+          "Soutien à l'expansion du marché",
+        ],
+        useCases: [
+          {
+            title: "Lancement de startup",
+            description:
+              "Bénéficiez d'un soutien complet pour lancer votre startup agricole avec succès.",
+          },
+          {
+            title: "Mise à l'échelle des opérations",
+            description:
+              "Accédez à des outils et des ressources pour développer votre entreprise agricole existante.",
+          },
+          {
+            title: "Acquisition de financement",
+            description:
+              "Connectez-vous avec des investisseurs et des opportunités de financement adaptées à l'agriculture.",
+          },
+        ],
+      },
+    },
     contact: {
+      tagline: "Nous sommes là pour vous aider",
       title: "Contactez-nous",
       description:
         "Vous avez des questions sur notre plateforme ? Nous sommes là pour vous aider à vous connecter avec la communauté agricole.",
@@ -302,6 +526,8 @@ export const translations = {
       },
       contactInfo: {
         title: "Informations de contact",
+        description:
+          "Nous sommes là pour vous aider. Contactez-nous par les moyens suivants :",
         visitUs: "Visitez-nous",
         emailUs: "Envoyez-nous un email",
         callUs: "Appelez-nous",
@@ -314,6 +540,7 @@ export const translations = {
       },
     },
     faq: {
+      tagline: "Ayez des reponses à vos questions",
       title: "Foire aux questions",
       description:
         "Trouvez des réponses aux questions courantes sur Agro et comment il peut vous aider à réussir dans l'agriculture.",
@@ -373,7 +600,7 @@ export const translations = {
         answer:
           "Le support client est disponible par email, téléphone ou chat en direct.",
       },
-      questionNoFound:
+      questionNotFound:
         "Aucune question trouvée correspondant à votre recherche.",
       stillHaveQuestions: "Vous avez encore des questions ?",
       cannotFind:
@@ -381,6 +608,7 @@ export const translations = {
       contactSupportButton: "Contacter le support",
     },
     blog: {
+      tagline: "Dernières Perspectives Agricoles",
       title: "Actualités et tendances agricoles",
       description:
         "Restez informé des dernières nouvelles, tendances et analyses dans le domaine de l'agriculture et de la technologie.",
@@ -534,7 +762,7 @@ export const translations = {
       emailPlaceholder: "Entrez votre adresse email",
       sendResetLink: "Envoyer le lien de réinitialisation",
       sending: "Envoi du lien de réinitialisation...",
-      
+
       or: "Ou",
       backToLogin: "Retour à la connexion",
       backToHome: "Retour à l'accueil",
@@ -553,7 +781,7 @@ export const translations = {
       instruction:
         "Cliquez sur le lien dans l'email pour réinitialiser votre mot de passe. Si vous ne voyez pas l'email, vérifiez votre dossier spam.",
       tryAnotherEmail: "Essayer une autre adresse email",
-      resetLinkTitle:"Succès !",
+      resetLinkTitle: "Succès !",
       requestAnotherLink: "Demander un autre lien de réinitialisation",
       resetLinkSent: "Lien de réinitialisation envoyé avec успех!",
       checkEmail:
@@ -607,6 +835,7 @@ export const translations = {
       downloadAndroid: "Get it on Google Play",
     },
     home: {
+      trusted: "Trusted by Agricultural Professionals",
       title: "Grow Your Agricultural Network",
       subtitle:
         "Connect with agricultural professionals, access expert knowledge, and discover opportunities in a trusted network designed for the future of farming.",
@@ -690,6 +919,7 @@ export const translations = {
       learnMore: "Learn More",
     },
     services: {
+      agriculturalSolution: "Comprehensive Agricultural Solutions",
       title: "Our Services",
       description:
         "Comprehensive solutions designed to support and enhance your agricultural business.",
@@ -771,9 +1001,231 @@ export const translations = {
       connect:
         "Connect with agricultural professionals and grow your business.",
       createAccountButton: "Create Account",
+      learnMoreButton: "Learn More",
+      feature: "Feature(s)",
       contactUsButton: "Contact Us",
     },
+    serviceDetail: {
+      serviceNotFound: {
+        title: "Service not found",
+        description: "The service you're looking for doesn't exist.",
+        backToServices: "Back to Services",
+      },
+      professionalService: "Professional Service",
+      getStarted: "Get Started",
+      contactSales: "Contact Sales",
+      keyBenefits: {
+        title: "Key Benefits",
+        heading: "Why Choose This Service?",
+        description:
+          "Discover the powerful benefits that make our service the preferred choice for agricultural professionals worldwide.",
+      },
+      useCases: {
+        title: "Use Cases",
+        heading: "Real-World Applications",
+        description:
+          "See how agricultural professionals are using our service to solve real challenges and achieve their goals.",
+      },
+      successStories: {
+        title: "Success Stories",
+        heading: "What Our Clients Say",
+        description:
+          "Hear from agricultural professionals who have transformed their operations with our service.",
+      },
+      pricingPlans: {
+        title: "Pricing Plans",
+        heading: "Choose Your Plan",
+        description:
+          "Flexible pricing options designed to grow with your agricultural business.",
+        mostPopular: "Most Popular",
+        free: "Free",
+        custom: "Custom",
+        perMonth: "/month",
+        contactSales: "Contact Sales",
+      },
+      readyToGetStarted: {
+        heading: "Ready to Get Started?",
+        description:
+          "Join thousands of agricultural professionals who are already benefiting from our {serviceName} service.",
+        startFreeTrial: "Start Free Trial",
+      },
+      networkBuilding: {
+        detailedDescription:
+          "Our Network Building service connects agricultural professionals worldwide, creating a comprehensive ecosystem where farmers, technicians, and entrepreneurs can collaborate, share knowledge, and grow together. Through our advanced matching algorithms and verified professional profiles, we ensure meaningful connections that drive real business results.",
+        benefits: [
+          "Access to 10,000+ verified agricultural professionals",
+          "AI-powered matching based on expertise and location",
+          "Secure messaging and video conferencing",
+          "Professional profile verification system",
+          "Industry-specific networking events",
+          "Multilingual support for global connections",
+        ],
+        useCases: [
+          {
+            title: "Farm Equipment Sharing",
+            description:
+              "Connect with nearby farmers to share expensive equipment and reduce operational costs.",
+          },
+          {
+            title: "Expert Consultation",
+            description:
+              "Find and consult with agricultural experts for specific crop or livestock challenges.",
+          },
+          {
+            title: "Supply Chain Partnerships",
+            description:
+              "Build relationships with suppliers and distributors to optimize your supply chain.",
+          },
+        ],
+      },
+      knowledgeExchange: {
+        detailedDescription:
+          "Our Knowledge Exchange platform revolutionizes how agricultural knowledge is shared and accessed. From cutting-edge research to time-tested farming practices, our platform ensures that valuable insights reach those who need them most, when they need them.",
+        benefits: [
+          "Access to 5,000+ research papers and case studies",
+          "Live expert consultations and Q&A sessions",
+          "Interactive workshops and training modules",
+          "Best practice sharing community",
+          "Multilingual content library",
+          "Mobile-first learning experience",
+        ],
+        useCases: [
+          {
+            title: "Crop Disease Diagnosis",
+            description:
+              "Get instant access to disease identification tools and treatment recommendations.",
+          },
+          {
+            title: "Sustainable Farming Practices",
+            description:
+              "Learn about eco-friendly farming methods that improve yield and reduce environmental impact.",
+          },
+          {
+            title: "Market Trend Analysis",
+            description:
+              "Stay updated with the latest market trends and pricing information.",
+          },
+        ],
+      },
+      partnershipFacilitation: {
+        detailedDescription:
+          "Our Partnership Facilitation service acts as a bridge between agricultural stakeholders, creating strategic alliances that drive innovation and growth. We use advanced matching algorithms and human expertise to identify and facilitate partnerships that create mutual value.",
+        benefits: [
+          "AI-powered partner matching system",
+          "Legal and contract support services",
+          "Due diligence assistance",
+          "Partnership success tracking",
+          "Conflict resolution support",
+          "International partnership opportunities",
+        ],
+        useCases: [
+          {
+            title: "Technology Integration",
+            description:
+              "Partner with tech companies to implement smart farming solutions.",
+          },
+          {
+            title: "Market Expansion",
+            description:
+              "Find distribution partners to expand into new geographic markets.",
+          },
+          {
+            title: "Research Collaboration",
+            description:
+              "Collaborate with research institutions on innovative agricultural projects.",
+          },
+        ],
+      },
+      verifiedExpertise: {
+        detailedDescription:
+          "Our Verified Expertise service ensures that you're connecting with genuine, qualified agricultural professionals. Through our rigorous verification process, we validate credentials, experience, and expertise to build trust in our community.",
+        benefits: [
+          "Multi-level verification process",
+          "Credential and certification validation",
+          "Experience verification through references",
+          "Continuous performance monitoring",
+          "Trust scoring system",
+          "Insurance and liability coverage",
+        ],
+        useCases: [
+          {
+            title: "Expert Hiring",
+            description:
+              "Hire verified agricultural consultants with confidence in their qualifications.",
+          },
+          {
+            title: "Skill Validation",
+            description:
+              "Validate your own skills and get recognized as a verified expert.",
+          },
+          {
+            title: "Quality Assurance",
+            description:
+              "Ensure all partnerships are with verified, trustworthy professionals.",
+          },
+        ],
+      },
+      marketInsights: {
+        detailedDescription:
+          "Our Market Insights service provides real-time agricultural market data, trends, and analytics to help you make informed business decisions. From commodity prices to weather patterns, we aggregate data from multiple sources to give you a competitive edge.",
+        benefits: [
+          "Real-time commodity price tracking",
+          "Weather and climate data integration",
+          "Market trend analysis and forecasting",
+          "Supply and demand analytics",
+          "Custom alerts and notifications",
+          "Historical data and trend analysis",
+        ],
+        useCases: [
+          {
+            title: "Price Optimization",
+            description:
+              "Optimize selling prices based on real-time market data and trends.",
+          },
+          {
+            title: "Crop Planning",
+            description:
+              "Plan crop selection based on market demand forecasts.",
+          },
+          {
+            title: "Risk Management",
+            description:
+              "Identify and mitigate market risks through data-driven insights.",
+          },
+        ],
+      },
+      businessGrowth: {
+        detailedDescription:
+          "Our Business Growth service provides comprehensive tools and resources to help agricultural businesses scale and succeed. From business planning to funding opportunities, we support your growth journey every step of the way.",
+        benefits: [
+          "Business plan templates and tools",
+          "Funding opportunity matching",
+          "Growth strategy consulting",
+          "Performance tracking and analytics",
+          "Mentorship programs",
+          "Market expansion support",
+        ],
+        useCases: [
+          {
+            title: "Startup Launch",
+            description:
+              "Get comprehensive support to launch your agricultural startup successfully.",
+          },
+          {
+            title: "Scale Operations",
+            description:
+              "Access tools and resources to scale your existing agricultural business.",
+          },
+          {
+            title: "Funding Acquisition",
+            description:
+              "Connect with investors and funding opportunities tailored to agriculture.",
+          },
+        ],
+      },
+    },
     contact: {
+      tagline: "We're Here to Help",
       title: "Get in Touch",
       description:
         "Have questions about our platform? We're here to help you connect with the agricultural community.",
@@ -807,6 +1259,8 @@ export const translations = {
       },
       contactInfo: {
         title: "Contact Information",
+        description:
+          "Choose the best way to reach us. We're available through multiple channels.",
         visitUs: "Visit Us",
         emailUs: "Email Us",
         callUs: "Call Us",
@@ -819,6 +1273,7 @@ export const translations = {
       },
     },
     faq: {
+      tagline: "Get Your Questions Answered",
       title: "Frequently Asked Questions",
       description:
         "Find answers to common questions about Agro and how it can help you succeed in agriculture.",
@@ -874,13 +1329,14 @@ export const translations = {
         question: "How can I contact customer support?",
         answer: "Customer support is available via email, phone, or live chat.",
       },
-      questionNoFound: "No questions found matching your search.",
+      questionNotFound: "No questions found matching your search.",
       stillHaveQuestions: "Still have questions?",
       cannotFind:
         "Can't find what you're looking for? Our support team is here to help.",
       contactSupportButton: "Contact Support",
     },
     blog: {
+      tagline: "Latest Agricultural Insights",
       title: "Agricultural Insights & Updates",
       description:
         "Stay informed with the latest news, trends, and insights in agriculture and technology.",
@@ -1029,7 +1485,7 @@ export const translations = {
       title: "Reset your Password",
       description:
         "Enter your email address and we'll send you a link to reset your password.",
-        invalidEmail: "Please enter a valid email address",
+      invalidEmail: "Please enter a valid email address",
       email: "Email Address",
       emailPlaceholder: "Enter your email address",
       sendResetLink: "Send Reset Link",

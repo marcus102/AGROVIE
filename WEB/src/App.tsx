@@ -7,6 +7,7 @@ import { useScrollToTop } from "./hooks/useScrollToTop";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Services } from "./pages/Services";
+import { ServiceDetail } from "./pages/ServiceDetail";
 import { Contact } from "./pages/Contact";
 import { FAQ } from "./pages/FAQ";
 import { Blog } from "./pages/Blog";
@@ -105,6 +106,15 @@ function App() {
                 path="/services"
                 element={
                   <Services
+                    language={language}
+                    translations={translations[language]}
+                  />
+                }
+              />
+              <Route
+                path="/services/:serviceId"
+                element={
+                  <ServiceDetail
                     language={language}
                     translations={translations[language]}
                   />
@@ -215,10 +225,7 @@ function App() {
                 path="notifications"
                 element={<NotificationManagement />}
               />
-              <Route
-                path="dynamic-pricing"
-                element={<DynamicPricing />}
-              />
+              <Route path="dynamic-pricing" element={<DynamicPricing />} />
               <Route path="links" element={<LinksManagement />} />
             </Route>
           </Routes>

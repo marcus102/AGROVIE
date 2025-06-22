@@ -1,6 +1,5 @@
-import React from "react";
 import { motion } from "framer-motion";
-import { Users, Target, Sprout, Award, ArrowRight, Quote, MapPin, Calendar, Mail } from "lucide-react";
+import { Users, Target, Sprout, Award, Quote, MapPin, Mail } from "lucide-react";
 import { fadeIn, staggerContainer, slideIn } from "../utils/animations";
 import { Layout } from "../components/Layout";
 import { Language, Translations } from "../types";
@@ -14,30 +13,30 @@ export function About({ translations }: AboutProps) {
   const team = [
     {
       name: "Aymard P. SAWADOGO",
-      role: "PDG & Co-Fondateur",
+      role: "Agronome, Expert consultant en sécurité alimentaire et nutrition & Co-fondateur",
       image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Eymar.jpg",
-      bio: "15 years of experience in AgTech",
+      bio: "9 ans d’expérience en conseil agricole et chaine de valeur",
       social: { email: "aymard@agronetwork.com", location: "Ouagadougou, BF" }
     },
     {
       name: "Marcus W. SAWADOGO",
-      role: "Developpeur & Co-Fondateur",
+      role: "Developpeur fullstack & Co-Fondateur",
       image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Marcus.jpg",
-      bio: "15 years of experience in AgTech",
+      bio: "Software engineer with a passion for agriculture",
       social: { email: "marcus@agronetwork.com", location: "Ouagadougou, BF" }
     },
     {
       name: "Razack A. NIKIEMA",
-      role: "Responsable des Partenariats",
+      role: "développeur de solutions IoT & Co-Fondateur",
       image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/WhatsApp%20Image%202025-05-17%20at%2020.18.58_1ae41512.jpg",
       bio: "Expert in agricultural partnerships",
       social: { email: "razack@agronetwork.com", location: "Ouagadougou, BF" }
     },
     {
       name: "Ariane P. SAWADOGO",
-      role: "Responsable de la Communication",
+      role: "Directrice Générale de Expertise Rurale, Ingénieur en aménagement hydro-agricole & Co-fondatrice",
       image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Ariane.jpg",
-      bio: "Former lead engineer at AgriTech Solutions",
+      bio: "Ingénieur en aménagement hydro-agricole",
       social: { email: "ariane@agronetwork.com", location: "Ouagadougou, BF" }
     },
   ];
@@ -68,28 +67,6 @@ export function About({ translations }: AboutProps) {
       gradient: "from-purple-500 to-purple-600",
     },
   ];
-
-  const milestones = [
-    {
-      year: "January 2025",
-      title: "Idea Was Born",
-      description: "The concept of AgroNetwork was envisioned to revolutionize agriculture.",
-      icon: "💡"
-    },
-    {
-      year: "February - April 2025",
-      title: "Software Development",
-      description: "The team worked tirelessly to develop the foundation of the platform.",
-      icon: "⚡"
-    },
-    {
-      year: "June 2025",
-      title: "Software Prototype Launch",
-      description: "Released the first prototype to gather feedback and refine the platform.",
-      icon: "🚀"
-    },
-  ];
-
   return (
     <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Hero Section */}
@@ -155,21 +132,12 @@ export function About({ translations }: AboutProps) {
             <motion.div variants={fadeIn}>
               <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                 <Target className="w-4 h-4 mr-2" />
-                Our Purpose
-              </div>
-              <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-8">
                 {translations.about.mission}
-              </h2>
+              </div>
+
               <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-8">
                 {translations.about.missionDescription}
               </p>
-              {/* <motion.button
-                whileHover={{ scale: 1.05, x: 5 }}
-                className="inline-flex items-center text-primary font-semibold text-lg group"
-              >
-                {translations.about.learnMore}
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </motion.button> */}
             </motion.div>
             
             <motion.div 
@@ -209,11 +177,8 @@ export function About({ translations }: AboutProps) {
           <motion.div variants={fadeIn} className="text-center mb-20">
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
               <Award className="w-4 h-4 mr-2" />
-              Core Values
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.about.ourValue}
-            </h2>
+            </div>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.about.ourValueDescription}
             </p>
@@ -224,7 +189,7 @@ export function About({ translations }: AboutProps) {
               const Icon = value.icon;
               return (
                 <motion.div
-                  key={value.title}
+                  key={value.title + index}
                   variants={fadeIn}
                   whileHover={{ y: -10, scale: 1.02 }}
                   className="group bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-800 text-center"
@@ -244,57 +209,6 @@ export function About({ translations }: AboutProps) {
           </div>
         </motion.div>
 
-        {/* Journey Section */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="py-24"
-        >
-          <motion.div variants={fadeIn} className="text-center mb-20">
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-              <Calendar className="w-4 h-4 mr-2" />
-              Our Journey
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
-              {translations.about.ourJourney}
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              {translations.about.ourJourneyDescription}
-            </p>
-          </motion.div>
-
-          <div className="relative">
-            {/* Timeline Line */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-primary to-primary-dark rounded-full"></div>
-            
-            <div className="space-y-16">
-              {milestones.map((milestone, index) => (
-                <motion.div
-                  key={index}
-                  variants={fadeIn}
-                  className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
-                >
-                  <div className={`w-1/2 ${index % 2 === 0 ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-xl border border-gray-100 dark:border-gray-800">
-                      <div className="text-4xl mb-4">{milestone.icon}</div>
-                      <div className="text-primary font-semibold mb-2">{milestone.year}</div>
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{milestone.title}</h3>
-                      <p className="text-gray-600 dark:text-gray-300">{milestone.description}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Timeline Dot */}
-                  <div className="relative z-10 w-6 h-6 bg-primary rounded-full border-4 border-white dark:border-gray-900 shadow-lg"></div>
-                  
-                  <div className="w-1/2"></div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
         {/* Team Section */}
         <motion.div
           variants={staggerContainer}
@@ -306,11 +220,8 @@ export function About({ translations }: AboutProps) {
           <motion.div variants={fadeIn} className="text-center mb-20">
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
               <Users className="w-4 h-4 mr-2" />
-              Meet the Team
+               {translations.about.ourTeam}
             </div>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
-              {translations.about.ourTeam}
-            </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.about.ourTeamDescription}
             </p>
@@ -319,7 +230,7 @@ export function About({ translations }: AboutProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {team.map((member, index) => (
               <motion.div
-                key={member.name}
+                key={member.name + index}
                 variants={fadeIn}
                 whileHover={{ y: -10, scale: 1.02 }}
                 className="group bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-800"

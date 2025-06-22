@@ -1,17 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Users,
   Target,
   Shield,
-  Sprout,
   ArrowRight,
   Play,
   Star,
   TrendingUp,
-  Globe,
-  Award,
 } from "lucide-react";
 import {
   fadeIn,
@@ -30,7 +27,7 @@ interface HomeProps {
   translations: Translations[Language];
 }
 
-export function Home({ translations }: HomeProps) {
+export function Home({ language, translations }: HomeProps) {
   const [showAppOverlay, setShowAppOverlay] = useState(false);
 
   const { links, fetchLinks } = useAdminStore();
@@ -226,7 +223,7 @@ export function Home({ translations }: HomeProps) {
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8"
             >
               <Star className="w-4 h-4 mr-2 text-yellow-400" />
-              Trusted by Agricultural Professionals
+              {translations.home.trusted}
             </motion.div>
 
             <motion.h1
@@ -304,14 +301,12 @@ export function Home({ translations }: HomeProps) {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-lg font-bold mb-6"
             >
               <TrendingUp className="w-4 h-4 mr-2" />
-              Why Choose Our Platform
-            </motion.div>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.home.whyUs}
-            </h2>
+            </motion.div>
+
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.home.whyUsDescription}
             </p>
@@ -366,14 +361,11 @@ export function Home({ translations }: HomeProps) {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-lg font-bold mb-6"
             >
               <Users className="w-4 h-4 mr-2" />
-              Tailored Solutions
-            </motion.div>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white font-montserrat mb-6">
               {translations.home.solutionsForEveryNeeds}
-            </h2>
+            </motion.div>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {translations.home.solutionsForEveryNeedsDescription}
             </p>
@@ -433,7 +425,7 @@ export function Home({ translations }: HomeProps) {
 
         {/* CTA Section */}
         <div className="py-24">
-          <CtaSection translations={translations} />
+          <CtaSection language={language} translations={translations} />
         </div>
       </Layout>
     </div>

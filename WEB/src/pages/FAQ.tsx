@@ -120,7 +120,7 @@ export function FAQ({ translations }: FaqProps) {
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8"
             >
               <HelpCircle className="w-4 h-4 mr-2" />
-              Get Your Questions Answered
+              {translations.faq.tagline}
             </motion.div>
             
             <motion.h1
@@ -205,7 +205,7 @@ export function FAQ({ translations }: FaqProps) {
           <AnimatePresence>
             {filteredFaqs.map((faq, index) => (
               <motion.div
-                key={faq.id}
+                key={faq.id + index}
                 variants={fadeIn}
                 initial="hidden"
                 animate="visible"

@@ -104,7 +104,7 @@ export function Blog({ translations }: BlogProps) {
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8"
             >
               <BookOpen className="w-4 h-4 mr-2" />
-              Latest Agricultural Insights
+              {translations.blog.tagline}
             </motion.div>
 
             <motion.h1

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   CheckCircle,
   Send,
-  Shield,
   Sparkles,
 } from "lucide-react";
 import { Language, Translations } from "../types";

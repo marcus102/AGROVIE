@@ -1,6 +1,5 @@
-import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle, MessageSquare, Users, Globe } from "lucide-react";
+import { MapPin, Phone, Mail, Clock,MessageSquare } from "lucide-react";
 import { fadeIn, staggerContainer, slideIn } from "../utils/animations";
 import { Layout } from "../components/Layout";
 import { Language, Translations } from "../types";
@@ -11,45 +10,12 @@ interface ContactProps {
 }
 
 export function Contact({ translations }: ContactProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: '',
-    subject: '',
-    message: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({ name: '', email: '', role: '', subject: '', message: '' });
-    }, 3000);
-  };
-
-  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-  //   setFormData({
-  //     ...formData,
-  //     [e.target.name]: e.target.value
-  //   });
-  // };
 
   const contactInfo = [
     {
       icon: Phone,
       title: translations.contact.contactInfo.callUs,
-      details: ["+226 XX XX XX XX", "+226 XX XX XX XX"],
+      details: ["+226 74 18 97 63", "+226 60 08 97 04"],
       gradient: "from-blue-500 to-blue-600",
     },
     {
@@ -61,7 +27,7 @@ export function Contact({ translations }: ContactProps) {
     {
       icon: MapPin,
       title: translations.contact.contactInfo.visitUs,
-      details: ["Ouagadougou, Burkina Faso", "Zone du Bois, Secteur 10"],
+      details: ["Ouagadougou, Burkina Faso"],
       gradient: "from-purple-500 to-purple-600",
     },
     {
@@ -109,7 +75,7 @@ export function Contact({ translations }: ContactProps) {
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
-              We're Here to Help
+              {translations.contact.tagline}
             </motion.div>
             
             <motion.h1
@@ -144,15 +110,13 @@ export function Contact({ translations }: ContactProps) {
               className="space-y-8 w-[1200px]"
             >
               <div className="mb-12">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-lg font-bold mb-4">
                   <Phone className="w-4 h-4 mr-2" />
-                  Contact Information
+                 {translations.contact.contactInfo.title}
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                  {translations.contact.contactInfo.title}
-                </h2>
+
                 <p className="text-gray-600 dark:text-gray-300">
-                  Choose the best way to reach us. We're available through multiple channels.
+                  {translations.contact.contactInfo.description}
                 </p>
               </div>
 

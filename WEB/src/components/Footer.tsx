@@ -53,29 +53,43 @@ export function Footer({ translations }: FooterProps) {
       title: translations.footer.contact,
       items: [
         { icon: Mail, text: "contact@agronetwork.com" },
-        { icon: Phone, text: "+226----------" },
+        { icon: Phone, text: "+22674189763 / +22660089704" },
         { icon: MapPin, text: "Ouagadougou, Burkina Faso" },
       ],
     },
   ];
 
+  const facebookLink =
+    links.find((link) => link.category === "facebook")?.link || "#";
+  const twitterLink =
+    links.find((link) => link.category === "twitter")?.link || "#";
+  const instagramLink =
+    links.find((link) => link.category === "instagram")?.link || "#";
+  const linkedinLink =
+    links.find((link) => link.category === "linkedin")?.link || "#";
+
   const socialLinks = [
     {
       icon: Facebook,
-      href: "#",
+      href: facebookLink,
       label: "Facebook",
       color: "hover:text-blue-500",
     },
-    { icon: Twitter, href: "#", label: "Twitter", color: "hover:text-sky-500" },
+    {
+      icon: Twitter,
+      href: twitterLink,
+      label: "Twitter",
+      color: "hover:text-sky-500",
+    },
     {
       icon: Instagram,
-      href: "#",
+      href: instagramLink,
       label: "Instagram",
       color: "hover:text-pink-500",
     },
     {
       icon: Linkedin,
-      href: "#",
+      href: linkedinLink,
       label: "LinkedIn",
       color: "hover:text-blue-600",
     },
@@ -120,11 +134,11 @@ export function Footer({ translations }: FooterProps) {
               </motion.div>
               <div className="flex flex-col">
                 <span className="text-2xl font-bold bg-gradient-to-r from-primary-light to-white bg-clip-text text-transparent font-montserrat">
-                  Agro
+                  Agrrick
                 </span>
-                <span className="text-sm text-gray-400 font-medium">
+                {/* <span className="text-sm text-gray-400 font-medium">
                   Network
-                </span>
+                </span> */}
               </div>
             </ScrollToTopLink>
 
@@ -246,13 +260,13 @@ export function Footer({ translations }: FooterProps) {
                 to="/privacy-policy"
                 className="hover:text-white transition-colors duration-300"
               >
-                Privacy
+                {translations.footer.privacy}
               </ScrollToTopLink>
               <ScrollToTopLink
                 to="/terms-of-service"
                 className="hover:text-white transition-colors duration-300"
               >
-                Terms
+                {translations.footer.terms}
               </ScrollToTopLink>
               <span>Version 1.0.0</span>
             </div>
