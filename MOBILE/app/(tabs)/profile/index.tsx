@@ -20,11 +20,7 @@ import {
   Folder,
   RefreshCw,
   Info,
-  Star,
-  Award,
-  Calendar,
   Phone,
-  Mail,
 } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
@@ -299,28 +295,6 @@ export default function ProfileScreen() {
                     {profile?.actual_location || 'Localisation Inconnue'}
                   </Text>
                 </View>
-              </View>
-            </Animated.View>
-
-            {/* Quick Stats */}
-            <Animated.View
-              entering={FadeInUp.delay(400)}
-              style={styles.statsContainer}
-            >
-              <View style={styles.statItem}>
-                <Star size={20} color="#fff" />
-                <Text style={styles.statValue}>4.8</Text>
-                <Text style={styles.statLabel}>Note</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Award size={20} color="#fff" />
-                <Text style={styles.statValue}>12</Text>
-                <Text style={styles.statLabel}>Missions</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Calendar size={20} color="#fff" />
-                <Text style={styles.statValue}>2</Text>
-                <Text style={styles.statLabel}>Années</Text>
               </View>
             </Animated.View>
           </LinearGradient>

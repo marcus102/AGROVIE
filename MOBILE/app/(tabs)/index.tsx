@@ -10,20 +10,23 @@ import {
   Share,
   Linking,
   Dimensions,
+  Alert,
 } from 'react-native';
 import {
   Bell,
   Star,
   Users,
-  Calendar,
   MapPin,
   ArrowRight,
   CheckCircle2,
   Share2,
   ChevronRight,
   Zap,
-  Award,
-  TrendingUp,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  AlertTriangle,
+  Settings,
 } from 'lucide-react-native';
 import { NotificationsModal } from '@/components/modals/NotificationsModal';
 import { useThemeStore } from '@/stores/theme';
@@ -31,40 +34,11 @@ import { router } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import AgroLogo from '../../components/AgroLogo';
 import { useNotificationStore } from '@/stores/notification';
+import { useNotification } from '@/context/NotificationContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLinkStore } from '@/stores/dynamic_links';
 
 const { width } = Dimensions.get('window');
-
-const testimonials = [
-  {
-    id: '1',
-    name: 'Marie Laurent',
-    role: 'Agricultrice',
-    image:
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=1200&auto=format&fit=crop',
-    text: "AGRO m'a permis de trouver rapidement des travailleurs qualifiés pour ma récolte.",
-    rating: 5,
-  },
-  {
-    id: '2',
-    name: 'Thomas Dubois',
-    role: 'Technicien Agricole',
-    image:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1200&auto=format&fit=crop',
-    text: "Une plateforme qui valorise vraiment l'expertise technique en agriculture.",
-    rating: 5,
-  },
-  {
-    id: '3',
-    name: 'Aminata Traoré',
-    role: 'Entrepreneur Agricole',
-    image:
-      'https://images.unsplash.com/photo-1494790108755-2616b612b786?q=80&w=1200&auto=format&fit=crop',
-    text: "Grâce à AGRO, j'ai pu développer mon exploitation avec des professionnels de confiance.",
-    rating: 5,
-  },
-];
 
 const features = [
   {
@@ -81,7 +55,7 @@ const features = [
   },
   {
     title: 'Couverture Nationale',
-    description: 'Un réseau de professionnels dans toute le Burkina Faso',
+    description: 'Un réseau de professionnels dans tout le Burkina Faso',
     icon: MapPin,
     color: '#f59e0b',
   },
@@ -101,6 +75,15 @@ export default function HomeScreen() {
     (notification) => !notification.read
   ).length;
   const { links, fetchLinks } = useLinkStore();
+  const { 
+    expoPushToken, 
+    notification, 
+    error, 
+    retryTokenRegistration,
+    isTokenSaved,
+    isSupported,
+    permissionStatus
+  } = useNotification();
 
   useEffect(() => {
     fetchLinks();
@@ -133,6 +116,120 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('Error sharing the app:', error);
     }
+  };
+
+  const PushNotificationStatus = () => {
+    // Don't show anything if not supported
+    if (!isSupported) {
+      return null;
+    }
+
+    if (error) {
+      return (
+        <Animated.View 
+          entering={FadeInDown.delay(1800)} 
+          style={[styles.notificationStatus, { backgroundColor: colors.error + '20' }]}
+        >
+          <View style={styles.statusHeader}>
+            <WifiOff size={20} color={colors.error} />
+            <Text style={[styles.statusTitle, { color: colors.error }]}>
+              Notifications désactivées
+            </Text>
+          </View>
+          <Text style={[styles.statusMessage, { color: colors.error }]}>
+            {error.message.includes('Firebase') 
+              ? 'Configuration Firebase requise pour les notifications'
+              : error.message.includes('Google Play Services')
+              ? 'Google Play Services requis'
+              : error.message.includes('permissions')
+              ? 'Autorisations de notification requises'
+              : 'Erreur de configuration des notifications'}
+          </Text>
+          <View style={styles.statusActions}>
+            <TouchableOpacity
+              style={[styles.retryButton, { backgroundColor: colors.error }]}
+              onPress={retryTokenRegistration}
+            >
+              <RefreshCw size={16} color="#fff" />
+              <Text style={styles.retryButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+            {error.message.includes('permissions') && (
+              <TouchableOpacity
+                style={[styles.settingsButton, { borderColor: colors.error }]}
+                onPress={() => {
+                  Alert.alert(
+                    'Autorisations requises',
+                    'Veuillez activer les notifications dans les paramètres de votre appareil.',
+                    [
+                      { text: 'Annuler', style: 'cancel' },
+                      { text: 'Paramètres', onPress: () => Linking.openSettings() }
+                    ]
+                  );
+                }}
+              >
+                <Settings size={16} color={colors.error} />
+                <Text style={[styles.settingsButtonText, { color: colors.error }]}>
+                  Paramètres
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </Animated.View>
+      );
+    }
+
+    if (expoPushToken) {
+      return (
+        <Animated.View 
+          entering={FadeInDown.delay(1800)} 
+          style={[styles.notificationStatus, { backgroundColor: colors.success + '20' }]}
+        >
+          <View style={styles.statusHeader}>
+            <Wifi size={20} color={colors.success} />
+            <Text style={[styles.statusTitle, { color: colors.success }]}>
+              Notifications activées
+            </Text>
+          </View>
+          <Text style={[styles.statusMessage, { color: colors.success }]}>
+            {isTokenSaved 
+              ? 'Vous recevrez des notifications importantes'
+              : 'Configuration en cours...'}
+          </Text>
+          {notification && (
+            <View style={[styles.lastNotification, { backgroundColor: colors.card }]}>
+              <Text style={[styles.notificationTitle, { color: colors.text }]}>
+                Dernière notification:
+              </Text>
+              <Text style={[styles.notificationContent, { color: colors.muted }]}>
+                {notification.request.content.title}
+              </Text>
+            </View>
+          )}
+        </Animated.View>
+      );
+    }
+
+    // Show loading state for supported devices
+    if (permissionStatus === 'undetermined') {
+      return (
+        <Animated.View 
+          entering={FadeInDown.delay(1800)} 
+          style={[styles.notificationStatus, { backgroundColor: colors.warning + '20' }]}
+        >
+          <View style={styles.statusHeader}>
+            <AlertTriangle size={20} color={colors.warning} />
+            <Text style={[styles.statusTitle, { color: colors.warning }]}>
+              Configuration des notifications
+            </Text>
+          </View>
+          <Text style={[styles.statusMessage, { color: colors.warning }]}>
+            Configuration en cours...
+          </Text>
+        </Animated.View>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -223,6 +320,9 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Push Notification Status */}
+        <PushNotificationStatus />
+
         {/* Features Section */}
         <View style={styles.featuresSection}>
           <Animated.View entering={FadeInDown.delay(800)}>
@@ -286,63 +386,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Testimonials */}
-        {/* <View style={styles.testimonialsSection}>
-          <Animated.View entering={FadeInDown.delay(1300)}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Ce que disent nos utilisateurs
-            </Text>
-          </Animated.View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.testimonialsContent}
-          >
-            {testimonials.map((testimonial, index) => (
-              <Animated.View
-                key={testimonial.id}
-                entering={FadeInDown.delay(1400 + index * 100)}
-                style={[
-                  styles.testimonialCard,
-                  { backgroundColor: colors.card },
-                ]}
-              >
-                <View style={styles.testimonialHeader}>
-                  <Image
-                    source={{ uri: testimonial.image }}
-                    style={styles.testimonialImage}
-                  />
-                  <View style={styles.testimonialInfo}>
-                    <Text
-                      style={[styles.testimonialName, { color: colors.text }]}
-                    >
-                      {testimonial.name}
-                    </Text>
-                    <Text
-                      style={[styles.testimonialRole, { color: colors.muted }]}
-                    >
-                      {testimonial.role}
-                    </Text>
-                    <View style={styles.ratingContainer}>
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={14}
-                          color="#f59e0b"
-                          fill="#f59e0b"
-                        />
-                      ))}
-                    </View>
-                  </View>
-                </View>
-                <Text style={[styles.testimonialText, { color: colors.text }]}>
-                  "{testimonial.text}"
-                </Text>
-              </Animated.View>
-            ))}
-          </ScrollView>
-        </View> */}
-
         {/* Contact Section */}
         <Animated.View
           entering={FadeInDown.delay(1600)}
@@ -370,7 +413,7 @@ export default function HomeScreen() {
                 Téléphone:
               </Text>
               <Text style={[styles.contactValue, { color: colors.primary }]}>
-                +226 ----------
+                {'+226 74 18 97 63\n+226 74 18 97 63'}
               </Text>
             </View>
           </View>
@@ -517,7 +560,80 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
   },
-  statsSection: {
+  notificationStatus: {
+    margin: 24,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 12,
+  },
+  statusTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+  },
+  statusMessage: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  statusActions: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  retryButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#fff',
+  },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+  },
+  settingsButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+  },
+  lastNotification: {
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  notificationTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  notificationContent: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+  },
+  featuresSection: {
     paddingHorizontal: 24,
     marginBottom: 40,
   },
@@ -526,46 +642,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginBottom: 24,
     textAlign: 'center',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    flex: 1,
-    minWidth: (width - 64) / 2,
-    padding: 20,
-    borderRadius: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  statValue: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  statLabel: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  featuresSection: {
-    paddingHorizontal: 24,
-    marginBottom: 40,
   },
   featuresGrid: {
     gap: 20,
@@ -627,58 +703,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
   },
-  testimonialsSection: {
-    paddingLeft: 24,
-    marginBottom: 40,
-  },
-  testimonialsContent: {
-    paddingRight: 24,
-    gap: 20,
-  },
-  testimonialCard: {
-    width: 320,
-    padding: 24,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  testimonialHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  testimonialImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
-  },
-  testimonialInfo: {
-    flex: 1,
-  },
-  testimonialName: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 18,
-    marginBottom: 4,
-  },
-  testimonialRole: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  testimonialText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    lineHeight: 24,
-    fontStyle: 'italic',
-  },
   contactSection: {
     margin: 24,
     padding: 28,
@@ -701,6 +725,7 @@ const styles = StyleSheet.create({
   },
   contactItem: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },

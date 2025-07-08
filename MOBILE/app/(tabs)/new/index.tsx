@@ -112,12 +112,6 @@ const missionTemplates = [
   },
 ];
 
-const stats = [
-  { label: 'Missions créées', value: '2,847', icon: Plus },
-  { label: 'Taux de succès', value: '94%', icon: Star },
-  { label: 'Temps moyen', value: '2.3h', icon: Clock },
-];
-
 export default function NewMissionLandingScreen() {
   const { colors } = useThemeStore();
   const { setDraftMission } = useMissionStore();
@@ -150,7 +144,7 @@ export default function NewMissionLandingScreen() {
       <View style={styles.heroSection}>
         <Image
           source={{
-            uri: 'https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            uri: 'https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/agriculture_potirons_loumbi.jpg',
           }}
           style={styles.heroImage}
         />
@@ -164,40 +158,6 @@ export default function NewMissionLandingScreen() {
           </Animated.View>
         </View>
       </View>
-
-      {/* Stats Section */}
-      <Animated.View
-        entering={FadeInDown.delay(300)}
-        style={[styles.statsSection, { backgroundColor: colors.card }]}
-      >
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Statistiques de la plateforme
-        </Text>
-        <View style={styles.statsGrid}>
-          {stats.map((stat, index) => (
-            <Animated.View
-              key={stat.label}
-              entering={FadeInDown.delay(400 + index * 100)}
-              style={[styles.statCard, { backgroundColor: colors.background }]}
-            >
-              <View
-                style={[
-                  styles.statIcon,
-                  { backgroundColor: colors.primary + '20' },
-                ]}
-              >
-                <stat.icon size={24} color={colors.primary} />
-              </View>
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {stat.value}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>
-                {stat.label}
-              </Text>
-            </Animated.View>
-          ))}
-        </View>
-      </Animated.View>
 
       {/* Quick Start Section */}
       <View style={styles.quickStartSection}>

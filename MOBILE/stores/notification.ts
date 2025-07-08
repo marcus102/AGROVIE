@@ -2,11 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   Notification,
-  NotificationRead,
-  NotificationStatus,
   NotificationType,
+  PushToken,
 } from '@/types/notification';
 import { supabase } from '@/lib/supabase';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 
 interface NotificationState {
   notifications: Notification[];
@@ -14,7 +15,11 @@ interface NotificationState {
   loading: boolean;
   error: string | null;
   readNotificationIds: string[];
+  pushToken: string | null;
+  tokenSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
+
   setNotifications: (notifications: Notification[]) => void;
+  setUnreadCount: (count: number) => void;
   setDraftNotification: (notification: Partial<Notification> | null) => void;
   updateDraftNotification: (updates: Partial<Notification>) => void;
   fetchNotifications: () => Promise<void>;
@@ -33,6 +38,10 @@ interface NotificationState {
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   getUnreadCount: () => number;
+  savePushToken: (token: string) => Promise<void>;
+  getPushToken: () => Promise<string | null>;
+  deletePushToken: () => Promise<void>;
+  // updateNotification: (key: string, value: any) => void;
 }
 
 // Type guard for NotificationType
@@ -57,6 +66,20 @@ function transformNotification(data: any, readIds: string[]): Notification {
   };
 }
 
+// Get device information for push token metadata
+const getDeviceInfo = () => {
+  return {
+    deviceName: Device.deviceName,
+    deviceType: Device.deviceType,
+    osName: Device.osName,
+    osVersion: Device.osVersion,
+    platform: Platform.OS,
+    modelName: Device.modelName,
+    brand: Device.brand,
+    timestamp: new Date().toISOString(),
+  };
+};
+
 export const useNotificationStore = create<NotificationState>()(
   persist(
     (set, get) => ({
@@ -65,8 +88,12 @@ export const useNotificationStore = create<NotificationState>()(
       loading: false,
       error: null,
       readNotificationIds: [],
+      pushToken: null,
+      tokenSaveStatus: 'idle',
 
       setNotifications: (notifications) => set({ notifications }),
+      setUnreadCount: (count: number) =>
+        set((state) => ({ ...state, unreadCount: count })),
       setDraftNotification: (notification) =>
         set({ draftNotification: notification }),
       updateDraftNotification: (updates) =>
@@ -75,6 +102,158 @@ export const useNotificationStore = create<NotificationState>()(
             ? { ...state.draftNotification, ...updates }
             : updates,
         })),
+
+      savePushToken: async (token: string) => {
+        set({ loading: true, error: null, tokenSaveStatus: 'saving' });
+        try {
+          console.log('🔔 Saving push token to database...');
+
+          // Get current user ID
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (!user) {
+            throw new Error('User not authenticated');
+          }
+
+          console.log('🔔 User authenticated, proceeding with token save...');
+
+          // Prepare device info
+          const deviceInfo = getDeviceInfo();
+
+          // Upsert token to database
+          const { data, error } = await supabase
+            .from('user_push_tokens')
+            .upsert(
+              {
+                user_id: user.id,
+                expo_push_token: token,
+                device_info: deviceInfo,
+                is_active: true,
+              },
+              {
+                onConflict: 'user_id',
+                ignoreDuplicates: false,
+              }
+            )
+            .select()
+            .single();
+
+          if (error) {
+            console.error('🔔 Database error:', error);
+            throw error;
+          }
+
+          console.log('🔔 Token saved successfully:', data);
+
+          // Update local state
+          set({
+            pushToken: token,
+            tokenSaveStatus: 'saved',
+            error: null,
+          });
+
+          return data;
+        } catch (error) {
+          console.error('🔔 Error saving push token:', error);
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to save push token',
+            tokenSaveStatus: 'error',
+          });
+          throw error;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      getPushToken: async () => {
+        set({ loading: true, error: null });
+        try {
+          // Get current user ID
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (!user) {
+            throw new Error('User not authenticated');
+          }
+
+          // Fetch token from database
+          const { data, error } = await supabase
+            .from('user_push_tokens')
+            .select('expo_push_token')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .single();
+
+          if (error && error.code !== 'PGRST116') {
+            // PGRST116 is "not found" error, which is acceptable
+            throw error;
+          }
+
+          const token = data?.expo_push_token || null;
+          set({ pushToken: token });
+          return token;
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to get push token',
+          });
+          return null;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      deletePushToken: async () => {
+        set({ loading: true, error: null });
+        try {
+          // Get current user ID
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (!user) {
+            throw new Error('User not authenticated');
+          }
+
+          // Delete token from database
+          const { error } = await supabase
+            .from('user_push_tokens')
+            .delete()
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+
+          // Update local state
+          set({
+            pushToken: null,
+            tokenSaveStatus: 'idle',
+          });
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to delete push token',
+          });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      // updateNotification: (key: string, value: any) => {
+      //   set((state) => ({
+      //     ...state,
+      //     [key]: value,
+      //   }));
+      // },
 
       fetchNotifications: async () => {
         set({ loading: true, error: null });
@@ -323,6 +502,7 @@ export const useNotificationStore = create<NotificationState>()(
       partialize: (state) => ({
         notifications: state.notifications,
         readNotificationIds: state.readNotificationIds,
+        pushToken: state.pushToken,
       }),
     }
   )

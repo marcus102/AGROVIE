@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Sun, Moon, ChevronDown, LogOut, Sparkles } from "lucide-react";
+import { Menu, X, User, Sun, Moon, ChevronDown, LogOut, Sparkles, Tractor } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Language, Translations } from "../types";
 import { useTheme } from "../contexts/ThemeContext";
@@ -79,7 +79,7 @@ export function Header({
                 whileHover={{ scale: 1.05, rotate: 5 }}
                 className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg"
               >
-                <Sparkles className="w-6 h-6 text-white" />
+                <Tractor className="w-6 h-6 text-white" />
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-light/20 to-transparent"></div>
               </motion.div>
               <div className="flex flex-col">

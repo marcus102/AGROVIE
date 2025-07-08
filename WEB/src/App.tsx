@@ -211,7 +211,10 @@ function App() {
               path="/admin/*"
               element={
                 <RequireAuth>
-                  <AdminLayout />
+                  <AdminLayout
+                    language={language}
+                    onLanguageChange={handleLanguageChange}
+                  />
                 </RequireAuth>
               }
             >

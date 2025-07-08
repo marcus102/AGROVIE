@@ -26,6 +26,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { ListItem } from '@/components/ListItem';
 import { FilterBar } from '@/components/FilterBar';
 import { useMissionStore } from '@/stores/mission';
+import { useRatingStore } from '@/stores/ratings';
 import { supabase } from '@/lib/supabase';
 import { Mission } from '@/types/mission';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,29 +37,35 @@ const { width } = Dimensions.get('window');
 export default function TechnicianDashboard() {
   const { colors } = useThemeStore();
   const { fetchMissionByUserId } = useMissionStore();
+  const { fetchAverageUserRating, userAverageRating } = useRatingStore();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchMissions = async (userId: string): Promise<void> => {
+  const fetchUserData = async (userId: string): Promise<void> => {
     try {
       setLoading(true);
-      const { data, error } = await fetchMissionByUserId(userId);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-      setMissions(data || []);
+      await Promise.all([fetchMissions(userId), fetchAverageUserRating(userId)]);
     } catch (error: any) {
-      console.error('Error fetching missions:', error.message);
+      console.error('Error fetching data:', error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchMissions = async (userId: string): Promise<void> => {
+    try {
+      const { data, error } = await fetchMissionByUserId(userId);
+      if (error) throw error;
+      setMissions(data || []);
+    } catch (error: any) {
+      console.error('Error fetching missions:', error.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchAuthenticatedUserMissions = async () => {
+    const fetchAuthenticatedUser = async () => {
       try {
         const {
           data: { user },
@@ -69,14 +76,13 @@ export default function TechnicianDashboard() {
           console.error('Error fetching user:', error?.message);
           return;
         }
-
-        await fetchMissions(user.id);
+        await fetchUserData(user.id);
       } catch (error) {
         console.error('Unexpected error:', error);
       }
     };
 
-    fetchAuthenticatedUserMissions();
+    fetchAuthenticatedUser();
   }, []);
 
   const handleRefresh = async () => {
@@ -111,6 +117,12 @@ export default function TechnicianDashboard() {
 
   const totalEarnings = completedMissions * 5000;
 
+  // Format the average rating for display
+  const ratingDisplay =
+    userAverageRating !== null && userAverageRating !== undefined
+      ? userAverageRating.toFixed(1)
+      : 'N/A';
+
   const STATS = [
     {
       title: 'Projets actifs',
@@ -126,7 +138,7 @@ export default function TechnicianDashboard() {
     },
     {
       title: 'Note moyenne',
-      value: '4.8/5',
+      value: ratingDisplay,
       icon: Star,
       color: '#f59e0b',
     },

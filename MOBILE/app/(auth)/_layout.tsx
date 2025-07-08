@@ -4,7 +4,6 @@ import { useThemeStore } from '@/stores/theme';
 
 export default function AuthLayout() {
   const { colors } = useThemeStore();
-  // usePublicRoute();
 
   return (
     <Stack 

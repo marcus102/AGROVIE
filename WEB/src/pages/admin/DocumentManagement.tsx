@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React,{ useState, useEffect, useMemo } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import {

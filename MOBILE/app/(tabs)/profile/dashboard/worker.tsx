@@ -13,7 +13,6 @@ import {
   Briefcase,
   CheckCircle2,
   Star,
-  DollarSign,
   TrendingUp,
   RefreshCw,
   Users,
@@ -25,6 +24,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { ListItem } from '@/components/ListItem';
 import { FilterBar } from '@/components/FilterBar';
 import { useMissionStore } from '@/stores/mission';
+import { useRatingStore } from '@/stores/ratings';
 import { supabase } from '@/lib/supabase';
 import { Mission } from '@/types/mission';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,29 +35,41 @@ const { width } = Dimensions.get('window');
 export default function WorkerDashboard() {
   const { colors } = useThemeStore();
   const { fetchMissionByUserId } = useMissionStore();
+  const { fetchAverageUserRating, userAverageRating } = useRatingStore();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const fetchMissions = async (userId: string): Promise<void> => {
+  const fetchUserData = async (userId: string): Promise<void> => {
     try {
       setLoading(true);
-      const { data, error } = await fetchMissionByUserId(userId);
 
-      if (error) {
-        throw new Error(error.message);
-      }
-      setMissions(data || []);
+      // Fetch missions and ratings in parallel
+      await Promise.all([
+        fetchMissions(userId),
+        fetchAverageUserRating(userId),
+      ]);
     } catch (error: any) {
-      console.error('Error fetching missions:', error.message);
+      console.error('Error fetching data:', error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchMissions = async (userId: string): Promise<void> => {
+    try {
+      const { data, error } = await fetchMissionByUserId(userId);
+      if (error) throw error;
+      setMissions(data || []);
+    } catch (error: any) {
+      console.error('Error fetching missions:', error.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchAuthenticatedUserMissions = async () => {
+    const fetchAuthenticatedUser = async () => {
       try {
         const {
           data: { user },
@@ -69,13 +81,14 @@ export default function WorkerDashboard() {
           return;
         }
 
-        await fetchMissions(user.id);
+        setUserId(user.id);
+        await fetchUserData(user.id);
       } catch (error) {
         console.error('Unexpected error:', error);
       }
     };
 
-    fetchAuthenticatedUserMissions();
+    fetchAuthenticatedUser();
   }, []);
 
   const handleRefresh = async () => {
@@ -104,10 +117,16 @@ export default function WorkerDashboard() {
     (mission) => mission.status === 'completed'
   ).length;
 
+  // Format averageRating for display
+  const ratingDisplay =
+    typeof userAverageRating === 'number' && !isNaN(userAverageRating)
+      ? userAverageRating.toFixed(1)
+      : 'N/A';
+
   const STATS = [
     {
       title: 'Note',
-      value: '4.5/5',
+      value: ratingDisplay,
       icon: Star,
       color: '#f59e0b',
     },
@@ -117,18 +136,18 @@ export default function WorkerDashboard() {
       icon: Briefcase,
       color: '#3b82f6',
     },
-    {
-      title: 'Succès',
-      value: completedMissions,
-      icon: CheckCircle2,
-      color: '#10b981',
-    },
-    {
-      title: 'Candidatures',
-      value: '0',
-      icon: Users,
-      color: '#8b5cf6',
-    },
+    // {
+    //   title: 'Succès',
+    //   value: completedMissions,
+    //   icon: CheckCircle2,
+    //   color: '#10b981',
+    // },
+    // {
+    //   title: 'Candidatures',
+    //   value: '0',
+    //   icon: Users,
+    //   color: '#8b5cf6',
+    // },
     {
       title: 'Heures travaillées',
       value: completedMissions * 8,
@@ -359,7 +378,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   statCardContainer: {
-    minWidth: (width - 60) /2,
+    minWidth: (width - 60) / 2,
   },
   missionsContainer: {
     paddingHorizontal: 12,

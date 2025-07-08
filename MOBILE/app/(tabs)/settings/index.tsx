@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -37,6 +37,7 @@ import { EmailUpdateModal } from '@/components/modals/EmailSettingsModal';
 import NotificationSettingsModal from '@/components/modals/NotificationSettingsModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useLinkStore } from '@/stores/dynamic_links';
 
 const { width } = Dimensions.get('window');
 
@@ -71,10 +72,12 @@ const MenuItem = ({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View style={[
-        styles.menuItemIcon,
-        { backgroundColor: backgroundColor || colors.primary + '15' }
-      ]}>
+      <View
+        style={[
+          styles.menuItemIcon,
+          { backgroundColor: backgroundColor || colors.primary + '15' },
+        ]}
+      >
         <Icon size={22} color={iconColor || colors.primary} />
       </View>
       <View style={styles.menuItemContent}>
@@ -110,8 +113,24 @@ export default function SettingsScreen() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const { links, fetchLinks } = useLinkStore();
 
   const selectedLanguage = LANGUAGES.find((lang) => lang.code === language);
+
+  useEffect(() => {
+    fetchLinks();
+  }, [fetchLinks]);
+
+  const termsAndConditionsLink =
+    links.find((link) => link.category === 'website-terms&conditions')?.link ||
+    '';
+
+  const privacyPolicyLink =
+    links.find((link) => link.category === 'website-privacy-policy')?.link ||
+    '';
+
+  const contactUsLink =
+    links.find((link) => link.category === 'contact-us')?.link || '';
 
   const handleSignOut = () => {
     signOut();
@@ -151,7 +170,10 @@ export default function SettingsScreen() {
           colors={[colors.primary, colors.primary + 'CC']}
           style={styles.gradientHeader}
         >
-          <Animated.View entering={FadeInUp.delay(200)} style={styles.headerContent}>
+          <Animated.View
+            entering={FadeInUp.delay(200)}
+            style={styles.headerContent}
+          >
             <View style={styles.headerIcon}>
               <SettingsIcon size={28} color="#fff" />
             </View>
@@ -184,7 +206,7 @@ export default function SettingsScreen() {
               }
               onPress={() => setShowLanguageModal(true)}
               iconColor="#3b82f6"
-              backgroundColor={"#3b82f6" + '15'}
+              backgroundColor={'#3b82f6' + '15'}
             />
             <MenuItem
               icon={Moon}
@@ -194,7 +216,7 @@ export default function SettingsScreen() {
               isToggled={theme === 'dark'}
               onPress={handleThemeToggle}
               iconColor="#6366f1"
-              backgroundColor={"#6366f1" + '15'}
+              backgroundColor={'#6366f1' + '15'}
             />
           </View>
         </Animated.View>
@@ -211,7 +233,7 @@ export default function SettingsScreen() {
               subtitle="Gérer vos préférences de notification"
               onPress={() => setShowNotificationsModal(true)}
               iconColor="#f59e0b"
-              backgroundColor={"#f59e0b" + '15'}
+              backgroundColor={'#f59e0b' + '15'}
             />
           </View>
         </Animated.View>
@@ -228,7 +250,7 @@ export default function SettingsScreen() {
               subtitle="Changer votre mot de passe de connexion"
               onPress={() => setShowPasswordModal(true)}
               iconColor="#ef4444"
-              backgroundColor={"#ef4444" + '15'}
+              backgroundColor={'#ef4444' + '15'}
             />
             <MenuItem
               icon={Shield}
@@ -236,7 +258,7 @@ export default function SettingsScreen() {
               subtitle="Mettre à jour votre adresse email"
               onPress={() => setShowEmailModal(true)}
               iconColor="#10b981"
-              backgroundColor={"#10b981" + '15'}
+              backgroundColor={'#10b981' + '15'}
             />
           </View>
         </Animated.View>
@@ -253,7 +275,7 @@ export default function SettingsScreen() {
               subtitle="Inviter vos amis à rejoindre la plateforme"
               onPress={handleShareApp}
               iconColor="#8b5cf6"
-              backgroundColor={"#8b5cf6" + '15'}
+              backgroundColor={'#8b5cf6' + '15'}
             />
           </View>
         </Animated.View>
@@ -268,29 +290,25 @@ export default function SettingsScreen() {
               icon={Info}
               title="Mentions légales"
               subtitle="Conditions d'utilisation et mentions"
-              onPress={() =>
-                Linking.openURL('http://localhost:5173/terms-of-service')
-              }
+              onPress={() => Linking.openURL(termsAndConditionsLink)}
               iconColor="#6b7280"
-              backgroundColor={"#6b7280" + '15'}
+              backgroundColor={'#6b7280' + '15'}
             />
             <MenuItem
               icon={Shield}
               title="Politique de confidentialité"
               subtitle="Comment nous protégeons vos données"
-              onPress={() =>
-                Linking.openURL('http://localhost:5173/privacy-policy')
-              }
+              onPress={() => Linking.openURL(privacyPolicyLink)}
               iconColor="#6b7280"
-              backgroundColor={"#6b7280" + '15'}
+              backgroundColor={'#6b7280' + '15'}
             />
             <MenuItem
               icon={HelpCircle}
               title="Support"
               subtitle="Obtenir de l'aide et du support"
-              onPress={() => Linking.openURL('mailto:support@agro.com')}
+              onPress={() => Linking.openURL(contactUsLink)}
               iconColor="#06b6d4"
-              backgroundColor={"#06b6d4" + '15'}
+              backgroundColor={'#06b6d4' + '15'}
             />
             <MenuItem
               icon={Heart}
@@ -299,19 +317,30 @@ export default function SettingsScreen() {
               showChevron={false}
               onPress={() => {}}
               iconColor="#ec4899"
-              backgroundColor={"#ec4899" + '15'}
+              backgroundColor={'#ec4899' + '15'}
             />
           </View>
         </Animated.View>
 
         {/* Logout Button */}
-        <Animated.View entering={FadeInDown.delay(800)} style={styles.logoutSection}>
+        <Animated.View
+          entering={FadeInDown.delay(800)}
+          style={styles.logoutSection}
+        >
           <TouchableOpacity
-            style={[styles.logoutButton, { backgroundColor: colors.error + '15' }]}
+            style={[
+              styles.logoutButton,
+              { backgroundColor: colors.error + '15' },
+            ]}
             onPress={handleSignOut}
             activeOpacity={0.7}
           >
-            <View style={[styles.logoutIcon, { backgroundColor: colors.error + '20' }]}>
+            <View
+              style={[
+                styles.logoutIcon,
+                { backgroundColor: colors.error + '20' },
+              ]}
+            >
               <LogOut size={24} color={colors.error} />
             </View>
             <Text style={[styles.logoutText, { color: colors.error }]}>

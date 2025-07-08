@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/auth';
+import { useNotificationStore } from '@/stores/notification';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function useAuth() {
   const { session, user, profile, setSession, setUser, setProfile } =
     useAuthStore();
+  const { savePushToken } = useNotificationStore();
   const [sessionLoading, setSessionLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
   const [checkedFirstVisit, setCheckedFirstVisit] = useState(false);
@@ -64,6 +66,26 @@ export function useAuth() {
     }
   }, [user, checkedFirstVisit]);
 
+  // Handle push token when user authenticates
+  useEffect(() => {
+    const handlePushTokenOnAuth = async () => {
+      if (user && session) {
+        try {
+          // Check if we have a stored push token
+          const storedToken = await AsyncStorage.getItem('@agro_push_token');
+          if (storedToken) {
+            console.log('🔔 User authenticated, saving stored push token...');
+            await savePushToken(storedToken);
+          }
+        } catch (error) {
+          console.error('🔔 Error handling push token on auth:', error);
+        }
+      }
+    };
+
+    handlePushTokenOnAuth();
+  }, [user, session, savePushToken]);
+
   const isLoading = sessionLoading || profileLoading;
 
   const isAuthenticated = !!session;
@@ -73,7 +95,7 @@ export function useAuth() {
   const isDocsVerified = profile?.docs_status === 'accepted';
 
   useEffect(() => {
-    if (!checkedFirstVisit || !isLoading) return;
+    if (!checkedFirstVisit || isLoading) return;
     // Wait for first visit check before redirecting
   }, [isLoading, checkedFirstVisit]);
 

@@ -20,3 +20,13 @@ export interface NotificationRead {
   notification_id: string;
   created_at: string;
 }
+
+export interface PushToken {
+  id: string;
+  user_id: string;
+  expo_push_token: string;
+  device_info: Record<string, any>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

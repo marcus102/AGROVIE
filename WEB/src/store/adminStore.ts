@@ -322,6 +322,11 @@ interface AdminState {
   ) => Promise<void>;
   updateLink: (id: string, data: Partial<LinkItem>) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
+  getUserPushToken: (userId: string) => Promise<string | null>;
+  sendDocumentNotification: (
+    pushToken: string | null,
+    message: string
+  ) => Promise<void>;
 }
 
 // Type guard for NotificationType
@@ -954,7 +959,19 @@ export const useAdminStore = create<AdminState>()(
             set({ error: error.message });
             return;
           } else {
-            console.log(`Updated document with ID ${id}`);
+            console.log(`Updated document with ID ${id} user ${userId}`);
+          }
+
+          const pushToken = await get().getUserPushToken(userId);
+
+          if (data.status === "approved" || data.status === "rejected") {
+            const message =
+              data.status === "approved"
+                ? "Your documents have been approved!"
+                : "Your documents have been rejected. Please resubmit.";
+
+            // Send notification
+            await get().sendDocumentNotification(pushToken, message);
           }
 
           set((state) => ({
@@ -1549,7 +1566,87 @@ export const useAdminStore = create<AdminState>()(
           set({ loading: false });
         }
       },
+
+      // Push token for notifications
+
+      getUserPushToken: async (userId: string) => {
+        try {
+          set({ loading: true, error: null });
+          const { data, error } = await supabase
+            .from("user_push_tokens")
+            .select("expo_push_token")
+            .eq("user_id", userId)
+            .single();
+
+          if (error) {
+            console.error(
+              `Error fetching push token for user ${userId}:`,
+              error.message
+            );
+            return null;
+          }
+
+          return data?.expo_push_token;
+        } catch (error) {
+          console.error(`Unexpected error fetching push token:`, error);
+          return null;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      sendDocumentNotification: async (
+        pushToken: string | null,
+        message: string
+      ) => {
+        try {
+          if (!pushToken) {
+            console.warn("No push token provided, skipping notification.");
+            return;
+          }
+          console.log("Sending push notification via Edge Function...");
+
+          const { data, error } = await supabase.functions.invoke(
+            "send-push-notification",
+            {
+              body: {
+                to: pushToken,
+                body: message,
+                title: "Document Status Update",
+                data: {
+                  timestamp: new Date().toISOString(),
+                  type: "document_status",
+                },
+              },
+            }
+          );
+
+          console.log("Edge Function response:", data, error);
+
+          if (error) {
+            console.error("Edge Function error:", error);
+            throw new Error(`Failed to send notification: ${error.message}`);
+          }
+
+          if (!data.success) {
+            console.error("Push notification failed:", data);
+            throw new Error(data.error || "Failed to send push notification");
+          }
+
+          console.log(
+            "Push notification sent successfully via Edge Function:",
+            data
+          );
+        } catch (error) {
+          console.error(
+            "Error sending document notification via Edge Function:",
+            error
+          );
+          throw error;
+        }
+      },
     }),
+
     {
       name: "admin-storage",
       partialize: (state) => ({

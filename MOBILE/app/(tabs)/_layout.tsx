@@ -3,6 +3,7 @@ import { Home, BookOpen, Plus, Settings, User } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import { useAuth } from '@/hooks/useAuth';
 
+
 export default function TabLayout() {
   const { colors } = useThemeStore();
   useAuth();

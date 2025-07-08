@@ -11,6 +11,16 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { StatusBar } from 'expo-status-bar';
 import { useThemeStore } from '@/stores/theme';
 import { View } from 'react-native';
+import { NotificationProvider } from '@/context/NotificationContext';
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -34,11 +44,13 @@ export default function RootLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style={theme === 'light' ? 'dark' : 'light'} />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="welcome" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
+      <NotificationProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="welcome" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+      </NotificationProvider>
     </View>
   );
 }

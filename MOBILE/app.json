@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "AGRO",
+    "name": "AGRRICK",
     "slug": "agro-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,11 +11,16 @@
       "resizeMode": "contain",
       "backgroundColor": "#166534"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "buildNumber": "1.0.0",
       "supportsTablet": true,
-      "bundleIdentifier": "com.agro.mobile"
+      "bundleIdentifier": "com.agrrick.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "versionCode": 1,
@@ -23,7 +28,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#166534"
       },
-      "package": "com.agro.mobile"
+      "package": "com.agrrick.mobile",
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -41,13 +51,9 @@
       [
         "expo-notifications",
         {
-          "icon": "./local/assets/notification_icon.png",
+          "icon": "./assets/notification_icon.png",
           "color": "#ffffff",
           "defaultChannel": "default",
-          "sounds": [
-            "./local/assets/notification_sound.wav",
-            "./local/assets/notification_sound_other.wav"
-          ],
           "enableBackgroundRemoteNotifications": false
         }
       ]
@@ -57,6 +63,15 @@
       "typedRoutes": true,
       "tsconfigPaths": true
     },
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "ed97114c-282f-406a-bbcb-465d49cf0211"
+      }
+    },
+    "owner": "s_w_marcus102"
   }
 }

@@ -13,6 +13,7 @@ import { ChevronDown, ChevronUp, Edit2, Save, X } from "lucide-react";
 import { useAdminStore } from "../../store/adminStore";
 import type { DynamicPricing } from "../../store/adminStore";
 
+
 export function DynamicPricing() {
   const [activeTab, setActiveTab] = useState<"base" | "dynamic">("base");
   const [sorting, setSorting] = useState<SortingState>([]);

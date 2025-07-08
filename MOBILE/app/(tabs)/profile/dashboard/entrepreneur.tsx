@@ -11,13 +11,14 @@ import {
 import { useThemeStore } from '@/stores/theme';
 import {
   Users,
-  Star,
   Briefcase,
   TrendingUp,
   RefreshCw,
   CheckCircle2,
   DollarSign,
   Target,
+  Heart,
+  Star,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { StatCard } from '@/components/StatCard';
@@ -25,6 +26,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { ListItem } from '@/components/ListItem';
 import { FilterBar } from '@/components/FilterBar';
 import { useMissionStore } from '@/stores/mission';
+import { useRatingStore } from '@/stores/ratings';
 import { supabase } from '@/lib/supabase';
 import { Mission } from '@/types/mission';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,30 +37,39 @@ const { width } = Dimensions.get('window');
 export default function EntrepreneurDashboard() {
   const { colors } = useThemeStore();
   const { fetchMissionByUserId } = useMissionStore();
+  const { fetchAverageUserRating, userAverageRating } = useRatingStore();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Fetch missions created by this entrepreneur
-  const fetchMissions = async (userId: string): Promise<void> => {
+  const fetchUserData = async (userId: string): Promise<void> => {
     try {
       setLoading(true);
-      const { data, error } = await fetchMissionByUserId(userId);
 
-      if (error) {
-        throw new Error(error.message);
-      }
-      setMissions(data || []);
+      // Fetch missions and ratings in parallel
+      await Promise.all([fetchMissions(userId), fetchAverageUserRating(userId)]);
     } catch (error: any) {
-      console.error('Error fetching missions:', error.message);
+      console.error('Error fetching data:', error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchMissions = async (userId: string): Promise<void> => {
+    try {
+      const { data, error } = await fetchMissionByUserId(userId);
+      if (error) throw error;
+      setMissions(data || []);
+    } catch (error: any) {
+      console.error('Error fetching missions:', error.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchUserMissions = async () => {
+    const fetchAuthenticatedUser = async () => {
       try {
         const {
           data: { user },
@@ -70,13 +81,14 @@ export default function EntrepreneurDashboard() {
           return;
         }
 
-        await fetchMissions(user.id);
+        setUserId(user.id);
+        await fetchUserData(user.id);
       } catch (error) {
         console.error('Unexpected error:', error);
       }
     };
 
-    fetchUserMissions();
+    fetchAuthenticatedUser();
   }, []);
 
   const handleRefresh = async () => {
@@ -127,6 +139,10 @@ export default function EntrepreneurDashboard() {
       : 0;
 
   const totalEarnings = completedMissions * 5000;
+  // Format the average rating for display
+  const ratingDisplay = userAverageRating !== null && userAverageRating !== undefined
+    ? userAverageRating.toFixed(1)
+    : 'N/A';
 
   // Entrepreneur-specific stats
   const STATS = [
@@ -145,7 +161,7 @@ export default function EntrepreneurDashboard() {
     {
       title: 'Taux de match',
       value: `${matchRate}%`,
-      icon: Star,
+      icon: Heart,
       color: '#f59e0b',
     },
     {
@@ -153,6 +169,12 @@ export default function EntrepreneurDashboard() {
       value: completedMissions,
       icon: CheckCircle2,
       color: '#8b5cf6',
+    },
+    {
+      title: 'Note',
+      value: ratingDisplay,
+      icon: Star,
+      color: '#ef4444',
     },
     {
       title: 'Recrutements',
