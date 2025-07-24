@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Platform,
-  useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowRight, Leaf, Users, Shield } from 'lucide-react-native';
@@ -14,47 +14,79 @@ import { useThemeStore } from '@/stores/theme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Default colors fallback
+const defaultColors = {
+  background: '#ffffff',
+  primary: '#22C55E',
+  card: '#000000',
+};
+
 const slides = [
   {
     id: '1',
     title: 'Bienvenue sur AGRO',
     subtitle: 'La plateforme qui connecte les talents agricoles de demain',
-    image: 'https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Productions_agricoles_du_Burkina_Faso.webp',
+    image: require('../assets/img1.jpg'),
     icon: Leaf,
   },
   {
     id: '2',
     title: 'Trouvez les Meilleurs Talents',
     subtitle: 'Accédez à un réseau de professionnels qualifiés et vérifiés',
-    image: 'https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/FieldActivity_01.jpg',
+    image: require('../assets/img2.jpg'),
     icon: Users,
   },
   {
     id: '3',
     title: 'En Toute Sécurité',
     subtitle: 'Profils vérifiés et paiements sécurisés pour votre tranquillité',
-    image: 'https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/offensive-agricole-burkina-faso-YT-1739963276.webp',
+    image: require('../assets/img3.jpg'),
     icon: Shield,
   },
 ];
 
+const FIRST_VISIT_KEY = '@agro_has_visited';
+
 export default function WelcomeScreen() {
-  const { colors } = useThemeStore();
+  const themeStore = useThemeStore();
+  const colors = themeStore?.colors || defaultColors;
   const [currentSlide, setCurrentSlide] = useState(0);
-  const { width } = useWindowDimensions();
 
   const handleNext = async () => {
-    if (currentSlide < slides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      await AsyncStorage.setItem('hasVisitedBefore', 'true');
-      router.replace('/(auth)/login');
+    try {
+      if (currentSlide < slides.length - 1) {
+        setCurrentSlide(currentSlide + 1);
+      } else {
+        await AsyncStorage.setItem(FIRST_VISIT_KEY, 'true');
+        router.replace('/(auth)/login');
+      }
+    } catch (error) {
+      console.error('Error saving welcome status:', error);
+      // Still navigate even if storage fails
+      if (currentSlide === slides.length - 1) {
+        router.replace('/(auth)/login');
+      }
     }
   };
 
   const handleSkip = async () => {
-    await AsyncStorage.setItem('hasVisitedBefore', 'true');
-    router.replace('/(auth)/login');
+    try {
+      await AsyncStorage.setItem(FIRST_VISIT_KEY, 'true');
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Error saving welcome status:', error);
+      // Still navigate even if storage fails
+      router.replace('/(auth)/login');
+    }
+  };
+
+  const handleSignInPress = () => {
+    try {
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Erreur', 'Impossible de naviguer vers la page de connexion');
+    }
   };
 
   const slide = slides[currentSlide];
@@ -64,7 +96,14 @@ export default function WelcomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Background Image */}
       <View style={styles.imageContainer}>
-        <Image source={{ uri: slide.image }} style={styles.backgroundImage} />
+        <Image
+          source={slide.image}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+          onError={(error) => {
+            console.error('Image loading error:', error);
+          }}
+        />
         <View
           style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]}
         />
@@ -88,10 +127,8 @@ export default function WelcomeScreen() {
           entering={FadeInDown.delay(400)}
           style={styles.textContent}
         >
-          <Text style={[styles.title, { color: colors.card }]}>
-            {slide.title}
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.card }]}>
+          <Text style={[styles.title, { color: '#fff' }]}>{slide.title}</Text>
+          <Text style={[styles.subtitle, { color: '#fff' }]}>
             {slide.subtitle}
           </Text>
         </Animated.View>
@@ -118,7 +155,7 @@ export default function WelcomeScreen() {
         {/* Action Buttons */}
         <Animated.View entering={FadeInDown.delay(600)} style={styles.actions}>
           <TouchableOpacity style={[styles.skipButton]} onPress={handleSkip}>
-            <Text style={[styles.skipButtonText, { color: colors.card }]}>
+            <Text style={[styles.skipButtonText, { color: colors.primary }]}>
               Passer
             </Text>
           </TouchableOpacity>
@@ -127,10 +164,10 @@ export default function WelcomeScreen() {
             style={[styles.nextButton, { backgroundColor: colors.primary }]}
             onPress={handleNext}
           >
-            <Text style={[styles.nextButtonText, { color: colors.card }]}>
+            <Text style={[styles.nextButtonText, { color: '#fff' }]}>
               {currentSlide === slides.length - 1 ? 'Commencer' : 'Suivant'}
             </Text>
-            <ArrowRight size={20} color={colors.card} />
+            <ArrowRight size={20} color={'#fff'} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -139,11 +176,11 @@ export default function WelcomeScreen() {
           entering={FadeInDown.delay(800)}
           style={styles.signInContainer}
         >
-          <Text style={[styles.signInText, { color: colors.card }]}>
+          <Text style={[styles.signInText, { color: '#fff' }]}>
             Déjà inscrit ?{' '}
             <Text
               style={[styles.signInLink, { color: colors.primary }]}
-              onPress={() => router.replace('/(auth)/login')}
+              onPress={handleSignInPress}
             >
               Se connecter
             </Text>
@@ -189,11 +226,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     fontSize: 36,
     marginBottom: 16,
+    fontWeight: 'bold',
   },
   subtitle: {
     fontFamily: 'Inter-Regular',
     fontSize: 18,
     lineHeight: 28,
+    fontWeight: 'normal',
   },
   progressContainer: {
     flexDirection: 'row',
@@ -218,6 +257,7 @@ const styles = StyleSheet.create({
   skipButtonText: {
     fontFamily: 'Inter-Medium',
     fontSize: 16,
+    fontWeight: '500',
   },
   nextButton: {
     flexDirection: 'row',
@@ -230,6 +270,7 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
+    fontWeight: '600',
   },
   signInContainer: {
     alignItems: 'center',
@@ -237,8 +278,10 @@ const styles = StyleSheet.create({
   signInText: {
     fontFamily: 'Inter-Regular',
     fontSize: 14,
+    fontWeight: 'normal',
   },
   signInLink: {
     fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
   },
 });

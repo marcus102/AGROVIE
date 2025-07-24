@@ -34,60 +34,10 @@ import { useAuthStore } from '@/stores/auth';
 import { Mission, MissionStatus } from '@/types/mission';
 import { Toast, ToastType } from '@/components/Toast';
 import { EmployeeCard } from '@/components/EmplyeeCard';
-
-const technicianCategories = [
-  {
-    label: 'Techniciens en Agriculture de Précision',
-    value: 'precision_agriculture_technician',
-  },
-  {
-    label: 'Techniciens en Matériel Agricole',
-    value: 'agricultural_equipment_technician',
-  },
-  {
-    label: 'Techniciens en Cultures et Sols',
-    value: 'crop_and_soil_technician',
-  },
-  {
-    label: 'Techniciens de Recherche et Laboratoire',
-    value: 'research_and_laboratory_technician',
-  },
-  {
-    label: 'Techniciens en Élevage et Laitier',
-    value: 'livestock_and_airy_technician',
-  },
-  {
-    label: 'Techniciens en Sécurité Alimentaire et Qualité',
-    value: 'food_safety_and_quality_technician',
-  },
-  {
-    label: 'Techniciens en Gestion des Ravageurs et Environnement',
-    value: 'pest_management_and_environmental_technician',
-  },
-  {
-    label: "Techniciens d'Inspection et Certification",
-    value: 'inspection_and_certification_technician',
-  },
-  {
-    label: 'Techniciens en Vente et Support',
-    value: 'sales_and_support_technician',
-  },
-  { label: 'Autre', value: 'other' },
-];
-
-const workerCategories = [
-  {
-    label: 'Ouvriers de Production Végétale',
-    value: 'crop_production_worker',
-  },
-  { label: 'Ouvriers en Élevage', value: 'livestock_worker' },
-  { label: 'Ouvriers Mécanisés', value: 'mechanized_worker' },
-  { label: 'Ouvriers de Transformation', value: 'processing_worker' },
-  { label: 'Ouvriers Spécialisés', value: 'specialized_worker' },
-  { label: 'Ouvriers Saisonniers', value: 'seasonal_worker' },
-  { label: "Ouvriers d'Entretien", value: 'maintenance_worker' },
-  { label: 'Autre', value: 'other' },
-];
+import {
+  advisorSpecializations,
+  workerSpecializations,
+} from '@/constants/specializations';
 
 function MissionDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -202,18 +152,18 @@ function MissionDetailScreen() {
     return Math.max(0, diffDays);
   };
 
-    if (loading && !mission) {
-      return (
-        <View
-          style={[
-            styles.centeredContainer,
-            { backgroundColor: colors.background },
-          ]}
-        >
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      );
-    }
+  if (loading && !mission) {
+    return (
+      <View
+        style={[
+          styles.centeredContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   if (!loading && !mission) {
     return (
@@ -310,8 +260,8 @@ function MissionDetailScreen() {
     const specialization = mission?.actor_specialization;
     const role = mission?.needed_actor;
 
-    if (role === 'technician') {
-      const category = technicianCategories.find(
+    if (role === 'advisor') {
+      const category = advisorSpecializations.find(
         (cat) => cat.value === specialization
       );
       if (specialization === 'other') {
@@ -319,7 +269,7 @@ function MissionDetailScreen() {
       }
       return category?.label || specialization;
     } else if (role === 'worker') {
-      const category = workerCategories.find(
+      const category = workerSpecializations.find(
         (cat) => cat.value === specialization
       );
       if (specialization === 'other') {
@@ -331,6 +281,11 @@ function MissionDetailScreen() {
   };
 
   const isOwner = mission?.user_id === user?.id;
+
+  const MapPinIcon = () => <MapPin size={20} color="#fff" />;
+  const CalendarIcon = () => <Calendar size={20} color="#fff" />;
+  const UsersIcon = () => <Users size={20} color="#fff" />;
+  const ClockIcon = () => <Clock size={20} color="#fff" />;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -442,7 +397,9 @@ function MissionDetailScreen() {
                   styles.trackingButton,
                   { backgroundColor: colors.primary },
                 ]}
-                onPress={() => router.push(`/mission_tracking/${mission?.id ?? ''}`)}
+                onPress={() =>
+                  router.push(`/mission_tracking/${mission?.id ?? ''}`)
+                }
               >
                 <TrendingUp size={20} color={colors.card} />
                 <Text
@@ -523,26 +480,26 @@ function MissionDetailScreen() {
           {/* Quick Info Grid */}
           <View style={styles.infoGrid}>
             <InfoCard
-              icon={MapPin}
+              icon={MapPinIcon}
               label="Localisation"
               value={mission?.location ?? ''}
             />
             <InfoCard
-              icon={Calendar}
+              icon={CalendarIcon}
               label="Période"
               value={`${mission?.start_date ?? ''} - ${
                 mission?.end_date ?? ''
               }`}
             />
             <InfoCard
-              icon={Users}
+              icon={UsersIcon}
               label="Postes"
               value={`${mission?.needed_actor_amount ?? ''} ${
                 mission?.needed_actor ?? ''
               }(s)`}
             />
             <InfoCard
-              icon={Clock}
+              icon={ClockIcon}
               label="Expérience"
               value={mission?.required_experience_level ?? ''}
             />

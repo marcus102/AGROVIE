@@ -23,6 +23,7 @@ const steps = [
   },
 ];
 
+
 export default function ConfirmationScreen() {
   const { colors } = useThemeStore();
 
@@ -256,6 +257,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 1,
+    marginBottom: 24,
   },
   secondaryButtonText: {
     fontFamily: 'Inter-SemiBold',

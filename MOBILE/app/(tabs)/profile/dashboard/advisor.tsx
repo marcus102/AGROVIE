@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { useThemeStore } from '@/stores/theme';
 import {
@@ -16,7 +17,6 @@ import {
   Clock,
   RefreshCw,
   Briefcase,
-  DollarSign,
   TrendingUp,
   Settings,
 } from 'lucide-react-native';
@@ -34,7 +34,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
-export default function TechnicianDashboard() {
+export default function AdvisorDashboard() {
   const { colors } = useThemeStore();
   const { fetchMissionByUserId } = useMissionStore();
   const { fetchAverageUserRating, userAverageRating } = useRatingStore();
@@ -46,7 +46,10 @@ export default function TechnicianDashboard() {
   const fetchUserData = async (userId: string): Promise<void> => {
     try {
       setLoading(true);
-      await Promise.all([fetchMissions(userId), fetchAverageUserRating(userId)]);
+      await Promise.all([
+        fetchMissions(userId),
+        fetchAverageUserRating(userId),
+      ]);
     } catch (error: any) {
       console.error('Error fetching data:', error.message);
     } finally {
@@ -94,13 +97,21 @@ export default function TechnicianDashboard() {
 
     setRefreshing(true);
     try {
-      await fetchMissions(user.id);
+      await Promise.all([
+        fetchMissions(user.id),
+        fetchAverageUserRating(user.id),
+      ]);
     } catch (error) {
-      console.error('Error refreshing missions:', error);
+      console.error('Error refreshing data:', error);
     } finally {
       setRefreshing(false);
     }
   };
+
+  // Pull-to-refresh handler
+  const onRefresh = React.useCallback(async () => {
+    await handleRefresh();
+  }, []);
 
   const filteredMissions = missions.filter((mission) => {
     if (selectedFilter === 'All') return true;
@@ -178,39 +189,6 @@ export default function TechnicianDashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Header with Gradient */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[colors.primary, colors.primary + 'CC']}
-          style={styles.gradientHeader}
-        >
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={handleRefresh}
-            disabled={refreshing || loading}
-          >
-            {refreshing ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <RefreshCw size={20} color="#fff" />
-            )}
-          </TouchableOpacity>
-
-          <Animated.View
-            entering={FadeInUp.delay(200)}
-            style={styles.headerContent}
-          >
-            <View style={styles.headerIcon}>
-              <Settings size={32} color="#fff" />
-            </View>
-            <Text style={styles.headerTitle}>Dashboard Technicien</Text>
-            <Text style={styles.headerSubtitle}>
-              Suivez vos projets techniques
-            </Text>
-          </Animated.View>
-        </LinearGradient>
-      </View>
-
       <FlatList
         data={[{ type: 'stats' }, { type: 'missions' }]}
         keyExtractor={(item, index) => `${item.type}-${index}`}
@@ -218,6 +196,28 @@ export default function TechnicianDashboard() {
           if (item.type === 'stats') {
             return (
               <>
+                {/* Header with Gradient */}
+                <View style={styles.headerContainer}>
+                  <LinearGradient
+                    colors={[colors.primary, colors.primary + 'CC']}
+                    style={styles.gradientHeader}
+                  >
+                    <Animated.View
+                      entering={FadeInUp.delay(200)}
+                      style={styles.headerContent}
+                    >
+                      <View style={styles.headerIcon}>
+                        <Settings size={32} color="#fff" />
+                      </View>
+                      <Text style={styles.headerTitle}>
+                        Tableau de bord Conseiller Agricole
+                      </Text>
+                      <Text style={styles.headerSubtitle}>
+                        Suivez vos projets et performances
+                      </Text>
+                    </Animated.View>
+                  </LinearGradient>
+                </View>
                 <SectionHeader title="Statistiques" colors={colors} />
                 <View style={styles.statsGrid}>
                   {STATS.map((stat, index) => (
@@ -318,6 +318,17 @@ export default function TechnicianDashboard() {
         }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            title="Actualisation..."
+            titleColor={colors.text}
+            progressBackgroundColor={colors.background}
+          />
+        }
       />
     </View>
   );
@@ -325,14 +336,14 @@ export default function TechnicianDashboard() {
 
 const styles = StyleSheet.create({
   headerContainer: {
+    marginTop: 12,
     marginBottom: 20,
   },
   gradientHeader: {
-    paddingTop: 60,
+    paddingTop: 40,
     paddingBottom: 40,
     paddingHorizontal: 24,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderRadius: 30,
   },
   refreshButton: {
     position: 'absolute',

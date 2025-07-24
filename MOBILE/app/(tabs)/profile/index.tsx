@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -26,445 +26,111 @@ import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import {
+  advisorSpecializations,
+  workerSpecializations,
+} from '@/constants/specializations';
 
-const { width } = Dimensions.get('window');
+// Create lookup maps for O(1) access
+const CATEGORY_MAP = new Map<string, string>([
+  ...advisorSpecializations.map(
+    (cat) => [cat.value, cat.label] as [string, string]
+  ),
+  ...workerSpecializations.map(
+    (cat) => [cat.value, cat.label] as [string, string]
+  ),
+]);
 
-const technicianCategories = [
-  {
-    label: 'Techniciens en Agriculture de Précision',
-    value: 'precision_agriculture_technician',
-  },
-  {
-    label: 'Techniciens en Matériel Agricole',
-    value: 'agricultural_equipment_technician',
-  },
-  {
-    label: 'Techniciens en Cultures et Sols',
-    value: 'crop_and_soil_technician',
-  },
-  {
-    label: 'Techniciens de Recherche et Laboratoire',
-    value: 'research_and_laboratory_technician',
-  },
-  {
-    label: 'Techniciens en Élevage et Laitier',
-    value: 'livestock_and_airy_technician',
-  },
-  {
-    label: 'Techniciens en Sécurité Alimentaire et Qualité',
-    value: 'food_safety_and_quality_technician',
-  },
-  {
-    label: 'Techniciens en Gestion des Ravageurs et Environnement',
-    value: 'pest_management_and_environmental_technician',
-  },
-  {
-    label: "Techniciens d'Inspection et Certification",
-    value: 'inspection_and_certification_technician',
-  },
-  {
-    label: 'Techniciens en Vente et Support',
-    value: 'sales_and_support_technician',
-  },
-  { label: 'Autre', value: 'other' },
-];
+const ROLE_TRANSLATIONS = {
+  worker: 'Ouvrier',
+  advisor: 'Conseiller Agricole',
+  entrepreneur: 'Entrepreneur',
+};
 
-const workerCategories = [
-  {
-    label: 'Ouvriers de Production Végétale',
-    value: 'crop_production_worker',
-  },
-  { label: 'Ouvriers en Élevage', value: 'livestock_worker' },
-  { label: 'Ouvriers Mécanisés', value: 'mechanized_worker' },
-  { label: 'Ouvriers de Transformation', value: 'processing_worker' },
-  { label: 'Ouvriers Spécialisés', value: 'specialized_worker' },
-  { label: 'Ouvriers Saisonniers', value: 'seasonal_worker' },
-  { label: "Ouvriers d'Entretien", value: 'maintenance_worker' },
-  { label: 'Autre', value: 'other' },
-];
+// Memoized components
+type ProfileImageProps = {
+  profile: any;
+  onEditPress: () => void;
+};
 
-export default function ProfileScreen() {
-  const { colors } = useThemeStore();
-  const { fetchProfile, loading, profile, error } = useAuthStore();
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      await fetchProfile();
-    };
-    fetchUserProfile();
-  }, []);
-
-  const handleRefresh = async () => {
-    await fetchProfile();
-  };
-
-  if (loading && !profile) {
-    return (
-      <View
-        style={[
-          styles.centeredContainer,
-          { backgroundColor: colors.background },
-        ]}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
-  const translateSpecialization = (value?: string | null) => {
-    if (!value) return null;
-
-    const techCategory = technicianCategories.find(
-      (cat) => cat.value === value
-    );
-    if (techCategory) return techCategory.label;
-
-    const workerCategory = workerCategories.find((cat) => cat.value === value);
-    if (workerCategory) return workerCategory.label;
-
-    return value;
-  };
-
-  const getDashboardRoute = () => {
-    if (profile?.super_role === 'admin') {
-      return '/profile/dashboard/admin';
-    } else {
-      switch (profile?.role) {
-        case 'entrepreneur':
-          return '/profile/dashboard/entrepreneur';
-        case 'technician':
-          return '/profile/dashboard/technician';
-        case 'worker':
-          return '/profile/dashboard/worker';
-        default:
-          return null;
-      }
-    }
-  };
-
-  const formatValue = (value?: string | null | number) => {
-    if (value === null || value === undefined) return null;
-
-    const stringValue = String(value)
-      .replace(/[\[\]']+/g, '')
-      .replace(/([a-z])([A-Z])/g, '$1, $2')
-      .trim();
-
-    if (!isNaN(Number(stringValue))) {
-      return stringValue;
-    }
-
-    return stringValue;
-  };
-
-  const renderDetailValue = (
-    value?: string | null | number,
-    label?: string
-  ) => {
-    const formattedValue = formatValue(value);
-
-    if (!formattedValue) {
-      return (
-        <Text style={[styles.emptyValue, { color: colors.muted }]}>
-          Non Disponible
-        </Text>
-      );
-    }
-
-    if (
-      label === 'Expérience Professionnelle' &&
-      !isNaN(Number(formattedValue))
-    ) {
-      return (
-        <Text style={[styles.detailValue, { color: colors.text }]}>
-          {formattedValue} ans d'expérience
-        </Text>
-      );
-    }
-
-    if (typeof formattedValue === 'string' && formattedValue.includes(',')) {
-      return (
-        <View style={styles.tagsContainer}>
-          {formattedValue.split(',').map((item, index) => (
-            <View
-              key={index}
-              style={[styles.tag, { backgroundColor: colors.primary + '20' }]}
-            >
-              <Text style={[styles.tagText, { color: colors.primary }]}>
-                {item.trim()}
-              </Text>
-            </View>
-          ))}
-        </View>
-      );
-    }
-
-    return (
-      <Text style={[styles.detailValue, { color: colors.text }]}>
-        {formattedValue}
-      </Text>
-    );
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.centeredContainer}>
-        <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header with Gradient Background */}
-        <View style={styles.headerContainer}>
-          <LinearGradient
-            colors={[colors.primary, colors.primary + 'CC']}
-            style={styles.gradientHeader}
-          >
-            <TouchableOpacity
-              style={[
-                styles.refreshButton,
-                { backgroundColor: 'rgba(255,255,255,0.2)' },
-              ]}
-              onPress={handleRefresh}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <RefreshCw size={20} color="#fff" />
-              )}
-            </TouchableOpacity>
-
-            <Animated.View
-              entering={FadeInUp.delay(200)}
-              style={styles.profileSection}
-            >
-              <View style={styles.profileImageContainer}>
-                {profile?.profile_picture ? (
-                  <Image
-                    source={{ uri: profile.profile_picture }}
-                    style={styles.profileImage}
-                  />
-                ) : (
-                  <View
-                    style={[
-                      styles.userIconContainer,
-                      { backgroundColor: 'rgba(255,255,255,0.2)' },
-                    ]}
-                  >
-                    <User size={50} color="#fff" />
-                  </View>
-                )}
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => router.push('/profile/edit')}
-                >
-                  <Edit size={16} color={colors.primary} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.profileInfo}>
-                <Text style={styles.name}>
-                  {profile?.full_name || 'Nom Inconnu'}
-                </Text>
-                <View style={styles.roleBadge}>
-                  <Text style={styles.role}>
-                    {profile?.role === 'worker'
-                      ? 'Ouvrier'
-                      : profile?.role === 'technician'
-                      ? 'Technicien'
-                      : profile?.role === 'entrepreneur'
-                      ? 'Entrepreneur'
-                      : 'Inconnu'}
-                  </Text>
-                </View>
-                <View style={styles.locationContainer}>
-                  <MapPin size={16} color="#fff" />
-                  <Text style={styles.location}>
-                    {profile?.actual_location || 'Localisation Inconnue'}
-                  </Text>
-                </View>
-              </View>
-            </Animated.View>
-          </LinearGradient>
-        </View>
-
-        {/* Dashboard Button */}
-        <Animated.View
-          entering={FadeInDown.delay(200)}
-          style={styles.dashboardSection}
+const ProfileImage = React.memo(
+  ({ profile, onEditPress }: ProfileImageProps) => (
+    <View style={styles.profileImageContainer}>
+      {profile?.profile_picture ? (
+        <Image
+          source={{ uri: profile.profile_picture }}
+          style={styles.profileImage}
+        />
+      ) : (
+        <View
+          style={[
+            styles.userIconContainer,
+            { backgroundColor: 'rgba(255,255,255,0.2)' },
+          ]}
         >
-          <TouchableOpacity
-            style={[
-              styles.dashboardButton,
-              { backgroundColor: colors.primary },
-            ]}
-            onPress={() => {
-              const route = getDashboardRoute();
-              if (route) {
-                router.push(route);
-              }
-            }}
-          >
-            <Briefcase size={24} color="#fff" />
-            <Text style={styles.dashboardButtonText}>Tableau De Bord</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Profile Details */}
-        <View style={styles.detailsContainer}>
-          <ProfileSection
-            title="À Propos"
-            icon={<Info size={20} color={colors.primary} />}
-            details={[
-              {
-                label: 'Bio',
-                value: profile?.bio,
-              },
-            ]}
-            colors={colors}
-            renderDetailValue={renderDetailValue}
-            delay={300}
-          />
-
-          <ProfileSection
-            title="Contact"
-            icon={<Phone size={20} color={colors.primary} />}
-            details={[
-              {
-                label: 'Téléphone',
-                value: profile?.phone,
-              },
-            ]}
-            colors={colors}
-            renderDetailValue={renderDetailValue}
-            delay={400}
-          />
-
-          <ProfileSection
-            title="Compétences et Expérience"
-            icon={<Briefcase size={20} color={colors.primary} />}
-            details={[
-              {
-                label: 'Compétences',
-                value: Array.isArray(profile?.skills)
-                  ? profile.skills.join(', ')
-                  : profile?.skills,
-              },
-              {
-                label: 'Expérience Professionnelle',
-                value: Array.isArray(profile?.work_experience)
-                  ? profile.work_experience.join(', ')
-                  : profile?.work_experience,
-              },
-              {
-                label: 'Spécialisation',
-                value: translateSpecialization(
-                  profile?.specialization || profile?.other_specialization
-                ),
-              },
-            ]}
-            colors={colors}
-            renderDetailValue={renderDetailValue}
-            delay={500}
-          />
-
-          <ProfileSection
-            title="Éducation et Certifications"
-            icon={<GraduationCap size={20} color={colors.primary} />}
-            details={[
-              {
-                label: 'Certifications',
-                value: Array.isArray(profile?.certifications)
-                  ? profile.certifications.join(', ')
-                  : profile?.certifications,
-              },
-            ]}
-            colors={colors}
-            renderDetailValue={renderDetailValue}
-            delay={600}
-          />
-
-          <ProfileSection
-            title="Langues"
-            icon={<Globe size={20} color={colors.primary} />}
-            details={[
-              {
-                label: 'Langues',
-                value: Array.isArray(profile?.languages)
-                  ? profile.languages.join(', ')
-                  : profile?.languages,
-              },
-            ]}
-            colors={colors}
-            renderDetailValue={renderDetailValue}
-            delay={700}
-          />
-
-          <ProfileSection
-            title="Portfolio"
-            icon={<Folder size={20} color={colors.primary} />}
-            details={[
-              {
-                label: 'Portfolio',
-                value: Array.isArray(profile?.portfolio)
-                  ? profile.portfolio.join(', ')
-                  : profile?.portfolio,
-              },
-            ]}
-            colors={colors}
-            renderDetailValue={renderDetailValue}
-            delay={800}
-          />
-
-          <ProfileSection
-            title="Zone de disponibilité"
-            icon={<MapPin size={20} color={colors.primary} />}
-            details={[
-              {
-                label: 'Zones',
-                value: Array.isArray(profile?.availability_locations)
-                  ? profile.availability_locations.join(', ')
-                  : profile?.availability_locations,
-              },
-            ]}
-            colors={colors}
-            renderDetailValue={renderDetailValue}
-            delay={900}
-          />
+          <User size={50} color="#fff" />
         </View>
-      </ScrollView>
+      )}
+      <TouchableOpacity style={styles.editButton} onPress={onEditPress}>
+        <Edit size={16} color="#4A90E2" />
+      </TouchableOpacity>
     </View>
-  );
-}
+  )
+);
 
-function ProfileSection({
-  title,
-  icon,
-  details,
-  colors,
-  renderDetailValue,
-  delay = 0,
-}: {
+type RoleType = keyof typeof ROLE_TRANSLATIONS;
+
+type ProfileInfoProps = {
+  profile: {
+    full_name?: string;
+    role?: RoleType | 'admin';
+    actual_location?: string | null;
+    [key: string]: any;
+  } | null;
+};
+
+const ProfileInfo = React.memo(({ profile }: ProfileInfoProps) => (
+  <View style={styles.profileInfo}>
+    <Text style={styles.name}>{profile?.full_name || 'Nom Inconnu'}</Text>
+    <View style={styles.roleBadge}>
+      <Text style={styles.role}>
+        {ROLE_TRANSLATIONS[profile?.role as RoleType] || 'Inconnu'}
+      </Text>
+    </View>
+    <View style={styles.locationContainer}>
+      <MapPin size={16} color="#fff" />
+      <Text style={styles.location}>
+        {profile?.actual_location || 'Localisation Inconnue'}
+      </Text>
+    </View>
+  </View>
+));
+
+type ProfileSectionProps = {
   title: string;
-  icon: JSX.Element;
-  details: { label: string; value?: string | null }[];
-  colors: any;
-  renderDetailValue: (value?: string | null, label?: string) => JSX.Element;
+  icon: React.ReactNode;
+  details: { label: string; value: any }[];
+  colors: {
+    card: string;
+    primary: string;
+    text: string;
+    muted: string;
+    border: string;
+    [key: string]: string;
+  };
+  renderDetailValue: (value: any, label: string) => React.ReactNode;
   delay?: number;
-}) {
-  return (
+};
+
+const ProfileSection = React.memo(
+  ({
+    title,
+    icon,
+    details,
+    colors,
+    renderDetailValue,
+    delay = 0,
+  }: ProfileSectionProps) => (
     <Animated.View
       entering={FadeInDown.delay(delay)}
       style={[styles.card, { backgroundColor: colors.card }]}
@@ -478,7 +144,11 @@ function ProfileSection({
         >
           {icon}
         </View>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>{title}</Text>
+        <View style={styles.cardTitleContainer}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>
+            {title}
+          </Text>
+        </View>
       </View>
       <View style={styles.detailsContent}>
         {details.map((detail, index) => (
@@ -499,12 +169,299 @@ function ProfileSection({
         ))}
       </View>
     </Animated.View>
+  )
+);
+
+export default function ProfileScreen() {
+  const { colors } = useThemeStore();
+  const { fetchProfile, loading, profile, error } = useAuthStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchProfile();
+  }, [fetchProfile]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchProfile();
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchProfile]);
+
+  const handleEditPress = useCallback(() => {
+    router.push('/profile/edit');
+  }, []);
+
+  const translateSpecialization = useCallback((value: string) => {
+    if (!value) return null;
+    return CATEGORY_MAP.get(value) || value;
+  }, []);
+
+  const getDashboardRoute = useCallback(() => {
+    if (profile?.super_role === 'admin') {
+      return '/profile/dashboard/admin';
+    }
+
+    const routes = {
+      entrepreneur: '/profile/dashboard/entrepreneur',
+      advisor: '/profile/dashboard/advisor',
+      worker: '/profile/dashboard/worker',
+    };
+
+    return profile?.role && routes[profile.role as keyof typeof routes]
+      ? routes[profile.role as keyof typeof routes]
+      : null;
+  }, [profile?.super_role, profile?.role]);
+
+  const formatValue = useCallback((value: any) => {
+    if (value === null || value === undefined) return null;
+
+    const stringValue = String(value)
+      .replace(/[\[\]']+/g, '')
+      .replace(/([a-z])([A-Z])/g, '$1, $2')
+      .trim();
+
+    return stringValue || null;
+  }, []);
+
+  const renderDetailValue = useCallback(
+    (value: any, label: string) => {
+      const formattedValue = formatValue(value);
+
+      if (!formattedValue) {
+        return (
+          <Text style={[styles.emptyValue, { color: colors.muted }]}>
+            Non Disponible
+          </Text>
+        );
+      }
+
+      if (
+        label === 'Expérience Professionnelle' &&
+        !isNaN(Number(formattedValue))
+      ) {
+        return (
+          <Text style={[styles.detailValue, { color: colors.text }]}>
+            {formattedValue} ans d'expérience
+          </Text>
+        );
+      }
+
+      if (formattedValue.includes(',')) {
+        return (
+          <View style={styles.tagsContainer}>
+            {formattedValue.split(',').map((item, index) => (
+              <View
+                key={index}
+                style={[styles.tag, { backgroundColor: colors.primary + '20' }]}
+              >
+                <Text style={[styles.tagText, { color: colors.primary }]}>
+                  {item.trim()}
+                </Text>
+              </View>
+            ))}
+          </View>
+        );
+      }
+
+      return (
+        <Text style={[styles.detailValue, { color: colors.text }]}>
+          {formattedValue}
+        </Text>
+      );
+    },
+    [colors, formatValue]
+  );
+
+  const handleDashboardPress = useCallback(() => {
+    const route = getDashboardRoute();
+    if (route) {
+      router.push(route as Parameters<typeof router.push>[0]);
+    }
+  }, [getDashboardRoute]);
+
+  // Memoize profile sections data
+  const profileSections = useMemo(() => {
+    if (!profile) return [];
+
+    const joinArrayValue = (arr: any) =>
+      Array.isArray(arr) ? arr.join(', ') : arr;
+
+    return [
+      {
+        title: 'À Propos',
+        icon: <Info size={20} color={colors.primary} />,
+        details: [{ label: 'Bio', value: profile.bio }],
+        delay: 300,
+      },
+      {
+        title: 'Contact',
+        icon: <Phone size={20} color={colors.primary} />,
+        details: [{ label: 'Téléphone', value: profile.phone }],
+        delay: 400,
+      },
+      {
+        title: 'Compétences et Expérience',
+        icon: <Briefcase size={20} color={colors.primary} />,
+        details: [
+          { label: 'Compétences', value: joinArrayValue(profile.skills) },
+          {
+            label: 'Expérience Professionnelle',
+            value: joinArrayValue(profile.work_experience),
+          },
+          {
+            label: 'Spécialisation',
+            value: translateSpecialization(
+              profile.specialization || profile.other_specialization
+            ),
+          },
+        ],
+        delay: 500,
+      },
+      {
+        title: 'Éducation et Certifications',
+        icon: <GraduationCap size={20} color={colors.primary} />,
+        details: [
+          {
+            label: 'Certifications',
+            value: joinArrayValue(profile.certifications),
+          },
+        ],
+        delay: 600,
+      },
+      {
+        title: 'Langues',
+        icon: <Globe size={20} color={colors.primary} />,
+        details: [
+          { label: 'Langues', value: joinArrayValue(profile.languages) },
+        ],
+        delay: 700,
+      },
+      {
+        title: 'Portfolio',
+        icon: <Folder size={20} color={colors.primary} />,
+        details: [
+          { label: 'Portfolio', value: joinArrayValue(profile.portfolio) },
+        ],
+        delay: 800,
+      },
+      {
+        title: 'Zone de disponibilité',
+        icon: <MapPin size={20} color={colors.primary} />,
+        details: [
+          {
+            label: 'Zones',
+            value: joinArrayValue(profile.availability_locations),
+          },
+        ],
+        delay: 900,
+      },
+    ];
+  }, [profile, colors.primary, translateSpecialization]);
+
+  if (loading && !profile) {
+    return (
+      <View
+        style={[
+          styles.centeredContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centeredContainer}>
+        <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView 
+        style={styles.container} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]} // Android
+            tintColor={colors.primary} // iOS
+            title="Actualisation..." // iOS
+            titleColor={colors.text} // iOS
+            progressBackgroundColor={colors.card} // Android
+          />
+        }
+      >
+        {/* Header with Gradient Background */}
+        <View style={styles.headerContainer}>
+          <LinearGradient
+            colors={[colors.primary, colors.primary + 'CC']}
+            style={styles.gradientHeader}
+          >
+
+            <Animated.View
+              entering={FadeInUp.delay(200)}
+              style={styles.profileSection}
+            >
+              <ProfileImage profile={profile} onEditPress={handleEditPress} />
+              <ProfileInfo profile={profile } />
+            </Animated.View>
+          </LinearGradient>
+        </View>
+
+        {/* Dashboard Button */}
+        <Animated.View
+          entering={FadeInDown.delay(200)}
+          style={styles.dashboardSection}
+        >
+          <TouchableOpacity
+            style={[
+              styles.dashboardButton,
+              { backgroundColor: colors.primary },
+            ]}
+            onPress={handleDashboardPress}
+          >
+            <Briefcase size={24} color="#fff" />
+            <Text style={styles.dashboardButtonText}>Tableau De Bord</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Profile Details */}
+        <View style={styles.detailsContainer}>
+          {profileSections.map((section, index) => (
+            <ProfileSection
+              key={index}
+              title={section.title}
+              icon={section.icon}
+              details={section.details}
+              colors={colors}
+              renderDetailValue={renderDetailValue}
+              delay={section.delay}
+            />
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginBottom: 80,
   },
   centeredContainer: {
     flex: 1,
@@ -515,7 +472,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   gradientHeader: {
-    paddingTop: 60,
+    paddingTop: 10,
     paddingBottom: 30,
     paddingHorizontal: 24,
     borderBottomLeftRadius: 30,
@@ -605,29 +562,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     opacity: 0.9,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 30,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
-  },
-  statItem: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  statValue: {
-    fontSize: 20,
-    fontFamily: 'Inter-Bold',
-    color: '#fff',
-  },
-  statLabel: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#fff',
-    opacity: 0.8,
-  },
   dashboardSection: {
     paddingHorizontal: 24,
     marginBottom: 20,
@@ -676,6 +610,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
+  },
+  cardTitleContainer: {
+    flex: 1,
   },
   cardTitle: {
     fontSize: 18,

@@ -28,21 +28,6 @@ export default function ConseilsLayout() {
           },
         }}
       />
-      <Stack.Screen
-        name="[id]"
-        options={{
-          headerShown: false,
-          headerTitle: '',
-          headerStyle: {
-            backgroundColor: colors.card,
-          },
-          headerTintColor: colors.primary,
-          headerTitleStyle: {
-            fontFamily: 'Inter-SemiBold',
-            color: colors.text,
-          },
-        }}
-      />
     </Stack>
   );
 }

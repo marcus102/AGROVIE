@@ -15,11 +15,12 @@ export default function SettingsLayout() {
       <Stack.Screen
         name="index"
         options={{
+          presentation: 'modal',
           title: 'Paramètres',
           headerShown: true,
           headerStyle: {
-          backgroundColor: colors.background,
-        },
+            backgroundColor: colors.background,
+          },
           headerTintColor: colors.primary,
           headerTitleStyle: {
             fontFamily: 'Inter-SemiBold',
@@ -27,13 +28,14 @@ export default function SettingsLayout() {
           },
         }}
       />
-      {/* <Stack.Screen
-        name="notifications"
+      <Stack.Screen
+        name="password"
         options={{
-          title: 'Notifications',
+          presentation: 'modal',
+          title: 'Modifier le mot de passe',
           headerShown: true,
           headerStyle: {
-            backgroundColor: colors.card,
+            backgroundColor: colors.background,
           },
           headerTintColor: colors.primary,
           headerTitleStyle: {
@@ -41,7 +43,23 @@ export default function SettingsLayout() {
             color: colors.text,
           },
         }}
-      /> */}
+      />
+      <Stack.Screen
+        name="email"
+        options={{
+          presentation: 'modal',
+          title: "Modifier l'adresse email",
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: colors.background,
+          },
+          headerTintColor: colors.primary,
+          headerTitleStyle: {
+            fontFamily: 'Inter-SemiBold',
+            color: colors.text,
+          },
+        }}
+      />
     </Stack>
   );
 }

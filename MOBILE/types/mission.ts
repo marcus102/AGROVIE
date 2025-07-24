@@ -1,8 +1,10 @@
-export type UserRole = 'technician' | 'worker' | 'entrepreneur' | 'admin';
+import { Json } from './supabase';
+export type UserRole = 'advisor' | 'worker' | 'entrepreneur' | 'admin';
 export type ExperienceLevel = 'starter' | 'qualified' | 'expert';
 export type MissionStatus =
   | 'in_review'
   | 'online'
+  | 'accepted'
   | 'rejected'
   | 'completed'
   | 'removed';
@@ -38,25 +40,36 @@ export type MissionBenefit =
   | 'insurance';
 export type Roles = 'worker' | 'technician' | 'entrepreneur' | 'admin';
 export type ActorSpecialization =
-  | 'precision_agriculture_technician'
-  | 'agricultural_equipment_technician'
-  | 'crop_and_soil_technician'
-  | 'research_and_laboratory_technician'
-  | 'livestock_and_airy_technician'
-  | 'food_safety_and_quality_technician'
-  | 'pest_management_and_environmental_technician'
-  | 'inspection_and_certification_technician'
-  | 'sales_and_support_technician'
+  // Worker specializations
   | 'crop_production_worker'
   | 'livestock_worker'
   | 'mechanized_worker'
-  | 'processing_worker'
   | 'specialized_worker'
   | 'seasonal_worker'
-  | 'maintenance_worker'
+  | 'agroforestry_worker'
+  | 'nursery_worker'
+  | 'aquaculture_worker'
+  // Technician specializations (Conseiller agricole)
+  | 'horticulture_market_gardening'
+  | 'fruit_cultivation_orchard'
+  | 'irrigation'
+  | 'agricultural_machinery'
+  | 'livestock_farming'
+  | 'smart_agriculture'
+  | 'agricultural_drone'
+  | 'large_scale_production'
+  | 'phytosanitary'
+  | 'soil_science'
+  | 'agricultural_development'
+  | 'project_management'
+  | 'agroecology'
+  | 'farm_management'
+  | 'agrifood'
+  | 'rural_land'
+  | 'aquaculture'
   | 'other';
 
-export type SurfaceUnit = 'square_meters' | 'hectares' | 'acres' | 'square_kilometers';
+export type SurfaceUnit = 'square_meter' | 'hectares';
 
 export interface Mission {
   id: string;
@@ -82,10 +95,12 @@ export interface Mission {
   final_price: string;
   status: MissionStatus;
   is_promoted: PromotionInfo;
+  personalized_expression: string | null;
   applicants: string[];
   created_at: string;
   updated_at: string;
   published_at?: string;
+  metadata?: Json;
 
   // Optional relations (if needed)
   created_by?: {

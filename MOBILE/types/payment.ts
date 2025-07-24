@@ -37,7 +37,7 @@ export interface PaymentSummary {
   }[];
 }
 
-export interface PaymentMethod {
+export interface PaymentMethodDetails {
   id: string;
   type: PaymentMethod;
   isDefault: boolean;

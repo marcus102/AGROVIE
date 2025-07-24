@@ -120,8 +120,8 @@ export default function ViewProfileScreen() {
           <Text style={[styles.role, { color: colors.muted }]}>
             {profile.role === 'worker'
               ? 'Ouvrier'
-              : profile.role === 'technician'
-              ? 'Technicien'
+              : profile.role === 'advisor'
+              ? 'Conseiller Agricole'
               : profile.role === 'entrepreneur'
               ? 'Entrepreneur'
               : 'Inconnu'}

@@ -14,6 +14,7 @@ import { Mail, ArrowLeft, AlertCircle } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Toast, ToastType } from '@/components/Toast'; // Assurez-vous que le composant Toast est correctement importé
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -21,12 +22,30 @@ export default function ForgotPasswordScreen() {
   const { colors } = useThemeStore();
   const { sendPasswordResetEmail, loading, error } = useAuthStore();
 
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>('success');
+  const [toastMessage, setToastMessage] = useState('');
+
+  const hideToast = () => setToastVisible(false);
+
   const handleSendCode = async () => {
     try {
       await sendPasswordResetEmail(email);
-      setShowModal(true); // Afficher la popup
+      setShowModal(true);
+      setToastType('success');
+      setToastMessage('Instructions envoyées à votre adresse email.');
+      setToastVisible(true);
     } catch (err) {
       // Erreur gérée par le store
+      console.error(
+        "Erreur lors de l'envoi du code de réinitialisation :",
+        err
+      );
+      setToastType('error');
+      setToastMessage("Erreur lors de l'envoi de l'email de réinitialisation.");
+      setToastVisible(true);
+      // Afficher un message d'erreur si nécessaire
     }
   };
 
@@ -37,6 +56,13 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Toast
+        visible={toastVisible}
+        type={toastType}
+        message={toastMessage}
+        onHide={hideToast}
+        duration={3000}
+      />
       <Image
         source={{
           uri: 'https://images.unsplash.com/photo-1467740100611-36858db27485?q=80&w=2073&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
@@ -55,11 +81,12 @@ export default function ForgotPasswordScreen() {
 
       <View style={styles.content}>
         <Animated.View entering={FadeInDown.delay(200)} style={styles.header}>
-          <Text style={[styles.title, { color: colors.card }]}>
+          <Text style={[styles.title, { color: colors.text }]}>
             Mot de passe oublié ?
           </Text>
-          <Text style={[styles.subtitle, { color: colors.card }]}>
-            Ne vous inquiétez pas ! Entrez votre email et nous vous enverrons des instructions pour réinitialiser votre mot de passe.
+          <Text style={[styles.subtitle, { color: colors.text }]}>
+            Ne vous inquiétez pas ! Entrez votre email et nous vous enverrons
+            des instructions pour réinitialiser votre mot de passe.
           </Text>
         </Animated.View>
 
@@ -68,9 +95,16 @@ export default function ForgotPasswordScreen() {
           style={[styles.form, { backgroundColor: colors.card }]}
         >
           {error && (
-            <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
+            <View
+              style={[
+                styles.errorContainer,
+                { backgroundColor: colors.error + '20' },
+              ]}
+            >
               <AlertCircle size={20} color={colors.error} />
-              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+              <Text style={[styles.errorText, { color: colors.error }]}>
+                {error}
+              </Text>
             </View>
           )}
 
@@ -101,7 +135,7 @@ export default function ForgotPasswordScreen() {
             onPress={handleSendCode}
             disabled={!email.trim() || loading}
           >
-            <Text style={[styles.resetButtonText, { color: colors.card }]}>
+            <Text style={[styles.resetButtonText, { color: colors.text }]}>
               {loading ? 'Envoi en cours...' : 'Envoyer les instructions'}
             </Text>
           </TouchableOpacity>
@@ -125,16 +159,23 @@ export default function ForgotPasswordScreen() {
         onRequestClose={handleModalClose}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.primary }]}>Email envoyé !</Text>
+          <View
+            style={[styles.modalContainer, { backgroundColor: colors.card }]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.primary }]}>
+              Email envoyé !
+            </Text>
             <Text style={[styles.modalMessage, { color: colors.text }]}>
-              Nous avons envoyé les instructions de réinitialisation à {email}. Veuillez vérifier votre boîte de réception et vos spams.
+              Nous avons envoyé les instructions de réinitialisation à {email}.
+              Veuillez vérifier votre boîte de réception et vos spams.
             </Text>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: colors.primary }]}
               onPress={handleModalClose}
             >
-              <Text style={[styles.modalButtonText, { color: colors.card }]}>OK</Text>
+              <Text style={[styles.modalButtonText, { color: colors.card }]}>
+                OK
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

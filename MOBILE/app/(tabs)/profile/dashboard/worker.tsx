@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { useThemeStore } from '@/stores/theme';
 import {
   Briefcase,
-  CheckCircle2,
   Star,
   TrendingUp,
   RefreshCw,
@@ -92,20 +92,25 @@ export default function WorkerDashboard() {
   }, []);
 
   const handleRefresh = async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!userId) return;
 
     setRefreshing(true);
     try {
-      await fetchMissions(user.id);
+      // Refresh both missions and ratings data
+      await Promise.all([
+        fetchMissions(userId),
+        fetchAverageUserRating(userId),
+      ]);
     } catch (error) {
-      console.error('Error refreshing missions:', error);
+      console.error('Error refreshing data:', error);
     } finally {
       setRefreshing(false);
     }
+  };
+
+  // Pull-to-refresh handler (same as handleRefresh but for the FlatList)
+  const onRefresh = async () => {
+    await handleRefresh();
   };
 
   const filteredMissions = missions.filter((mission) => {
@@ -136,18 +141,6 @@ export default function WorkerDashboard() {
       icon: Briefcase,
       color: '#3b82f6',
     },
-    // {
-    //   title: 'Succès',
-    //   value: completedMissions,
-    //   icon: CheckCircle2,
-    //   color: '#10b981',
-    // },
-    // {
-    //   title: 'Candidatures',
-    //   value: '0',
-    //   icon: Users,
-    //   color: '#8b5cf6',
-    // },
     {
       title: 'Heures travaillées',
       value: completedMissions * 8,
@@ -164,39 +157,6 @@ export default function WorkerDashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Header with Gradient */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[colors.primary, colors.primary + 'CC']}
-          style={styles.gradientHeader}
-        >
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={handleRefresh}
-            disabled={refreshing || loading}
-          >
-            {refreshing ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <RefreshCw size={20} color="#fff" />
-            )}
-          </TouchableOpacity>
-
-          <Animated.View
-            entering={FadeInUp.delay(200)}
-            style={styles.headerContent}
-          >
-            <View style={styles.headerIcon}>
-              <Users size={32} color="#fff" />
-            </View>
-            <Text style={styles.headerTitle}>Dashboard Ouvrier</Text>
-            <Text style={styles.headerSubtitle}>
-              Suivez votre activité professionnelle
-            </Text>
-          </Animated.View>
-        </LinearGradient>
-      </View>
-
       <FlatList
         data={[{ type: 'stats' }, { type: 'missions' }]}
         keyExtractor={(item, index) => `${item.type}-${index}`}
@@ -204,6 +164,26 @@ export default function WorkerDashboard() {
           if (item.type === 'stats') {
             return (
               <>
+                {/* Header with Gradient */}
+                <View style={styles.headerContainer}>
+                  <LinearGradient
+                    colors={[colors.primary, colors.primary + 'CC']}
+                    style={styles.gradientHeader}
+                  >
+                    <Animated.View
+                      entering={FadeInUp.delay(200)}
+                      style={styles.headerContent}
+                    >
+                      <View style={styles.headerIcon}>
+                        <Users size={32} color="#fff" />
+                      </View>
+                      <Text style={styles.headerTitle}>Dashboard Ouvrier</Text>
+                      <Text style={styles.headerSubtitle}>
+                        Suivez votre activité professionnelle
+                      </Text>
+                    </Animated.View>
+                  </LinearGradient>
+                </View>
                 <SectionHeader title="Statistiques" colors={colors} />
                 <View style={styles.statsGrid}>
                   {STATS.map((stat, index) => (
@@ -313,6 +293,17 @@ export default function WorkerDashboard() {
         }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            title="Actualisation..."
+            titleColor={colors.text}
+            progressBackgroundColor={colors.background}
+          />
+        }
       />
     </View>
   );
@@ -320,14 +311,14 @@ export default function WorkerDashboard() {
 
 const styles = StyleSheet.create({
   headerContainer: {
+    marginTop: 12,
     marginBottom: 20,
   },
   gradientHeader: {
-    paddingTop: 60,
+    paddingTop: 40,
     paddingBottom: 40,
     paddingHorizontal: 24,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderRadius: 30,
   },
   refreshButton: {
     position: 'absolute',

@@ -77,11 +77,11 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen
-        name="dashboard/technician"
+        name="dashboard/advisor"
         options={{
           presentation: 'modal',
           headerShown: true,
-          title: 'Tableau de bord technicien',
+          title: 'Tableau de bord conseiller agricole',
           headerStyle: {
             backgroundColor: colors.card,
           },
