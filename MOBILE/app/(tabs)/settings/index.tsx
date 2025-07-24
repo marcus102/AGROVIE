@@ -5,11 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
   Switch,
   Share,
   Linking,
-  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -22,9 +21,8 @@ import {
   ChevronRight,
   LogOut,
   Share as ShareIcon,
-  User,
   Settings as SettingsIcon,
-  HelpCircle,
+  Circle as HelpCircle,
   Heart,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth';
@@ -32,17 +30,17 @@ import { useThemeStore } from '@/stores/theme';
 import { useLanguageStore } from '@/stores/language';
 import { LANGUAGES } from '@/types/language';
 import { LanguageModal } from '@/components/modals/LanguageModal';
-import { PasswordModal } from '@/components/modals/PasswordModal';
-import { EmailUpdateModal } from '@/components/modals/EmailSettingsModal';
 import NotificationSettingsModal from '@/components/modals/NotificationSettingsModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useLinkStore } from '@/stores/dynamic_links';
+import { useWelcomeFlow } from '@/hooks/useWelcomeFlow';
+import { FeedbackOverlay } from '@/components/FeedbackOverlay';
 
-const { width } = Dimensions.get('window');
+import type { LucideProps } from 'lucide-react-native';
 
 type MenuItemProps = {
-  icon: React.ComponentType<{ size: number; color: string }>;
+  icon: React.ComponentType<LucideProps>;
   title: string;
   subtitle?: string;
   onPress: () => void;
@@ -105,20 +103,40 @@ const MenuItem = ({
   );
 };
 
+const LoadingScreen = () => {
+  const { colors } = useThemeStore();
+
+  return (
+    <View
+      style={[styles.loadingContainer, { backgroundColor: colors.background }]}
+    >
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={[styles.loadingText, { color: colors.text }]}>
+        Chargement des paramètres...
+      </Text>
+    </View>
+  );
+};
+
 export default function SettingsScreen() {
-  const { theme, colors, toggleTheme } = useThemeStore();
+  const { theme, colors, toggleTheme, isLoading } =
+    useThemeStore();
   const { language } = useLanguageStore();
   const { signOut } = useAuthStore();
   const [showLanguageModal, setShowLanguageModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
   const { links, fetchLinks } = useLinkStore();
+  const { showFeedback, markFeedbackShown, showFeedbackManually } =
+    useWelcomeFlow();
 
   const selectedLanguage = LANGUAGES.find((lang) => lang.code === language);
 
   useEffect(() => {
-    fetchLinks();
+    const initializeApp = async () => {
+      fetchLinks();
+    };
+
+    initializeApp();
   }, [fetchLinks]);
 
   const termsAndConditionsLink =
@@ -162,192 +180,224 @@ export default function SettingsScreen() {
     }
   };
 
+  // Show loading screen while theme is being initialized
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header with Gradient */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[colors.primary, colors.primary + 'CC']}
-          style={styles.gradientHeader}
-        >
-          <Animated.View
-            entering={FadeInUp.delay(200)}
-            style={styles.headerContent}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Header with Gradient */}
+        <View style={styles.headerContainer}>
+          <LinearGradient
+            colors={[colors.primary, colors.primary + 'CC']}
+            style={styles.gradientHeader}
           >
-            <View style={styles.headerIcon}>
-              <SettingsIcon size={28} color="#fff" />
-            </View>
-            <Text style={styles.headerTitle}>Paramètres</Text>
-            <Text style={styles.headerSubtitle}>
-              Personnalisez votre expérience
-            </Text>
-          </Animated.View>
-        </LinearGradient>
-      </View>
-
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* General Section */}
-        <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Général
-          </Text>
-          <View style={styles.sectionContent}>
-            <MenuItem
-              icon={Globe}
-              title="Langue"
-              subtitle={
-                selectedLanguage?.code === 'en'
-                  ? ` ${selectedLanguage?.nativeName}  (Disponible bientôt)`
-                  : ` ${selectedLanguage?.nativeName}`
-              }
-              onPress={() => setShowLanguageModal(true)}
-              iconColor="#3b82f6"
-              backgroundColor={'#3b82f6' + '15'}
-            />
-            <MenuItem
-              icon={Moon}
-              title="Mode sombre"
-              subtitle="Basculer entre les thèmes clair et sombre"
-              showToggle
-              isToggled={theme === 'dark'}
-              onPress={handleThemeToggle}
-              iconColor="#6366f1"
-              backgroundColor={'#6366f1' + '15'}
-            />
-          </View>
-        </Animated.View>
-
-        {/* Notifications Section */}
-        <Animated.View entering={FadeInDown.delay(400)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Notifications
-          </Text>
-          <View style={styles.sectionContent}>
-            <MenuItem
-              icon={Bell}
-              title="Paramètres des notifications"
-              subtitle="Gérer vos préférences de notification"
-              onPress={() => setShowNotificationsModal(true)}
-              iconColor="#f59e0b"
-              backgroundColor={'#f59e0b' + '15'}
-            />
-          </View>
-        </Animated.View>
-
-        {/* Security Section */}
-        <Animated.View entering={FadeInDown.delay(500)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Sécurité
-          </Text>
-          <View style={styles.sectionContent}>
-            <MenuItem
-              icon={KeyRound}
-              title="Modifier le mot de passe"
-              subtitle="Changer votre mot de passe de connexion"
-              onPress={() => setShowPasswordModal(true)}
-              iconColor="#ef4444"
-              backgroundColor={'#ef4444' + '15'}
-            />
-            <MenuItem
-              icon={Shield}
-              title="Modifier l'email"
-              subtitle="Mettre à jour votre adresse email"
-              onPress={() => setShowEmailModal(true)}
-              iconColor="#10b981"
-              backgroundColor={'#10b981' + '15'}
-            />
-          </View>
-        </Animated.View>
-
-        {/* Share Section */}
-        <Animated.View entering={FadeInDown.delay(600)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Partager l'application
-          </Text>
-          <View style={styles.sectionContent}>
-            <MenuItem
-              icon={ShareIcon}
-              title="Partager AGRO"
-              subtitle="Inviter vos amis à rejoindre la plateforme"
-              onPress={handleShareApp}
-              iconColor="#8b5cf6"
-              backgroundColor={'#8b5cf6' + '15'}
-            />
-          </View>
-        </Animated.View>
-
-        {/* About Section */}
-        <Animated.View entering={FadeInDown.delay(700)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            À propos
-          </Text>
-          <View style={styles.sectionContent}>
-            <MenuItem
-              icon={Info}
-              title="Mentions légales"
-              subtitle="Conditions d'utilisation et mentions"
-              onPress={() => Linking.openURL(termsAndConditionsLink)}
-              iconColor="#6b7280"
-              backgroundColor={'#6b7280' + '15'}
-            />
-            <MenuItem
-              icon={Shield}
-              title="Politique de confidentialité"
-              subtitle="Comment nous protégeons vos données"
-              onPress={() => Linking.openURL(privacyPolicyLink)}
-              iconColor="#6b7280"
-              backgroundColor={'#6b7280' + '15'}
-            />
-            <MenuItem
-              icon={HelpCircle}
-              title="Support"
-              subtitle="Obtenir de l'aide et du support"
-              onPress={() => Linking.openURL(contactUsLink)}
-              iconColor="#06b6d4"
-              backgroundColor={'#06b6d4' + '15'}
-            />
-            <MenuItem
-              icon={Heart}
-              title="Version"
-              subtitle="1.0.0"
-              showChevron={false}
-              onPress={() => {}}
-              iconColor="#ec4899"
-              backgroundColor={'#ec4899' + '15'}
-            />
-          </View>
-        </Animated.View>
-
-        {/* Logout Button */}
-        <Animated.View
-          entering={FadeInDown.delay(800)}
-          style={styles.logoutSection}
-        >
-          <TouchableOpacity
-            style={[
-              styles.logoutButton,
-              { backgroundColor: colors.error + '15' },
-            ]}
-            onPress={handleSignOut}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.logoutIcon,
-                { backgroundColor: colors.error + '20' },
-              ]}
+            <Animated.View
+              entering={FadeInUp.delay(200)}
+              style={styles.headerContent}
             >
-              <LogOut size={24} color={colors.error} />
-            </View>
-            <Text style={[styles.logoutText, { color: colors.error }]}>
-              Déconnexion
+              <View style={styles.headerIcon}>
+                <SettingsIcon size={28} color="#fff" />
+              </View>
+              <Text style={styles.headerTitle}>Paramètres</Text>
+              <Text style={styles.headerSubtitle}>
+                Personnalisez votre expérience
+              </Text>
+            </Animated.View>
+          </LinearGradient>
+        </View>
+
+        <View style={styles.scrollContent}>
+          {/* General Section */}
+          <Animated.View
+            entering={FadeInDown.delay(300)}
+            style={styles.section}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Général
             </Text>
-          </TouchableOpacity>
-        </Animated.View>
+            <View style={styles.sectionContent}>
+              <MenuItem
+                icon={Globe}
+                title="Langue"
+                subtitle={
+                  selectedLanguage?.code === 'en'
+                    ? ` ${selectedLanguage?.nativeName}  (Disponible bientôt)`
+                    : ` ${selectedLanguage?.nativeName}`
+                }
+                onPress={() => setShowLanguageModal(true)}
+                iconColor="#3b82f6"
+                backgroundColor={'#3b82f6' + '15'}
+              />
+              <MenuItem
+                icon={Moon}
+                title="Mode sombre"
+                subtitle="Basculer entre les thèmes clair et sombre"
+                showToggle
+                isToggled={theme === 'dark'}
+                onPress={handleThemeToggle}
+                iconColor="#6366f1"
+                backgroundColor={'#6366f1' + '15'}
+              />
+            </View>
+          </Animated.View>
+          {/* Notifications Section */}
+          <Animated.View
+            entering={FadeInDown.delay(400)}
+            style={styles.section}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Notifications
+            </Text>
+            <View style={styles.sectionContent}>
+              <MenuItem
+                icon={Bell}
+                title="Paramètres des notifications"
+                subtitle="Gérer vos préférences de notification"
+                onPress={() => setShowNotificationsModal(true)}
+                iconColor="#f59e0b"
+                backgroundColor={'#f59e0b' + '15'}
+              />
+            </View>
+          </Animated.View>
+          {/* Security Section */}
+          <Animated.View
+            entering={FadeInDown.delay(500)}
+            style={styles.section}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Sécurité
+            </Text>
+            <View style={styles.sectionContent}>
+              <MenuItem
+                icon={KeyRound}
+                title="Modifier le mot de passe"
+                subtitle="Changer votre mot de passe de connexion"
+                onPress={() => router.push('/settings/password')}
+                iconColor="#ef4444"
+                backgroundColor={'#ef4444' + '15'}
+              />
+              <MenuItem
+                icon={Shield}
+                title="Modifier l'email"
+                subtitle="Mettre à jour votre adresse email"
+                onPress={() => router.push('/settings/email')}
+                iconColor="#10b981"
+                backgroundColor={'#10b981' + '15'}
+              />
+            </View>
+          </Animated.View>
+          {/* Share Section */}
+          <Animated.View
+            entering={FadeInDown.delay(600)}
+            style={styles.section}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Partager l'application
+            </Text>
+            <View style={styles.sectionContent}>
+              <MenuItem
+                icon={ShareIcon}
+                title="Partager AGRO"
+                subtitle="Inviter vos amis à rejoindre la plateforme"
+                onPress={handleShareApp}
+                iconColor="#8b5cf6"
+                backgroundColor={'#8b5cf6' + '15'}
+              />
+            </View>
+          </Animated.View>
+          {/* Feedback Section */}
+          <Animated.View
+            entering={FadeInDown.delay(650)}
+            style={styles.section}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Feedback
+            </Text>
+            <View style={styles.sectionContent}>
+              <MenuItem
+                icon={Heart}
+                title="Donner votre avis"
+                subtitle="Aidez-nous à améliorer l'application"
+                onPress={showFeedbackManually}
+                iconColor="#ec4899"
+                backgroundColor={'#ec4899' + '15'}
+              />
+            </View>
+          </Animated.View>
+          {/* About Section */}
+          <Animated.View
+            entering={FadeInDown.delay(700)}
+            style={styles.section}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              À propos
+            </Text>
+            <View style={styles.sectionContent}>
+              <MenuItem
+                icon={Info}
+                title="Mentions légales"
+                subtitle="Conditions d'utilisation et mentions"
+                onPress={() => Linking.openURL(termsAndConditionsLink)}
+                iconColor="#6b7280"
+                backgroundColor={'#6b7280' + '15'}
+              />
+              <MenuItem
+                icon={Shield}
+                title="Politique de confidentialité"
+                subtitle="Comment nous protégeons vos données"
+                onPress={() => Linking.openURL(privacyPolicyLink)}
+                iconColor="#6b7280"
+                backgroundColor={'#6b7280' + '15'}
+              />
+              <MenuItem
+                icon={HelpCircle}
+                title="Support"
+                subtitle="Obtenir de l'aide et du support"
+                onPress={() => Linking.openURL(contactUsLink)}
+                iconColor="#06b6d4"
+                backgroundColor={'#06b6d4' + '15'}
+              />
+              <MenuItem
+                icon={Heart}
+                title="Version"
+                subtitle="1.0.0"
+                showChevron={false}
+                onPress={() => {}}
+                iconColor="#ec4899"
+                backgroundColor={'#ec4899' + '15'}
+              />
+            </View>
+          </Animated.View>
+          {/* Logout Button */}
+          <Animated.View
+            entering={FadeInDown.delay(800)}
+            style={styles.logoutSection}
+          >
+            <TouchableOpacity
+              style={[
+                styles.logoutButton,
+                { backgroundColor: colors.error + '15' },
+              ]}
+              onPress={handleSignOut}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.logoutIcon,
+                  { backgroundColor: colors.error + '20' },
+                ]}
+              >
+                <LogOut size={24} color={colors.error} />
+              </View>
+              <Text style={[styles.logoutText, { color: colors.error }]}>
+                Déconnexion
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       </ScrollView>
 
       {/* Modals */}
@@ -356,20 +406,12 @@ export default function SettingsScreen() {
         onClose={() => setShowLanguageModal(false)}
       />
 
-      <PasswordModal
-        visible={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-      />
-
       <NotificationSettingsModal
         visible={showNotificationsModal}
         onClose={() => setShowNotificationsModal(false)}
       />
 
-      <EmailUpdateModal
-        visible={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-      />
+      <FeedbackOverlay visible={showFeedback} onClose={markFeedbackShown} />
     </View>
   );
 }
@@ -377,6 +419,17 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginBottom: 80,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
   },
   headerContainer: {
     marginBottom: 20,

@@ -248,13 +248,6 @@ export const useNotificationStore = create<NotificationState>()(
         }
       },
 
-      // updateNotification: (key: string, value: any) => {
-      //   set((state) => ({
-      //     ...state,
-      //     [key]: value,
-      //   }));
-      // },
-
       fetchNotifications: async () => {
         set({ loading: true, error: null });
         try {

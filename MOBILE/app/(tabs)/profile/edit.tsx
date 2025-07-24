@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -83,57 +83,95 @@ const MemoizedArrayInputSection = memo(
     label,
     Icon,
     items,
-    newEntryValue,
-    onAdd,
-    onRemove,
-    onEntryChange,
+    onUpdateItems,
+    onAddNewInput,
     colors,
   }: {
     field: string;
     label: string;
     Icon: React.ComponentType<any>;
     items: string[];
-    newEntryValue: string;
-    onAdd: () => void;
-    onRemove: (index: number) => void;
-    onEntryChange: (text: string) => void;
+    onUpdateItems: (newItems: string[]) => void;
+    onAddNewInput: () => void;
     colors: any;
-  }) => (
-    <View style={styles.inputContainer}>
-      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
-      <View style={styles.arraySection}>
-        {(Array.isArray(items) ? items : []).map((item, index) => (
-          <View
-            key={`${field}-${index}`}
-            style={[styles.arrayItem, { backgroundColor: colors.card }]}
-          >
-            <Text style={{ color: colors.text }}>{item}</Text>
-            <TouchableOpacity onPress={() => onRemove(index)}>
-              <X size={16} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-        ))}
-        <View style={styles.arrayInputWrapper}>
-          <TextInput
-            style={[
-              styles.arrayInput,
-              { color: colors.text, borderColor: colors.border },
-            ]}
-            placeholder="Ajouter un nouvel élément"
-            placeholderTextColor={colors.muted}
-            value={newEntryValue}
-            onChangeText={onEntryChange}
-          />
+  }) => {
+    const handleInputChange = useCallback(
+      (text: string, index: number) => {
+        const newItems = [...items];
+        newItems[index] = text;
+        onUpdateItems(newItems);
+      },
+      [items, onUpdateItems]
+    );
+
+    const handleRemoveItem = useCallback(
+      (index: number) => {
+        const newItems = items.filter((_, i) => i !== index);
+        onUpdateItems(newItems);
+      },
+      [items, onUpdateItems]
+    );
+
+    // Ensure there's always at least one empty input
+    const displayItems = useMemo(() => {
+      if (items.length === 0 || items[items.length - 1] !== '') {
+        return [...items, ''];
+      }
+      return items;
+    }, [items]);
+
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+        <View style={styles.arraySection}>
+          {displayItems.map((item, index) => (
+            <View key={`${field}-${index}`} style={styles.arrayInputWrapper}>
+              <TextInput
+                style={[
+                  styles.arrayInput,
+                  {
+                    color: colors.text,
+                    borderColor: colors.border,
+                    backgroundColor: colors.card,
+                  },
+                ]}
+                placeholder="Entrez votre information"
+                placeholderTextColor={colors.muted}
+                value={item}
+                onChangeText={(text) => handleInputChange(text, index)}
+                onEndEditing={() => {
+                  // Auto-add new input when user finishes typing in the last input
+                  if (index === displayItems.length - 1 && item.trim() !== '') {
+                    onAddNewInput();
+                  }
+                }}
+              />
+              {displayItems.length > 1 && (
+                <TouchableOpacity
+                  style={[
+                    styles.removeButton,
+                    { backgroundColor: colors.destructive },
+                  ]}
+                  onPress={() => handleRemoveItem(index)}
+                >
+                  <X size={16} color={colors.card} />
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: colors.primary }]}
-            onPress={onAdd}
+            onPress={onAddNewInput}
           >
             <Plus size={20} color={colors.card} />
+            <Text style={[styles.addButtonText, { color: colors.card }]}>
+              Ajouter un autre champ
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
-    </View>
-  )
+    );
+  }
 );
 
 export default function EditProfileScreen() {
@@ -150,14 +188,6 @@ export default function EditProfileScreen() {
     skills: [],
     work_experience: [],
     availability_locations: [],
-  });
-  const [newEntries, setNewEntries] = useState<Record<string, string>>({
-    portfolio: '',
-    certifications: '',
-    languages: '',
-    skills: '',
-    work_experience: '',
-    availability_locations: '',
   });
   const [uploading, setUploading] = useState(false);
 
@@ -193,28 +223,25 @@ export default function EditProfileScreen() {
 
   const handleArrayUpdate = useCallback(
     (field: keyof FormData, value: string[]) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
+      // Filter out empty strings when updating
+      const cleanedValue = value.filter((item) => item.trim() !== '');
+      setFormData((prev) => ({ ...prev, [field]: cleanedValue }));
     },
     []
   );
 
-  const addToArray = useCallback(
+  const addNewInputToArray = useCallback(
     (field: keyof FormData) => {
-      const value = newEntries[field].trim();
-      if (value) {
-        handleArrayUpdate(field, [...formData[field], value]);
-        setNewEntries((prev) => ({ ...prev, [field]: '' }));
-      }
-    },
-    [formData, handleArrayUpdate, newEntries]
-  );
-
-  const removeFromArray = useCallback(
-    (field: keyof FormData, index: number) => {
-      const updatedArray = Array.isArray(formData[field])
-        ? formData[field].filter((_, i) => i !== index)
+      const currentItems = Array.isArray(formData[field])
+        ? formData[field]
         : [];
-      handleArrayUpdate(field, updatedArray);
+      // Only add if the last item is not empty
+      if (
+        currentItems.length === 0 ||
+        currentItems[currentItems.length - 1].trim() !== ''
+      ) {
+        handleArrayUpdate(field, [...currentItems, '']);
+      }
     },
     [formData, handleArrayUpdate]
   );
@@ -291,20 +318,59 @@ export default function EditProfileScreen() {
 
   const handleSave = useCallback(async () => {
     try {
-      await updateProfile(formData);
+      // Clean up formData before saving - remove empty strings from arrays
+      const cleanedFormData = {
+        ...formData,
+        portfolio: formData.portfolio.filter((item) => item.trim() !== ''),
+        certifications: formData.certifications.filter(
+          (item) => item.trim() !== ''
+        ),
+        languages: formData.languages.filter((item) => item.trim() !== ''),
+        skills: formData.skills.filter((item) => item.trim() !== ''),
+        work_experience: formData.work_experience.filter(
+          (item) => item.trim() !== ''
+        ),
+        availability_locations: formData.availability_locations.filter(
+          (item) => item.trim() !== ''
+        ),
+      };
+
+      await updateProfile(cleanedFormData);
 
       if (profile?.id) {
-        setProfile({ ...profile, ...formData });
+        setProfile({ ...profile, ...cleanedFormData });
       }
       router.back();
     } catch (error) {
       console.error('Error updating profile:', error);
     }
-  }, [formData, profile, setProfile]);
+  }, [formData, profile, setProfile, updateProfile]);
+
+  // Memoize array field configurations to prevent unnecessary re-renders
+  const arrayFieldConfigs = useMemo(
+    () => [
+      { field: 'portfolio', label: 'Liens Site Web', Icon: Globe },
+      { field: 'certifications', label: 'Certifications', Icon: FileText },
+      { field: 'languages', label: 'Langues', Icon: FileText },
+      { field: 'skills', label: 'Compétences', Icon: FileText },
+      {
+        field: 'work_experience',
+        label: 'Expérience professionnelle',
+        Icon: FileText,
+      },
+      {
+        field: 'availability_locations',
+        label: 'Zones de disponibilité',
+        Icon: FileText,
+      },
+    ],
+    []
+  );
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
+      showsVerticalScrollIndicator={false}
     >
       <View
         style={[
@@ -371,99 +437,27 @@ export default function EditProfileScreen() {
 
         <MemoizedInputField
           Icon={FileText}
-          label="Bio"
+          label="Biographie"
           value={formData.bio}
           onChangeText={(text) => handleTextChange('bio', text)}
           multiline
           colors={colors}
         />
 
-        <MemoizedArrayInputSection
-          field="portfolio"
-          label="Portfolio"
-          Icon={Globe}
-          items={formData.portfolio}
-          newEntryValue={newEntries.portfolio}
-          onAdd={() => addToArray('portfolio')}
-          onRemove={(index) => removeFromArray('portfolio', index)}
-          onEntryChange={(text) =>
-            setNewEntries((prev) => ({ ...prev, portfolio: text }))
-          }
-          colors={colors}
-        />
-
-        <MemoizedArrayInputSection
-          field="certifications"
-          label="Certifications"
-          Icon={FileText}
-          items={formData.certifications}
-          newEntryValue={newEntries.certifications}
-          onAdd={() => addToArray('certifications')}
-          onRemove={(index) => removeFromArray('certifications', index)}
-          onEntryChange={(text) =>
-            setNewEntries((prev) => ({ ...prev, certifications: text }))
-          }
-          colors={colors}
-        />
-
-        <MemoizedArrayInputSection
-          field="languages"
-          label="Langues"
-          Icon={FileText}
-          items={formData.languages}
-          newEntryValue={newEntries.languages}
-          onAdd={() => addToArray('languages')}
-          onRemove={(index) => removeFromArray('languages', index)}
-          onEntryChange={(text) =>
-            setNewEntries((prev) => ({ ...prev, languages: text }))
-          }
-          colors={colors}
-        />
-
-        <MemoizedArrayInputSection
-          field="skills"
-          label="Compétences"
-          Icon={FileText}
-          items={formData.skills}
-          newEntryValue={newEntries.skills}
-          onAdd={() => addToArray('skills')}
-          onRemove={(index) => removeFromArray('skills', index)}
-          onEntryChange={(text) =>
-            setNewEntries((prev) => ({ ...prev, skills: text }))
-          }
-          colors={colors}
-        />
-
-        <MemoizedArrayInputSection
-          field="work_experience"
-          label="Expérience professionnelle"
-          Icon={FileText}
-          items={formData.work_experience}
-          newEntryValue={newEntries.work_experience}
-          onAdd={() => addToArray('work_experience')}
-          onRemove={(index) => removeFromArray('work_experience', index)}
-          onEntryChange={(text) =>
-            setNewEntries((prev) => ({ ...prev, work_experience: text }))
-          }
-          colors={colors}
-        />
-
-        <MemoizedArrayInputSection
-          field="availability_locations"
-          label="Localisations disponibles"
-          Icon={FileText}
-          items={formData.availability_locations}
-          newEntryValue={newEntries.availability_locations}
-          onAdd={() => addToArray('availability_locations')}
-          onRemove={(index) => removeFromArray('availability_locations', index)}
-          onEntryChange={(text) =>
-            setNewEntries((prev) => ({
-              ...prev,
-              availability_locations: text,
-            }))
-          }
-          colors={colors}
-        />
+        {arrayFieldConfigs.map(({ field, label, Icon }) => (
+          <MemoizedArrayInputSection
+            key={field}
+            field={field}
+            label={label}
+            Icon={Icon}
+            items={formData[field as keyof FormData] as string[]}
+            onUpdateItems={(newItems) =>
+              handleArrayUpdate(field as keyof FormData, newItems)
+            }
+            onAddNewInput={() => addNewInputToArray(field as keyof FormData)}
+            colors={colors}
+          />
+        ))}
       </View>
 
       <TouchableOpacity
@@ -494,9 +488,6 @@ const styles = StyleSheet.create({
     padding: 24,
     borderBottomWidth: 1,
   },
-  imageContainer: {
-    alignItems: 'center',
-  },
   profileImageContainer: {
     alignItems: 'center',
     marginBottom: 16,
@@ -506,13 +497,6 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     marginBottom: 16,
-  },
-  changeImageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
   },
   changeImageText: {
     fontFamily: 'Inter-Medium',
@@ -547,19 +531,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   arraySection: {
-    gap: 8,
-  },
-  arrayItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
+    gap: 12,
   },
   arrayInputWrapper: {
     flexDirection: 'row',
-    gap: 8,
     alignItems: 'center',
+    gap: 8,
   },
   arrayInput: {
     flex: 1,
@@ -569,9 +546,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
+  removeButton: {
+    padding: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 12,
     borderRadius: 8,
+    marginTop: 8,
+  },
+  addButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    marginLeft: 8,
   },
   saveButton: {
     margin: 16,

@@ -4,8 +4,8 @@ export interface MissionTracking {
   user_id: string;
   start_time: string;
   end_time: string | null;
-  completion_rate: number; // 0-100
-  time_worked: number; // in minutes
+  completion_rate: number;
+  time_worked: number;
   earnings: number;
   status: 'active' | 'completed' | 'paused';
   tasks_completed: number;

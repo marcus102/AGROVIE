@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
 
 interface FilterBarProps {
   filters: string[];

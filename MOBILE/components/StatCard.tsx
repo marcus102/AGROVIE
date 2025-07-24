@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { LucideProps } from 'lucide-react-native';
 
 interface StatCardProps {
-  icon: React.ComponentType<{ size: number; color: string }>;
+  icon: React.ComponentType<LucideProps>;
   title: string;
   value: string | number;
   colors: {

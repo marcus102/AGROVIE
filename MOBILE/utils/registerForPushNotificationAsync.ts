@@ -12,38 +12,68 @@ export async function registerForPushNotificationsAsync() {
     throw new Error('Push notifications require a physical device');
   }
 
-  // Android: Set up notification channel
+  // Android: Set up notification channel BEFORE requesting permissions
   if (Platform.OS === 'android') {
     console.log('🔔 Setting up Android notification channel...');
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
+      name: 'Default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
+      sound: null,
+      enableVibrate: true,
+      showBadge: true,
     });
   }
 
-  // Check & request permissions
+  // Check current permissions
   console.log('🔔 Checking notification permissions...');
   let { status: existingStatus } = await Notifications.getPermissionsAsync();
   console.log(`🔔 Existing permission status: ${existingStatus}`);
 
   let finalStatus = existingStatus;
 
-  // Only request permissions if not already granted
+  // Request permissions if not granted
   if (existingStatus !== 'granted') {
     console.log('🔔 Requesting notification permissions...');
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-    console.log(`🔔 New permission status: ${status}`);
+
+    // For Android, use a more explicit approach
+    if (Platform.OS === 'android') {
+      const requestResult = await Notifications.requestPermissionsAsync({
+        android: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+          allowDisplayInCarPlay: true,
+          allowCriticalAlerts: true,
+        },
+      });
+      finalStatus = requestResult.status;
+      console.log(`🔔 Android permission request result:`, requestResult);
+    } else {
+      // iOS permissions
+      const requestResult = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+        },
+      });
+      finalStatus = requestResult.status;
+      console.log(`🔔 iOS permission request result:`, requestResult);
+    }
+
+    console.log(`🔔 Final permission status: ${finalStatus}`);
   }
 
-  // Only throw if the final status is not granted (after user decision)
+  // Handle permission denial
   if (finalStatus !== 'granted') {
-    throw new Error('Notification permissions not granted');
+    const errorMessage = `Notification permissions denied. Status: ${finalStatus}`;
+    console.log(`❌ ${errorMessage}`);
+    throw new Error(errorMessage);
   }
 
-  // Get project ID (fallback to expoConfig or easConfig)
+  // Get project ID with better error handling
   const projectId =
     Constants?.expoConfig?.extra?.eas?.projectId ??
     Constants?.easConfig?.projectId;
@@ -51,22 +81,31 @@ export async function registerForPushNotificationsAsync() {
   console.log(`🔔 Project ID: ${projectId || 'Not found'}`);
 
   if (!projectId) {
-    throw new Error('EAS Project ID not found. Configure it in app.json');
+    const errorMessage =
+      'EAS Project ID not found. Please configure it in app.json under "extra.eas.projectId"';
+    console.log(`❌ ${errorMessage}`);
+    throw new Error(errorMessage);
   }
 
   // Get Expo push token
   console.log('🔔 Getting Expo push token...');
   try {
-    const pushToken = (await Notifications.getExpoPushTokenAsync({ projectId }))
-      .data;
+    const tokenResult = await Notifications.getExpoPushTokenAsync({
+      projectId,
+      // Removed unsupported 'experienceId' property
+    });
+
+    const pushToken = tokenResult.data;
     console.log('✅ Push token received successfully:', pushToken);
-    return pushToken; // Return token for storage
+    return pushToken;
   } catch (error) {
     console.error('❌ Failed to get push token:', error);
-    let errorMessage = 'Unknown error';
+    let errorMessage = 'Unknown error occurred while getting push token';
+
     if (error instanceof Error) {
       errorMessage = error.message;
     }
+
     throw new Error(`Failed to get push token: ${errorMessage}`);
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import {
-  Upload,
-  AlertCircle,
   ArrowLeft,
-  FileText,
   CheckCircle2,
   Camera,
   Trash2,
@@ -27,6 +24,7 @@ import { supabase } from '@/lib/supabase';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
+import { Toast, ToastType } from '@/components/Toast';
 
 type IdType = 'id_card' | 'passport' | 'driver_license' | 'residence_permit';
 type LegalDocType =
@@ -38,6 +36,7 @@ type LegalDocType =
 
 interface Document {
   id: string;
+  requirementId: string;
   type: string;
   documentType: IdType | LegalDocType;
   file: string;
@@ -104,7 +103,7 @@ const LEGAL_TYPES: DocumentTypeOption[] = [
   },
 ];
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const SUPPORTED_FORMATS = ['image/jpeg', 'image/png', 'application/pdf'];
 
 const getRequirements = (role: string) => {
@@ -204,12 +203,22 @@ export default function UploadDocumentsScreen() {
   const { colors } = useThemeStore();
   const { profile, user } = useAuthStore();
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [typeModalVisible, setTypeModalVisible] = useState(false);
   const [selectedRequirement, setSelectedRequirement] = useState<
     (typeof requirements)[0] | null
   >(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>('success');
+  const [toastMessage, setToastMessage] = useState('');
+
+  const hideToast = () => setToastVisible(false);
+
+  const showToast = (type: ToastType, message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
 
   const requirements = getRequirements(profile?.role || 'worker');
 
@@ -270,7 +279,8 @@ export default function UploadDocumentsScreen() {
         validateFile(asset.uri, fileType, fileSize);
 
         const newDoc: Document = {
-          id: selectedRequirement.id,
+          id: `${selectedRequirement.id}_${Date.now()}`,
+          requirementId: selectedRequirement.id,
           type: selectedRequirement.title,
           documentType: option.id,
           file: asset.uri,
@@ -281,25 +291,24 @@ export default function UploadDocumentsScreen() {
         };
 
         setDocuments((prev) => [
-          ...prev.filter((d) => d.id !== selectedRequirement.id),
+          ...prev.filter((d) => d.requirementId !== selectedRequirement.id),
           newDoc,
         ]);
 
-        // Simuler la progression du téléchargement
         let progress = 0;
         const interval = setInterval(() => {
           progress += 10;
           if (progress <= 100) {
             setDocuments((prev) =>
               prev.map((d) =>
-                d.id === selectedRequirement.id ? { ...d, progress } : d
+                d.id === newDoc.id ? { ...d, progress } : d
               )
             );
           } else {
             clearInterval(interval);
             setDocuments((prev) =>
               prev.map((d) =>
-                d.id === selectedRequirement.id
+                d.id === newDoc.id
                   ? { ...d, status: 'completed', progress: 100 }
                   : d
               )
@@ -308,9 +317,7 @@ export default function UploadDocumentsScreen() {
         }, 500);
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Échec de la sélection du document'
-      );
+      showToast('error', 'Échec de la sélection du document');
     }
   };
 
@@ -325,22 +332,18 @@ export default function UploadDocumentsScreen() {
 
   const handleSubmit = async () => {
     try {
-      setError(null);
       setLoading(true);
-
       if (!user?.id) throw new Error('Utilisateur non trouvé');
 
-      // Valider les documents requis
       const requiredDocs = requirements.filter((r) => r.required);
       const uploadedRequiredDocs = documents.filter((d) =>
-        requiredDocs.some((r) => r.id === d.id && d.status === 'completed')
+        requiredDocs.some((r) => r.id === d.requirementId && d.status === 'completed')
       );
 
       if (uploadedRequiredDocs.length < requiredDocs.length) {
         throw new Error('Veuillez télécharger tous les documents requis');
       }
 
-      // Préparer l'objet de données documentaires
       const documentData: Record<string, any> = {
         user_id: user.id,
         identification_type: null,
@@ -358,20 +361,22 @@ export default function UploadDocumentsScreen() {
       for (const doc of documents) {
         const fileExt = doc.fileType.split('/')[1];
         const timestamp = Date.now();
-        const isIdDocument = doc.id === 'identity';
+        const isIdDocument = doc.requirementId === 'identity';
 
         const path = `${user.id}/${
           isIdDocument ? 'id' : 'legal'
         }/${timestamp}.${fileExt}`;
         const storagePath = await uploadToStorage(doc.file, path, doc.fileType);
 
-        documentData.identification_type = doc.documentType;
-        documentData.id_file_path = storagePath;
-        documentData.legal_document_type = doc.documentType;
-        documentData.legal_file_path = storagePath;
+        if (isIdDocument) {
+          documentData.identification_type = doc.documentType;
+          documentData.id_file_path = storagePath;
+        } else {
+          documentData.legal_document_type = doc.documentType;
+          documentData.legal_file_path = storagePath;
+        }
       }
 
-      // Insérer les données documentaires dans la base de données
       const { data, error: docsError } = await supabase
         .from('user_documents')
         .insert([documentData])
@@ -379,7 +384,6 @@ export default function UploadDocumentsScreen() {
 
       if (docsError) throw docsError;
 
-      // Mettre à jour le statut du profil
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ docs_status: 'pending' })
@@ -387,9 +391,11 @@ export default function UploadDocumentsScreen() {
 
       if (profileError) throw profileError;
 
+      showToast('success', 'Documents téléchargés avec succès');
       router.push('/confirmation');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      if (__DEV__) console.error(err);
+      showToast('error', 'Échec du téléchargement des documents');
     } finally {
       setLoading(false);
     }
@@ -397,9 +403,16 @@ export default function UploadDocumentsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Toast
+        visible={toastVisible}
+        type={toastType}
+        message={toastMessage}
+        onHide={hideToast}
+        duration={3000}
+      />
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: colors.card }]}
-        onPress={() => router.back()}
+        onPress={() => router.push('/(auth)/register')}
       >
         <ArrowLeft size={24} color={colors.primary} />
       </TouchableOpacity>
@@ -430,23 +443,9 @@ export default function UploadDocumentsScreen() {
           </Text>
         </View>
 
-        {error && (
-          <View
-            style={[
-              styles.errorContainer,
-              { backgroundColor: colors.error + '20' },
-            ]}
-          >
-            <AlertCircle size={20} color={colors.error} />
-            <Text style={[styles.errorText, { color: colors.error }]}>
-              {error}
-            </Text>
-          </View>
-        )}
-
         <View style={styles.requirements}>
           {requirements.map((req, index) => {
-            const doc = documents.find((d) => d.id === req.id);
+            const doc = documents.find((d) => d.requirementId === req.id);
 
             return (
               <Animated.View
@@ -634,7 +633,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   header: {
-    marginTop: Platform.OS === 'web' ? 24 : 48,
+    marginTop: Platform.OS === 'web' ? 24 : 65,
     marginBottom: 32,
   },
   title: {
@@ -769,7 +768,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 32,
-    marginBottom: 16,
+    marginBottom: 40,
   },
   buttonDisabled: {
     opacity: 0.7,

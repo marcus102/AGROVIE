@@ -12,7 +12,7 @@ export interface Database {
       profiles: {
         Row: {
           id: string;
-          role: 'worker' | 'technician' | 'entrepreneur' | 'admin';
+          role: 'worker' | 'advisor' | 'entrepreneur' | 'admin';
           super_role:
             | 'user'
             | 'admin'
@@ -36,22 +36,31 @@ export interface Database {
           work_experience: string[] | null;
           availability_locations: string[] | null;
           specialization:
-            | 'precision_agriculture_technician'
-            | 'agricultural_equipment_technician'
-            | 'crop_and_soil_technician'
-            | 'research_and_laboratory_technician'
-            | 'livestock_and_airy_technician'
-            | 'food_safety_and_quality_technician'
-            | 'pest_management_and_environmental_technician'
-            | 'inspection_and_certification_technician'
-            | 'sales_and_support_technician'
             | 'crop_production_worker'
             | 'livestock_worker'
             | 'mechanized_worker'
-            | 'processing_worker'
             | 'specialized_worker'
             | 'seasonal_worker'
-            | 'maintenance_worker'
+            | 'agroforestry_worker'
+            | 'nursery_worker'
+            | 'aquaculture_worker'
+            | 'horticulture_market_gardening'
+            | 'fruit_cultivation_orchard'
+            | 'irrigation'
+            | 'agricultural_machinery'
+            | 'livestock_farming'
+            | 'smart_agriculture'
+            | 'agricultural_drone'
+            | 'large_scale_production'
+            | 'phytosanitary'
+            | 'soil_science'
+            | 'agricultural_development'
+            | 'project_management'
+            | 'agroecology'
+            | 'farm_management'
+            | 'agrifood'
+            | 'rural_land'
+            | 'aquaculture'
             | 'other';
           other_specialization: string | null;
           availability_status: 'available' | 'not_available';
@@ -67,7 +76,7 @@ export interface Database {
         };
         Insert: {
           id: string;
-          role: 'worker' | 'technician' | 'entrepreneur';
+          role: 'worker' | 'advisor' | 'entrepreneur';
           full_name: string;
           phone?: string | null;
           verification_status?:
@@ -80,7 +89,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          role?: 'worker' | 'technician' | 'entrepreneur';
+          role?: 'worker' | 'advisor' | 'entrepreneur';
           full_name?: string;
           phone?: string | null;
           verification_status?:
@@ -88,7 +97,7 @@ export interface Database {
             | 'in_review'
             | 'approved'
             | 'rejected';
-          
+
           created_at?: string;
           updated_at?: string;
         };

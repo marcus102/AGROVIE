@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   Platform,
-  Keyboard,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Mail, AlertCircle, ArrowLeft } from 'lucide-react-native';
@@ -14,6 +14,7 @@ import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
 import { isValidVerificationCode } from '@/lib/supabase';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Toast, ToastType } from '@/components/Toast';
 
 const CODE_LENGTH = 6;
 
@@ -25,6 +26,18 @@ export default function VerifyEmailScreen() {
   const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef<TextInput[]>([]);
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>('success');
+  const [toastMessage, setToastMessage] = useState('');
+  const hideToast = () => setToastVisible(false);
+
+  const showToast = (type: ToastType, message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -78,14 +91,30 @@ export default function VerifyEmailScreen() {
     try {
       await verifyEmail(code);
 
-      router.replace('/upload-documents');
+      setTimeout(() => {
+        if (!error) {
+          showToast('success', 'Email vérifié avec succès');
+
+          router.replace('/upload-documents');
+        }
+      }, 1000);
     } catch (err) {
-      // Error is handled by the store
+      showToast('error', "Erreur lors de la vérification de l'email");
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <Toast
+        visible={toastVisible}
+        type={toastType}
+        message={toastMessage}
+        onHide={hideToast}
+        duration={3000}
+      />
+
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: colors.card }]}
         onPress={() => router.push('/(auth)/register')}
@@ -118,20 +147,6 @@ export default function VerifyEmailScreen() {
             Étape 2 sur 4
           </Text>
         </View>
-
-        {error && (
-          <View
-            style={[
-              styles.errorContainer,
-              { backgroundColor: colors.error + '20' },
-            ]}
-          >
-            <AlertCircle size={20} color={colors.error} />
-            <Text style={[styles.errorText, { color: colors.error }]}>
-              {error}
-            </Text>
-          </View>
-        )}
 
         <View style={styles.codeContainer}>
           {[...Array(CODE_LENGTH)].map((_, index) => (
@@ -193,11 +208,12 @@ export default function VerifyEmailScreen() {
         <View style={styles.helpContainer}>
           <Mail size={20} color={colors.muted} />
           <Text style={[styles.helpText, { color: colors.muted }]}>
-            Vérifiez votre dossier spam si vous ne voyez pas l'email dans votre boîte de réception
+            Vérifiez votre dossier spam si vous ne voyez pas l'email dans votre
+            boîte de réception
           </Text>
         </View>
       </Animated.View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

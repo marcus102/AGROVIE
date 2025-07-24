@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { useThemeStore } from '@/stores/theme';
 import {
@@ -50,7 +51,10 @@ export default function EntrepreneurDashboard() {
       setLoading(true);
 
       // Fetch missions and ratings in parallel
-      await Promise.all([fetchMissions(userId), fetchAverageUserRating(userId)]);
+      await Promise.all([
+        fetchMissions(userId),
+        fetchAverageUserRating(userId),
+      ]);
     } catch (error: any) {
       console.error('Error fetching data:', error.message);
     } finally {
@@ -91,6 +95,25 @@ export default function EntrepreneurDashboard() {
     fetchAuthenticatedUser();
   }, []);
 
+  // Pull-to-refresh handler
+  const onRefresh = async () => {
+    if (!userId) return;
+
+    setRefreshing(true);
+    try {
+      // Fetch both missions and ratings when refreshing
+      await Promise.all([
+        fetchMissions(userId),
+        fetchAverageUserRating(userId),
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Manual refresh handler (for the button)
   const handleRefresh = async () => {
     const {
       data: { user },
@@ -100,7 +123,10 @@ export default function EntrepreneurDashboard() {
 
     setRefreshing(true);
     try {
-      await fetchMissions(user.id);
+      await Promise.all([
+        fetchMissions(user.id),
+        fetchAverageUserRating(user.id),
+      ]);
     } catch (error) {
       console.error('Error refreshing missions:', error);
     } finally {
@@ -140,9 +166,10 @@ export default function EntrepreneurDashboard() {
 
   const totalEarnings = completedMissions * 5000;
   // Format the average rating for display
-  const ratingDisplay = userAverageRating !== null && userAverageRating !== undefined
-    ? userAverageRating.toFixed(1)
-    : 'N/A';
+  const ratingDisplay =
+    userAverageRating !== null && userAverageRating !== undefined
+      ? userAverageRating.toFixed(1)
+      : 'N/A';
 
   // Entrepreneur-specific stats
   const STATS = [
@@ -203,39 +230,6 @@ export default function EntrepreneurDashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Header with Gradient */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[colors.primary, colors.primary + 'CC']}
-          style={styles.gradientHeader}
-        >
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={handleRefresh}
-            disabled={refreshing || loading}
-          >
-            {refreshing ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <RefreshCw size={20} color="#fff" />
-            )}
-          </TouchableOpacity>
-
-          <Animated.View
-            entering={FadeInUp.delay(200)}
-            style={styles.headerContent}
-          >
-            <View style={styles.headerIcon}>
-              <Target size={32} color="#fff" />
-            </View>
-            <Text style={styles.headerTitle}>Dashboard Entrepreneur</Text>
-            <Text style={styles.headerSubtitle}>
-              Gérez vos missions et recrutements
-            </Text>
-          </Animated.View>
-        </LinearGradient>
-      </View>
-
       <FlatList
         data={[{ type: 'stats' }, { type: 'missions' }]}
         keyExtractor={(item, index) => `${item.type}-${index}`}
@@ -243,6 +237,28 @@ export default function EntrepreneurDashboard() {
           if (item.type === 'stats') {
             return (
               <>
+                {/* Header with Gradient */}
+                <View style={styles.headerContainer}>
+                  <LinearGradient
+                    colors={[colors.primary, colors.primary + 'CC']}
+                    style={styles.gradientHeader}
+                  >
+                    <Animated.View
+                      entering={FadeInUp.delay(200)}
+                      style={styles.headerContent}
+                    >
+                      <View style={styles.headerIcon}>
+                        <Target size={32} color="#fff" />
+                      </View>
+                      <Text style={styles.headerTitle}>
+                        Tableau de bord Entrepreneur
+                      </Text>
+                      <Text style={styles.headerSubtitle}>
+                        Gérez vos missions et recrutements
+                      </Text>
+                    </Animated.View>
+                  </LinearGradient>
+                </View>
                 <SectionHeader title="Statistiques" colors={colors} />
                 <View style={styles.statsGrid}>
                   {STATS.map((stat, index) => (
@@ -343,6 +359,18 @@ export default function EntrepreneurDashboard() {
         }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        // Pull-to-refresh functionality
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]} // Android
+            tintColor={colors.primary} // iOS
+            title="Actualisation..." // iOS
+            titleColor={colors.text} // iOS
+            progressBackgroundColor={colors.background} // Android
+          />
+        }
       />
     </View>
   );
@@ -350,14 +378,14 @@ export default function EntrepreneurDashboard() {
 
 const styles = StyleSheet.create({
   headerContainer: {
+    marginTop: 12,
     marginBottom: 20,
   },
   gradientHeader: {
-    paddingTop: 60,
+    paddingTop: 40,
     paddingBottom: 40,
     paddingHorizontal: 24,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderRadius: 30,
   },
   refreshButton: {
     position: 'absolute',
