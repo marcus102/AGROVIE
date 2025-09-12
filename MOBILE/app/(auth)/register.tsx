@@ -8,6 +8,7 @@ import {
   ScrollView,
   Linking,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -297,6 +298,7 @@ export default function RegisterScreen() {
   // Dynamic styles based on screen dimensions
   const responsiveStyles = StyleSheet.create({
     container: {
+      marginTop: Platform.OS === 'android' ? 24 : 0,
       flex: 1,
     },
     content: {
@@ -419,6 +421,7 @@ export default function RegisterScreen() {
       justifyContent: 'center',
       alignItems: 'center',
       marginTop: getResponsiveValue(12, 16, 20),
+      marginBottom: getResponsiveValue(50, 54, 58),
       gap: isSmallScreen ? 4 : 0,
     },
     loginText: {
@@ -735,8 +738,8 @@ export default function RegisterScreen() {
                   >
                     {formData.actor_specialization
                       ? getSpecializationCategories().find(
-                          (cat) => cat.value === formData.actor_specialization
-                        )?.label || 'Select specialization'
+                        (cat) => cat.value === formData.actor_specialization
+                      )?.label || 'Select specialization'
                       : 'Sélectionnez votre spécialisation'}
                   </Text>
                   <ChevronDown

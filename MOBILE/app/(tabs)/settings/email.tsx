@@ -6,6 +6,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Platform,
+  Alert,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import {
   Eye,
@@ -13,13 +17,25 @@ import {
   CircleAlert as AlertCircle,
   Mail,
   ArrowLeft,
+  Shield,
+  Check,
 } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  SlideInLeft,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { useAuthStore } from '@/stores/auth';
 import { Toast, ToastType } from '@/components/Toast';
 import { isValidVerificationCode } from '@/lib/supabase';
+import { router } from 'expo-router';
 
+const { width } = Dimensions.get('window');
 const CODE_LENGTH = 6;
 
 interface EmailModalProps {
@@ -72,6 +88,10 @@ export default function EmailUpdate({ visible, onClose }: EmailModalProps) {
   const [toastType, setToastType] = useState<ToastType>('success');
   const [toastMessage, setToastMessage] = useState('');
 
+  // Animation values
+  const headerOpacity = useSharedValue(1);
+  const formTranslateY = useSharedValue(0);
+
   const hideToast = () => setToastVisible(false);
 
   const showToast = (type: ToastType, message: string) => {
@@ -81,7 +101,7 @@ export default function EmailUpdate({ visible, onClose }: EmailModalProps) {
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (timer > 0 && !canResend && showVerification) {
       interval = setInterval(() => {
         setTimer((prev) => prev - 1);
@@ -275,6 +295,16 @@ export default function EmailUpdate({ visible, onClose }: EmailModalProps) {
     }
   };
 
+  // Memoized back handler
+  const handleBack = useCallback(() => {
+    try {
+      router.back();
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Unable to go back');
+    }
+  }, []);
+
   const resetFields = () => {
     setCurrentPassword({ value: '', visible: false, error: undefined });
     setNewEmail({ value: '', error: '' });
@@ -287,230 +317,121 @@ export default function EmailUpdate({ visible, onClose }: EmailModalProps) {
     setError(null);
   };
 
+  const animatedHeaderStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(headerOpacity.value, { duration: 300 }),
+      transform: [
+        { translateY: withTiming(formTranslateY.value, { duration: 300 }) }
+      ],
+    };
+  });
+
   return (
     <>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <ScrollView style={styles.container}>
-          {showVerification && (
+      <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
+        {/* Header with gradient background */}
+        <Animated.View
+          style={[
+            styles.headerContainer,
+            { backgroundColor: colors.primary },
+            animatedHeaderStyle
+          ]}
+        >
+          <View style={styles.headerContent}>
             <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setShowVerification(false)}
-              disabled={isUpdating}
+              style={[styles.backButton]}
+              onPress={showVerification ? () => setShowVerification(false) : handleBack}
+              activeOpacity={0.7}
             >
-              <ArrowLeft size={24} color={colors.primary} />
+              <ArrowLeft size={24} color="#ffffff" />
             </TouchableOpacity>
-          )}
 
-          <Text style={[styles.title, { color: colors.text }]}>
-            {showVerification ? 'Vérifiez votre email' : ''}
-          </Text>
-
-          {error && (
-            <View
-              style={[
-                styles.globalError,
-                { backgroundColor: colors.error + '20' },
-              ]}
-            >
-              <AlertCircle size={20} color={colors.error} />
-              <Text style={[styles.globalErrorText, { color: colors.error }]}>
-                {error}
-              </Text>
-            </View>
-          )}
-
-          {showVerification ? (
-            <>
-              <Text style={[styles.subtitle, { color: colors.muted }]}>
-                Nous avons envoyé un code de vérification à votre email actuel.
-                Entrez ce code pour confirmer le changement vers{' '}
-                {newEmail.value}
-              </Text>
-
-              <View style={styles.codeContainer}>
-                {[...Array(CODE_LENGTH)].map((_, index) => (
-                  <TextInput
-                    key={index}
-                    ref={(ref) => ref && (inputRefs.current[index] = ref)}
-                    style={[
-                      styles.codeInput,
-                      {
-                        backgroundColor: colors.card,
-                        borderColor: colors.border,
-                        color: colors.text,
-                      },
-                      verificationCode[index]
-                        ? { borderColor: colors.primary }
-                        : undefined,
-                    ]}
-                    value={verificationCode[index] || ''}
-                    onChangeText={(value) => handleCodeChange(index, value)}
-                    onKeyPress={({ nativeEvent: { key } }) =>
-                      handleKeyPress(index, key)
-                    }
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    selectTextOnFocus
-                    editable={!isUpdating}
-                  />
-                ))}
-              </View>
-
-              <View style={styles.resendContainer}>
-                <Text style={[styles.resendText, { color: colors.muted }]}>
-                  Vous n'avez pas reçu le code ?
-                </Text>
-                {canResend ? (
-                  <TouchableOpacity
-                    onPress={handleResendCode}
-                    disabled={loading || isUpdating}
-                  >
-                    <Text
-                      style={[
-                        styles.resendButton,
-                        {
-                          color:
-                            loading || isUpdating
-                              ? colors.muted
-                              : colors.primary,
-                        },
-                      ]}
-                    >
-                      {loading ? 'Envoi...' : 'Renvoyer le code'}
-                    </Text>
-                  </TouchableOpacity>
+            <View style={styles.titleContainer}>
+              <Animated.View
+                entering={FadeInUp.delay(200)}
+                style={styles.iconContainer}
+              >
+                {showVerification ? (
+                  <Shield size={32} color="#ffffff" />
                 ) : (
-                  <Text style={[styles.timerText, { color: colors.muted }]}>
-                    Renvoyer dans {timer}s
-                  </Text>
+                  <Mail size={32} color="#ffffff" />
                 )}
-              </View>
+              </Animated.View>
 
-              <View style={styles.buttons}>
-                <TouchableOpacity
-                  style={[
-                    styles.button,
-                    styles.submitButton,
-                    { backgroundColor: colors.primary },
-                    (isUpdating || verificationCode.length !== CODE_LENGTH) &&
-                      styles.buttonDisabled,
-                  ]}
-                  onPress={handleVerifyAndUpdate}
-                  disabled={
-                    isUpdating || verificationCode.length !== CODE_LENGTH
-                  }
-                >
-                  <Text style={[styles.buttonText, styles.submitButtonText]}>
-                    {isUpdating ? 'Mise à jour...' : 'Confirmer'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { color: colors.text }]}>
-                  Nouvel email
+              <Animated.Text
+                entering={FadeInUp.delay(300)}
+                style={styles.headerTitle}
+              >
+                {showVerification ? 'Vérifiez votre email' : 'Modifier l\'email'}
+              </Animated.Text>
+
+              <Animated.Text
+                entering={FadeInUp.delay(400)}
+                style={styles.headerSubtitle}
+              >
+                {showVerification
+                  ? 'Entrez le code de vérification reçu par email'
+                  : 'Mettez à jour votre adresse email en toute sécurité'
+                }
+              </Animated.Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Main Content */}
+        <ScrollView
+          style={styles.contentContainer}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View
+            entering={FadeInDown.delay(500)}
+            style={styles.formCard}
+          >
+            {error && (
+              <Animated.View
+                entering={SlideInLeft}
+                style={[
+                  styles.globalError,
+                  { backgroundColor: colors.error + '15', borderColor: colors.error + '30' },
+                ]}
+              >
+                <AlertCircle size={20} color={colors.error} />
+                <Text style={[styles.globalErrorText, { color: colors.error }]}>
+                  {error}
                 </Text>
-                <View
-                  style={[
-                    styles.inputWrapper,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: newEmail.error
-                        ? colors.error
-                        : colors.border,
-                    },
-                  ]}
-                >
-                  <Mail size={20} color={colors.muted} style={styles.icon} />
-                  <TextInput
-                    style={[styles.input, { color: colors.text }]}
-                    value={newEmail.value}
-                    onChangeText={handleEmailChange('newEmail')}
-                    placeholder="Nouvel email"
-                    placeholderTextColor={colors.muted}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={!loading}
-                  />
-                </View>
-                {newEmail.error && (
-                  <View style={styles.errorContainer}>
-                    <AlertCircle size={16} color={colors.error} />
-                    <Text style={[styles.errorText, { color: colors.error }]}>
-                      {newEmail.error}
-                    </Text>
-                  </View>
-                )}
-              </View>
+              </Animated.View>
+            )}
 
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { color: colors.text }]}>
-                  Confirmer l'email
-                </Text>
-                <View
-                  style={[
-                    styles.inputWrapper,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: confirmEmail.error
-                        ? colors.error
-                        : colors.border,
-                    },
-                  ]}
-                >
-                  <Mail size={20} color={colors.muted} style={styles.icon} />
-                  <TextInput
-                    style={[styles.input, { color: colors.text }]}
-                    value={confirmEmail.value}
-                    onChangeText={handleEmailChange('confirmEmail')}
-                    placeholder="Confirmer l'email"
-                    placeholderTextColor={colors.muted}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={!loading}
-                  />
-                </View>
-                {confirmEmail.error && (
-                  <View style={styles.errorContainer}>
-                    <AlertCircle size={16} color={colors.error} />
-                    <Text style={[styles.errorText, { color: colors.error }]}>
-                      {confirmEmail.error}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <PasswordInput
-                label="Mot de passe actuel"
-                value={currentPassword.value}
-                visible={currentPassword.visible}
-                error={currentPassword.error}
-                onChangeText={handlePasswordChange(setCurrentPassword)}
-                onToggleVisibility={handleToggleVisibility(setCurrentPassword)}
-                testID="current-password"
-                editable={!loading}
+            {showVerification ? (
+              <VerificationSection
+                verificationCode={verificationCode}
+                newEmail={newEmail.value}
+                isUpdating={isUpdating}
+                loading={loading}
+                timer={timer}
+                canResend={canResend}
+                inputRefs={inputRefs}
+                onCodeChange={handleCodeChange}
+                onKeyPress={handleKeyPress}
+                onResendCode={handleResendCode}
+                onVerifyAndUpdate={handleVerifyAndUpdate}
+                colors={colors}
               />
-
-              <View style={styles.buttons}>
-                <TouchableOpacity
-                  style={[
-                    styles.button,
-                    styles.submitButton,
-                    { backgroundColor: colors.primary },
-                    loading && styles.buttonDisabled,
-                  ]}
-                  onPress={handleSendVerificationCode}
-                  disabled={loading}
-                >
-                  <Text style={[styles.buttonText, styles.submitButtonText]}>
-                    {loading ? 'Envoi en cours...' : 'Envoyer le code'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
+            ) : (
+              <EmailFormSection
+                newEmail={newEmail}
+                confirmEmail={confirmEmail}
+                currentPassword={currentPassword}
+                loading={loading}
+                onEmailChange={handleEmailChange}
+                onPasswordChange={handlePasswordChange(setCurrentPassword)}
+                onToggleVisibility={handleToggleVisibility(setCurrentPassword)}
+                onSubmit={handleSendVerificationCode}
+                colors={colors}
+              />
+            )}
+          </Animated.View>
         </ScrollView>
       </View>
 
@@ -525,137 +446,509 @@ export default function EmailUpdate({ visible, onClose }: EmailModalProps) {
   );
 }
 
-const PasswordInput = React.memo(
-  ({
-    label,
-    value,
-    visible,
-    error,
-    onChangeText,
-    onToggleVisibility,
-    testID,
-    editable = true,
-  }: {
-    label: string;
-    value: string;
-    visible: boolean;
-    error?: string;
-    onChangeText: (text: string) => void;
-    onToggleVisibility: () => void;
-    testID: string;
-    editable?: boolean;
-  }) => {
-    const { colors } = useThemeStore();
+// Verification Section Component
+const VerificationSection = ({
+  verificationCode,
+  newEmail,
+  isUpdating,
+  loading,
+  timer,
+  canResend,
+  inputRefs,
+  onCodeChange,
+  onKeyPress,
+  onResendCode,
+  onVerifyAndUpdate,
+  colors,
+}: any) => (
+  <>
+    <Animated.View entering={FadeInDown.delay(100)} style={styles.infoCard}>
+      <Text style={[styles.infoText, { color: colors.text }]}>
+        Nous avons envoyé un code de vérification à votre email actuel.
+      </Text>
+      <Text style={[styles.emailHighlight, { color: colors.primary }]}>
+        {newEmail}
+      </Text>
+    </Animated.View>
 
-    return (
-      <Animated.View entering={FadeInDown} style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
-        <View
-          style={[
-            styles.inputWrapper,
-            {
-              backgroundColor: colors.card,
-              borderColor: error ? colors.error : colors.border,
-            },
-          ]}
+    <Animated.View entering={FadeInDown.delay(200)} style={styles.codeContainer}>
+      {[...Array(CODE_LENGTH)].map((_, index) => (
+        <Animated.View
+          key={index}
+          entering={FadeInDown.delay(300 + index * 50)}
         >
           <TextInput
-            style={[styles.input, { color: colors.text }]}
-            value={value}
-            onChangeText={onChangeText}
-            secureTextEntry={!visible}
-            placeholderTextColor={colors.muted}
-            testID={testID}
-            editable={editable}
+            ref={(ref) => {
+              if (ref) {
+                inputRefs.current[index] = ref;
+              }
+            }}
+            style={[
+              styles.codeInput,
+              {
+                backgroundColor: colors.card,
+                borderColor: verificationCode[index] ? colors.primary : colors.border,
+                color: colors.text,
+              },
+              verificationCode[index] && {
+                borderWidth: 2,
+                shadowColor: colors.primary,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              },
+            ]}
+            value={verificationCode[index] || ''}
+            onChangeText={(value) => onCodeChange(index, value)}
+            onKeyPress={({ nativeEvent: { key } }) =>
+              onKeyPress(index, key)
+            }
+            keyboardType="number-pad"
+            maxLength={1}
+            selectTextOnFocus
+            editable={!isUpdating}
           />
-          <TouchableOpacity
-            style={styles.visibilityToggle}
-            onPress={onToggleVisibility}
-            disabled={!editable}
+        </Animated.View>
+      ))}
+    </Animated.View>
+
+    <Animated.View entering={FadeInDown.delay(600)} style={styles.resendContainer}>
+      <Text style={[styles.resendText, { color: colors.muted }]}>
+        Vous n'avez pas reçu le code ?
+      </Text>
+      {canResend ? (
+        <TouchableOpacity
+          onPress={onResendCode}
+          disabled={loading || isUpdating}
+          style={styles.resendButton}
+        >
+          <Text
+            style={[
+              styles.resendButtonText,
+              {
+                color: loading || isUpdating ? colors.muted : colors.primary,
+              },
+            ]}
           >
-            {visible ? (
-              <EyeOff size={20} color={colors.muted} />
-            ) : (
-              <Eye size={20} color={colors.muted} />
-            )}
-          </TouchableOpacity>
+            {loading ? 'Envoi...' : 'Renvoyer le code'}
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.timerContainer}>
+          <Text style={[styles.timerText, { color: colors.muted }]}>
+            Renvoyer dans {timer}s
+          </Text>
         </View>
-        {error && (
-          <View style={styles.errorContainer}>
-            <AlertCircle size={16} color={colors.error} />
-            <Text style={[styles.errorText, { color: colors.error }]}>
-              {error}
-            </Text>
-          </View>
-        )}
-      </Animated.View>
-    );
-  }
+      )}
+    </Animated.View>
+
+    <Animated.View entering={FadeInDown.delay(700)} style={styles.buttonContainer}>
+      <TouchableOpacity
+        style={[
+          styles.primaryButton,
+          { backgroundColor: colors.primary },
+          (isUpdating || verificationCode.length !== CODE_LENGTH) &&
+          styles.buttonDisabled,
+        ]}
+        onPress={onVerifyAndUpdate}
+        disabled={isUpdating || verificationCode.length !== CODE_LENGTH}
+      >
+        {isUpdating && <ActivityIndicator size="small" color="#ffffff" style={styles.buttonIcon} />}
+        <Text style={styles.primaryButtonText}>
+          {isUpdating ? 'Mise à jour...' : 'Confirmer'}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  </>
 );
 
+// Email Form Section Component
+const EmailFormSection = ({
+  newEmail,
+  confirmEmail,
+  currentPassword,
+  loading,
+  onEmailChange,
+  onPasswordChange,
+  onToggleVisibility,
+  onSubmit,
+  colors,
+}: any) => (
+  <>
+    <Animated.View entering={FadeInDown.delay(100)} style={styles.formSection}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Nouvelle adresse email
+      </Text>
+
+      <ModernInput
+        label="Nouvel email"
+        value={newEmail.value}
+        onChangeText={onEmailChange('newEmail')}
+        placeholder="Entrez votre nouvel email"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        icon={<Mail size={20} color={colors.muted} />}
+        error={newEmail.error}
+        editable={!loading}
+        colors={colors}
+        delay={200}
+      />
+
+      <ModernInput
+        label="Confirmer l'email"
+        value={confirmEmail.value}
+        onChangeText={onEmailChange('confirmEmail')}
+        placeholder="Confirmez votre nouvel email"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        icon={<Mail size={20} color={colors.muted} />}
+        error={confirmEmail.error}
+        editable={!loading}
+        colors={colors}
+        delay={300}
+      />
+    </Animated.View>
+
+    <Animated.View entering={FadeInDown.delay(400)} style={styles.formSection}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Confirmation de sécurité
+      </Text>
+
+      <ModernPasswordInput
+        label="Mot de passe actuel"
+        value={currentPassword.value}
+        visible={currentPassword.visible}
+        error={currentPassword.error}
+        onChangeText={onPasswordChange}
+        onToggleVisibility={onToggleVisibility}
+        editable={!loading}
+        colors={colors}
+        delay={500}
+      />
+    </Animated.View>
+
+    <Animated.View entering={FadeInDown.delay(600)} style={styles.buttonContainer}>
+      <TouchableOpacity
+        style={[
+          styles.primaryButton,
+          { backgroundColor: colors.primary },
+          loading && styles.buttonDisabled,
+        ]}
+        onPress={onSubmit}
+        disabled={loading}
+      >
+        {loading && <ActivityIndicator size="small" color="#ffffff" style={styles.buttonIcon} />}
+        <Text style={styles.primaryButtonText}>
+          {loading ? 'Envoi en cours...' : 'Envoyer le code'}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  </>
+);
+
+// Modern Input Component
+const ModernInput = React.memo(({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType = 'default',
+  autoCapitalize = 'sentences',
+  icon,
+  error,
+  editable = true,
+  colors,
+  delay = 0,
+}: any) => (
+  <Animated.View entering={FadeInDown.delay(delay)} style={styles.inputGroup}>
+    <Text style={[styles.inputLabel, { color: colors.text }]}>{label}</Text>
+    <View
+      style={[
+        styles.modernInputWrapper,
+        {
+          backgroundColor: colors.card,
+          borderColor: error ? colors.error : colors.border,
+        },
+        error && { borderWidth: 1.5 },
+      ]}
+    >
+      {icon && <View style={styles.inputIconContainer}>{icon}</View>}
+      <TextInput
+        style={[styles.modernInput, { color: colors.text }]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        editable={editable}
+      />
+    </View>
+    {error && (
+      <Animated.View entering={SlideInLeft} style={styles.errorContainer}>
+        <AlertCircle size={14} color={colors.error} />
+        <Text style={[styles.errorText, { color: colors.error }]}>
+          {error}
+        </Text>
+      </Animated.View>
+    )}
+  </Animated.View>
+));
+
+// Modern Password Input Component
+const ModernPasswordInput = React.memo(({
+  label,
+  value,
+  visible,
+  error,
+  onChangeText,
+  onToggleVisibility,
+  editable = true,
+  colors,
+  delay = 0,
+}: any) => (
+  <Animated.View entering={FadeInDown.delay(delay)} style={styles.inputGroup}>
+    <Text style={[styles.inputLabel, { color: colors.text }]}>{label}</Text>
+    <View
+      style={[
+        styles.modernInputWrapper,
+        {
+          backgroundColor: colors.card,
+          borderColor: error ? colors.error : colors.border,
+        },
+        error && { borderWidth: 1.5 },
+      ]}
+    >
+      <TextInput
+        style={[styles.modernInput, { color: colors.text }]}
+        value={value}
+        onChangeText={onChangeText}
+        secureTextEntry={!visible}
+        placeholder="Entrez votre mot de passe actuel"
+        placeholderTextColor={colors.muted}
+        editable={editable}
+      />
+      <TouchableOpacity
+        style={styles.visibilityToggle}
+        onPress={onToggleVisibility}
+        disabled={!editable}
+      >
+        {visible ? (
+          <EyeOff size={20} color={colors.muted} />
+        ) : (
+          <Eye size={20} color={colors.muted} />
+        )}
+      </TouchableOpacity>
+    </View>
+    {error && (
+      <Animated.View entering={SlideInLeft} style={styles.errorContainer}>
+        <AlertCircle size={14} color={colors.error} />
+        <Text style={[styles.errorText, { color: colors.error }]}>
+          {error}
+        </Text>
+      </Animated.View>
+    )}
+  </Animated.View>
+));
+
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 25,
-    paddingBottom: 10,
-    paddingTop: 20,
+  mainContainer: {
+    flex: 1,
+  },
+  headerContainer: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  headerContent: {
+    paddingHorizontal: 24,
   },
   backButton: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    zIndex: 1,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
-  title: {
-    fontFamily: 'Inter-Bold',
+  titleContainer: {
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  headerTitle: {
     fontSize: 24,
-    marginBottom: 24,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
     textAlign: 'center',
+    marginBottom: 8,
   },
-  subtitle: {
-    fontFamily: 'Inter-Regular',
+  headerSubtitle: {
     fontSize: 16,
-    marginBottom: 24,
+    fontFamily: 'Inter-Regular',
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     lineHeight: 22,
+    paddingHorizontal: 20,
+  },
+  contentContainer: {
+    flex: 1,
+    marginTop: -12,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  formCard: {
+    backgroundColor: 'transparent',
+    paddingTop: 24,
   },
   globalError: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    borderWidth: 1,
   },
   globalErrorText: {
     fontFamily: 'Inter-Medium',
     fontSize: 14,
-    marginLeft: 8,
+    marginLeft: 12,
+    flex: 1,
   },
-  inputContainer: {
-    marginBottom: 20,
+  // Verification Section Styles
+  infoCard: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 32,
+    alignItems: 'center',
   },
-  label: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
+  infoText: {
+    fontSize: 15,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    lineHeight: 22,
     marginBottom: 8,
   },
-  inputWrapper: {
+  emailHighlight: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  codeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 32,
+    paddingHorizontal: 8,
+  },
+  codeInput: {
+    width: (width - 80) / 6,
+    height: 56,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    textAlign: 'center',
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+  },
+  resendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  resendText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    marginRight: 6,
+  },
+  resendButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  resendButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+  },
+  timerContainer: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(107, 114, 128, 0.1)',
+    borderRadius: 16,
+  },
+  timerText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+  },
+  // Form Section Styles
+  formSection: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 20,
+  },
+  inputGroup: {
+    marginBottom: 24,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    marginBottom: 8,
+  },
+  modernInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    minHeight: 52,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
-  icon: {
-    marginRight: 8,
+  inputIconContainer: {
+    marginRight: 12,
   },
-  input: {
+  modernInput: {
     flex: 1,
-    fontFamily: 'Inter-Regular',
     fontSize: 16,
-    paddingVertical: 12,
+    fontFamily: 'Inter-Regular',
+    paddingVertical: 16,
   },
   visibilityToggle: {
     padding: 8,
+    marginLeft: 8,
   },
   errorContainer: {
     flexDirection: 'row',
@@ -663,69 +956,43 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   errorText: {
-    fontFamily: 'Inter-Regular',
     fontSize: 12,
-    marginLeft: 4,
+    fontFamily: 'Inter-Regular',
+    marginLeft: 6,
   },
-  buttons: {
+  // Button Styles
+  buttonContainer: {
+    marginTop: 8,
+  },
+  primaryButton: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-    marginBottom: 25,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
     alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: 'transparent',
-  },
-  submitButton: {
-    backgroundColor: '#166534',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    minHeight: 52,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
-  buttonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+  buttonIcon: {
+    marginRight: 8,
   },
-  submitButtonText: {
+  primaryButtonText: {
     color: '#ffffff',
-  },
-  codeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  codeInput: {
-    width: 48,
-    height: 56,
-    borderWidth: 2,
-    borderRadius: 12,
-    textAlign: 'center',
-    fontSize: 24,
-    fontFamily: 'Inter-Bold',
-  },
-  resendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  resendText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    marginRight: 4,
-  },
-  resendButton: {
+    fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-  },
-  timerText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
   },
 });

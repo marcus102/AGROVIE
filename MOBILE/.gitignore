@@ -18,7 +18,7 @@ web-build/
 .metro-health-check*
 
 # debug
-npm-debug.*
+npm-debug.*r
 yarn-debug.*
 yarn-error.*
 

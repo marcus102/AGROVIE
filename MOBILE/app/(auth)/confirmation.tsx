@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView, Linking } from 'react-native';
 import { router } from 'expo-router';
-import { CheckCircle2, ChevronRight } from 'lucide-react-native';
+import { CheckCircle2, ChevronRight, Mail, AlertCircle } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
+import { useLinkStore } from '@/stores/dynamic_links';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const steps = [
@@ -26,11 +27,24 @@ const steps = [
 
 export default function ConfirmationScreen() {
   const { colors } = useThemeStore();
+  const { links, fetchLinks } = useLinkStore();
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      fetchLinks();
+    };
+
+    initializeApp();
+  }, [fetchLinks]);
+
+  const about =
+    links.find((link) => link.category === 'website-about')?.link ||
+    '';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.content}>
-        <Animated.View 
+        <Animated.View
           entering={FadeInDown.delay(200)}
           style={styles.header}
         >
@@ -47,7 +61,7 @@ export default function ConfirmationScreen() {
 
         <View style={styles.progress}>
           <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.progressFill,
                 { backgroundColor: colors.primary, width: '100%' }
@@ -58,6 +72,21 @@ export default function ConfirmationScreen() {
             Étape 4 sur 4
           </Text>
         </View>
+
+        <Animated.View
+          entering={FadeInDown.delay(250)}
+          style={[styles.noteContainer, { backgroundColor: 'rgba(255, 193, 7, 0.1)', borderColor: 'rgba(255, 193, 7, 0.3)' }]}
+        >
+          <View style={styles.noteHeader}>
+            <AlertCircle size={20} color={colors.warning || '#FFC107'} />
+            <Text style={[styles.noteTitle, { color: colors.text }]}>
+              Note importante
+            </Text>
+          </View>
+          <Text style={[styles.noteText, { color: colors.muted }]}>
+            Les emails de notification peuvent parfois arriver dans votre dossier spam/courrier indésirable de Gmail ou autre service de messagerie. Pensez à vérifier régulièrement ce dossier.
+          </Text>
+        </Animated.View>
 
         <View style={styles.timeline}>
           {steps.map((step, index) => (
@@ -84,8 +113,23 @@ export default function ConfirmationScreen() {
           ))}
         </View>
 
-        <Animated.View 
+        <Animated.View
           entering={FadeInDown.delay(600)}
+          style={[styles.emailNotificationCard, { backgroundColor: colors.card, borderColor: colors.primary + '30' }]}
+        >
+          <View style={styles.emailHeader}>
+            <Mail size={24} color={colors.primary} />
+            <Text style={[styles.emailTitle, { color: colors.text }]}>
+              Notification par email
+            </Text>
+          </View>
+          <Text style={[styles.emailText, { color: colors.muted }]}>
+            Une fois l'examen de vos documents terminé, vous recevrez un email de confirmation ou de refus avec les détails de la décision et les prochaines étapes à suivre.
+          </Text>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.delay(700)}
           style={[styles.infoCard, { backgroundColor: colors.card }]}
         >
           <Text style={[styles.infoTitle, { color: colors.text }]}>
@@ -99,7 +143,7 @@ export default function ConfirmationScreen() {
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.primary }]}
-            onPress={() => router.push('https://www.agro.com/about')}
+            onPress={() => Linking.openURL(about)}
           >
             <Text style={[styles.buttonText, { color: colors.card }]}>
               En savoir plus
@@ -171,6 +215,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
   },
+  noteContainer: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 32,
+    borderWidth: 1,
+  },
+  noteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  noteTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  noteText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+  },
   timeline: {
     marginBottom: 32,
     gap: 16,
@@ -206,6 +271,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   timelineDescription: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emailNotificationCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      },
+      default: {
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+    }),
+  },
+  emailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  emailTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  emailText: {
     fontFamily: 'Inter-Regular',
     fontSize: 14,
     lineHeight: 20,

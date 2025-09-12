@@ -12,14 +12,27 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Platform,
+  Alert,
+  Dimensions,
 } from 'react-native';
-import { Eye, EyeOff, CircleAlert as AlertCircle } from 'lucide-react-native';
+import {
+  Eye,
+  EyeOff,
+  CircleAlert as AlertCircle,
+  ArrowLeft,
+  Shield,
+  Check,
+  Lock,
+} from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn, SlideInUp } from 'react-native-reanimated';
 import { useAuthStore } from '@/stores/auth';
 import { Toast, ToastType } from '@/components/Toast';
 import debounce from 'lodash.debounce';
 import { router } from 'expo-router';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 interface PasswordModalProps {
   visible: boolean;
@@ -39,11 +52,11 @@ interface PasswordState {
 }
 
 const passwordRequirements = [
-  { id: 'length', label: 'Au moins 8 caractères' },
-  { id: 'uppercase', label: 'Une lettre majuscule' },
-  { id: 'lowercase', label: 'Une lettre minuscule' },
-  { id: 'number', label: 'Un chiffre' },
-  { id: 'special', label: 'Un caractère spécial' },
+  { id: 'length', label: 'Au moins 8 caractères', icon: '8+' },
+  { id: 'uppercase', label: 'Une lettre majuscule', icon: 'A' },
+  { id: 'lowercase', label: 'Une lettre minuscule', icon: 'a' },
+  { id: 'number', label: 'Un chiffre', icon: '1' },
+  { id: 'special', label: 'Un caractère spécial', icon: '#' },
 ] as const;
 
 const SPECIAL_CHAR_REGEX = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/;
@@ -326,7 +339,6 @@ export default function PasswordUpdate({
         setIsUpdating(true);
 
         // Call the resetPassword function and wait for it to complete
-
         console.log(
           '🔒 Submitting password reset operation...',
           passwords.current.value
@@ -437,128 +449,223 @@ export default function PasswordUpdate({
   );
 
   const strengthColors = [
-    colors.error,
-    colors.error,
-    colors.warning,
-    colors.success,
-    colors.success,
+    '#EF4444', // Red - Very weak
+    '#F97316', // Orange - Weak  
+    '#EAB308', // Yellow - Fair
+    '#22C55E', // Green - Good
+    '#059669', // Dark Green - Strong
   ];
+
+  const strengthLabels = [
+    'Très faible',
+    'Faible', 
+    'Moyen',
+    'Bon',
+    'Excellent'
+  ];
+
+  // Memoized back handler
+  const handleBack = useCallback(() => {
+    try {
+      router.back();
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Unable to go back');
+    }
+  }, []);
 
   return (
     <>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <ScrollView style={styles.container}>
-          <PasswordInput
-            label="Mot de passe actuel"
-            value={passwords.current.value}
-            visible={passwords.current.visible}
-            error={passwords.current.error}
-            onChangeText={handlePasswordChange('current')}
-            onToggleVisibility={handleToggleVisibility('current')}
-            testID="current-password"
-            editable={!isUpdating && !loading}
-          />
-
-          <PasswordInput
-            label="Nouveau mot de passe"
-            value={passwords.new.value}
-            visible={passwords.new.visible}
-            error={passwords.new.error}
-            onChangeText={handlePasswordChange('new')}
-            onToggleVisibility={handleToggleVisibility('new')}
-            testID="new-password"
-            editable={!isUpdating && !loading}
-          />
-
-          <PasswordInput
-            label="Confirmer le nouveau mot de passe"
-            value={passwords.confirm.value}
-            visible={passwords.confirm.visible}
-            error={passwords.confirm.error}
-            onChangeText={handlePasswordChange('confirm')}
-            onToggleVisibility={handleToggleVisibility('confirm')}
-            testID="confirm-password"
-            editable={!isUpdating && !loading}
-          />
-
-          <View style={styles.requirementsContainer}>
-            <Text style={[styles.requirementsTitle, { color: colors.text }]}>
-              Le mot de passe doit contenir :
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* Header */}
+        <Animated.View entering={SlideInUp.delay(100)} style={[styles.header, { backgroundColor: colors.background }]}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: colors.card }]}
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+          
+          <View style={styles.headerContent}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+              <Shield size={32} color={colors.primary} />
+            </View>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Modifier votre mot de passe
             </Text>
-            {passwordRequirements.map((req) => (
-              <View key={req.id} style={styles.requirementItem}>
-                <View
-                  style={[
-                    styles.requirementBullet,
-                    {
-                      backgroundColor: checkPasswordRequirement(
-                        req.id,
-                        passwords.new.value
-                      )
-                        ? colors.success
-                        : colors.muted,
-                    },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.requirement,
-                    {
-                      color: checkPasswordRequirement(
-                        req.id,
-                        passwords.new.value
-                      )
-                        ? colors.success
-                        : colors.text,
-                    },
-                  ]}
-                >
-                  {req.label}
-                </Text>
-              </View>
-            ))}
+            <Text style={[styles.subtitle, { color: colors.muted }]}>
+              Assurez-vous que votre nouveau mot de passe est sécurisé
+            </Text>
+          </View>
+        </Animated.View>
 
-            {/* Password Strength Meter */}
+        <ScrollView 
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Password Inputs */}
+          <Animated.View entering={FadeInDown.delay(200)}>
+            <PasswordInput
+              label="Mot de passe actuel"
+              placeholder="Entrez votre mot de passe actuel"
+              value={passwords.current.value}
+              visible={passwords.current.visible}
+              error={passwords.current.error}
+              onChangeText={handlePasswordChange('current')}
+              onToggleVisibility={handleToggleVisibility('current')}
+              testID="current-password"
+              editable={!isUpdating && !loading}
+              icon={<Lock size={20} color={colors.muted} />}
+            />
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(300)}>
+            <PasswordInput
+              label="Nouveau mot de passe"
+              placeholder="Créez un nouveau mot de passe"
+              value={passwords.new.value}
+              visible={passwords.new.visible}
+              error={passwords.new.error}
+              onChangeText={handlePasswordChange('new')}
+              onToggleVisibility={handleToggleVisibility('new')}
+              testID="new-password"
+              editable={!isUpdating && !loading}
+              icon={<Shield size={20} color={colors.muted} />}
+              showStrength={true}
+              strength={passwordStrength}
+              strengthColor={passwordStrength > 0 ? strengthColors[passwordStrength - 1] : colors.muted}
+              strengthLabel={passwordStrength > 0 ? strengthLabels[passwordStrength - 1] : ''}
+            />
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(400)}>
+            <PasswordInput
+              label="Confirmer le nouveau mot de passe"
+              placeholder="Confirmez votre nouveau mot de passe"
+              value={passwords.confirm.value}
+              visible={passwords.confirm.visible}
+              error={passwords.confirm.error}
+              onChangeText={handlePasswordChange('confirm')}
+              onToggleVisibility={handleToggleVisibility('confirm')}
+              testID="confirm-password"
+              editable={!isUpdating && !loading}
+              icon={<Check size={20} color={colors.muted} />}
+            />
+          </Animated.View>
+
+          {/* Requirements Section */}
+          <Animated.View entering={FadeInDown.delay(500)} style={[styles.requirementsCard, { backgroundColor: colors.card }]}>
+            <View style={styles.requirementsHeader}>
+              <View style={[styles.requirementsIcon, { backgroundColor: colors.primary + '15' }]}>
+                <Shield size={20} color={colors.primary} />
+              </View>
+              <Text style={[styles.requirementsTitle, { color: colors.text }]}>
+                Exigences du mot de passe
+              </Text>
+            </View>
+            
+            <View style={styles.requirementsList}>
+              {passwordRequirements.map((req, index) => {
+                const isMet = checkPasswordRequirement(req.id, passwords.new.value);
+                return (
+                  <Animated.View 
+                    key={req.id} 
+                    entering={FadeInDown.delay(600 + index * 50)}
+                    style={styles.requirementItem}
+                  >
+                    <View style={[
+                      styles.requirementIndicator, 
+                      { backgroundColor: isMet ? colors.success : colors.border }
+                    ]}>
+                      {isMet ? (
+                        <Check size={14} color="white" />
+                      ) : (
+                        <Text style={[styles.requirementIconText, { color: colors.muted }]}>
+                          {req.icon}
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={[
+                      styles.requirementText,
+                      { color: isMet ? colors.success : colors.text }
+                    ]}>
+                      {req.label}
+                    </Text>
+                  </Animated.View>
+                );
+              })}
+            </View>
+
+            {/* Overall Progress */}
             {passwords.new.value && (
-              <View style={styles.strengthContainer}>
-                <Text style={[styles.strengthLabel, { color: colors.text }]}>
-                  Force du mot de passe:
-                </Text>
-                <View style={styles.strengthMeter}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.strengthSegment,
-                        i <= passwordStrength && {
-                          backgroundColor: strengthColors[passwordStrength - 1],
-                        },
-                      ]}
-                    />
-                  ))}
+              <View style={styles.progressContainer}>
+                <View style={styles.progressHeader}>
+                  <Text style={[styles.progressLabel, { color: colors.text }]}>
+                    Force du mot de passe
+                  </Text>
+                  <Text style={[styles.progressText, { 
+                    color: passwordStrength > 0 ? strengthColors[passwordStrength - 1] : colors.muted 
+                  }]}>
+                    {passwordStrength > 0 ? strengthLabels[passwordStrength - 1] : 'Faible'}
+                  </Text>
+                </View>
+                <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
+                  <Animated.View 
+                    style={[
+                      styles.progressFill,
+                      {
+                        backgroundColor: passwordStrength > 0 ? strengthColors[passwordStrength - 1] : colors.muted,
+                        width: `${(passwordStrength / 5) * 100}%`
+                      }
+                    ]}
+                    entering={FadeIn.duration(300)}
+                  />
                 </View>
               </View>
             )}
-          </View>
+          </Animated.View>
 
-          <View style={styles.buttons}>
+          {/* Submit Button */}
+          <Animated.View entering={FadeInDown.delay(700)} style={styles.buttonContainer}>
             <TouchableOpacity
               style={[
-                styles.button,
                 styles.submitButton,
-                { backgroundColor: colors.primary },
-                (!isFormValid || isUpdating || loading) &&
-                  styles.buttonDisabled,
+                { 
+                  backgroundColor: isFormValid ? colors.primary : colors.border,
+                  shadowColor: colors.primary
+                },
+                (!isFormValid || isUpdating || loading) && styles.submitButtonDisabled,
               ]}
               onPress={handleSubmit}
               disabled={!isFormValid || isUpdating || loading}
+              activeOpacity={0.8}
               accessibilityLabel="Confirmer la modification du mot de passe"
             >
-              <Text style={[styles.buttonText, styles.submitButtonText]}>
-                {isUpdating ? 'Modification...' : 'Modifier'}
-              </Text>
+              <View style={styles.submitButtonContent}>
+                {isUpdating ? (
+                  <>
+                    <View style={styles.loadingSpinner} />
+                    <Text style={[styles.submitButtonText, { 
+                      color: isFormValid ? 'white' : colors.muted 
+                    }]}>
+                      Modification en cours...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Shield size={20} color={isFormValid ? 'white' : colors.muted} />
+                    <Text style={[styles.submitButtonText, { 
+                      color: isFormValid ? 'white' : colors.muted 
+                    }]}>
+                      Modifier le mot de passe
+                    </Text>
+                  </>
+                )}
+              </View>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </ScrollView>
       </View>
 
@@ -576,6 +683,7 @@ export default function PasswordUpdate({
 const PasswordInput = React.memo(
   ({
     label,
+    placeholder,
     value,
     visible,
     error,
@@ -583,8 +691,14 @@ const PasswordInput = React.memo(
     onToggleVisibility,
     testID,
     editable = true,
+    icon,
+    showStrength = false,
+    strength = 0,
+    strengthColor,
+    strengthLabel,
   }: {
     label: string;
+    placeholder?: string;
     value: string;
     visible: boolean;
     error?: string;
@@ -592,26 +706,34 @@ const PasswordInput = React.memo(
     onToggleVisibility: () => void;
     testID: string;
     editable?: boolean;
+    icon?: React.ReactNode;
+    showStrength?: boolean;
+    strength?: number;
+    strengthColor?: string;
+    strengthLabel?: string;
   }) => {
     const { colors } = useThemeStore();
 
     return (
-      <Animated.View entering={FadeInDown} style={styles.inputContainer}>
-        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      <View style={styles.inputContainer}>
+        <Text style={[styles.inputLabel, { color: colors.text }]}>{label}</Text>
         <View
           style={[
             styles.inputWrapper,
             {
               backgroundColor: colors.card,
-              borderColor: error ? colors.error : colors.border,
+              borderColor: error ? colors.error : value ? colors.primary + '40' : colors.border,
+              borderWidth: error ? 2 : value ? 1.5 : 1,
             },
           ]}
         >
+          {icon && <View style={styles.inputIcon}>{icon}</View>}
           <TextInput
-            style={[styles.input, { color: colors.text }]}
+            style={[styles.textInput, { color: colors.text, flex: 1 }]}
             value={value}
             onChangeText={onChangeText}
             secureTextEntry={!visible}
+            placeholder={placeholder}
             placeholderTextColor={colors.muted}
             testID={testID}
             editable={editable}
@@ -622,13 +744,13 @@ const PasswordInput = React.memo(
             }
           />
           <TouchableOpacity
-            style={styles.visibilityToggle}
+            style={styles.visibilityButton}
             onPress={onToggleVisibility}
             disabled={!editable}
+            activeOpacity={0.7}
             accessibilityLabel={
               visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
             }
-            accessibilityHint="Basculer la visibilité du mot de passe"
           >
             {visible ? (
               <EyeOff size={20} color={colors.muted} />
@@ -637,134 +759,256 @@ const PasswordInput = React.memo(
             )}
           </TouchableOpacity>
         </View>
+        
+        {showStrength && value && strengthLabel && (
+          <View style={styles.strengthIndicator}>
+            <Text style={[styles.strengthText, { color: strengthColor }]}>
+              {strengthLabel}
+            </Text>
+          </View>
+        )}
+        
         {error && (
-          <View style={styles.errorContainer}>
+          <Animated.View entering={FadeInDown} style={styles.errorContainer}>
             <AlertCircle size={16} color={colors.error} />
             <Text style={[styles.errorText, { color: colors.error }]}>
               {error}
             </Text>
-          </View>
+          </Animated.View>
         )}
-      </Animated.View>
+      </View>
     );
   }
 );
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 25,
-    paddingBottom: 10,
-    paddingTop: 20,
+    flex: 1,
+  },
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  headerContent: {
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   title: {
+    fontSize: 28,
+    fontWeight: '700',
     fontFamily: 'Inter-Bold',
-    fontSize: 24,
-    marginBottom: 24,
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  requirementsContainer: {
-    marginBottom: 24,
-    padding: 16,
-    borderRadius: 12,
-  },
-  requirementsTitle: {
-    fontFamily: 'Inter-SemiBold',
+  subtitle: {
     fontSize: 16,
-    marginBottom: 12,
-  },
-  requirementItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  requirementBullet: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 12,
-  },
-  requirement: {
     fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
   },
-  strengthContainer: {
-    marginTop: 16,
-  },
-  strengthLabel: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  strengthMeter: {
-    flexDirection: 'row',
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-    gap: 4,
-  },
-  strengthSegment: {
+  scrollContainer: {
     flex: 1,
-    backgroundColor: '#e5e7eb',
+  },
+  scrollContent: {
+    padding: 24,
+    paddingBottom: 100,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
-  label: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    marginBottom: 8,
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 12,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  input: {
-    flex: 1,
-    fontFamily: 'Inter-Regular',
+  inputIcon: {
+    marginRight: 12,
+  },
+  textInput: {
     fontSize: 16,
-    paddingVertical: 12,
+    fontFamily: 'Inter-Regular',
+    paddingVertical: 16,
+    minHeight: 56,
   },
-  visibilityToggle: {
-    padding: 8,
+  visibilityButton: {
+    padding: 12,
+    marginLeft: 8,
+  },
+  strengthIndicator: {
+    marginTop: 8,
+    alignItems: 'flex-end',
+  },
+  strengthText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    fontWeight: '500',
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 8,
+    paddingHorizontal: 4,
   },
   errorText: {
+    fontSize: 14,
     fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  buttons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-    marginBottom: 25,
-  },
-  button: {
+    marginLeft: 8,
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
   },
-  cancelButton: {
-    backgroundColor: 'transparent',
+  requirementsCard: {
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  requirementsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  requirementsIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  requirementsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  requirementsList: {
+    marginBottom: 20,
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingVertical: 4,
+  },
+  requirementIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  requirementIconText: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  requirementText: {
+    fontSize: 15,
+    fontFamily: 'Inter-Regular',
+    flex: 1,
+    lineHeight: 20,
+  },
+  progressContainer: {
+    marginTop: 8,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    fontWeight: '500',
+  },
+  progressText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  buttonContainer: {
+    marginTop: 8,
   },
   submitButton: {
-    backgroundColor: '#166534',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  submitButtonDisabled: {
+    shadowOpacity: 0.05,
+    elevation: 2,
   },
-  buttonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+  submitButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitButtonText: {
-    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+    marginLeft: 8,
+  },
+  loadingSpinner: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderTopColor: 'white',
+    marginRight: 8,
   },
 });

@@ -9,8 +9,8 @@ import {
   Mail,
   MapPin,
   Phone,
-  Sparkles,
   ArrowUpRight,
+  Tractor
 } from "lucide-react";
 import { Language, Translations } from "../types";
 import { motion } from "framer-motion";
@@ -52,7 +52,7 @@ export function Footer({ translations }: FooterProps) {
     {
       title: translations.footer.contact,
       items: [
-        { icon: Mail, text: "contact@agronetwork.com" },
+        { icon: Mail, text: "support@agrovie.africa" },
         { icon: Phone, text: "+22674189763 / +22660089704" },
         { icon: MapPin, text: "Ouagadougou, Burkina Faso" },
       ],
@@ -129,12 +129,12 @@ export function Footer({ translations }: FooterProps) {
                 whileHover={{ scale: 1.05, rotate: 5 }}
                 className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg"
               >
-                <Sparkles className="w-6 h-6 text-white" />
+                <Tractor className="w-6 h-6 text-white" />
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-light/20 to-transparent"></div>
               </motion.div>
               <div className="flex flex-col">
                 <span className="text-2xl font-bold bg-gradient-to-r from-primary-light to-white bg-clip-text text-transparent font-montserrat">
-                  Agrrick
+                  Agrovie
                 </span>
                 {/* <span className="text-sm text-gray-400 font-medium">
                   Network
@@ -178,34 +178,34 @@ export function Footer({ translations }: FooterProps) {
                   <div className="space-y-4">
                     {"links" in section
                       ? (section.links ?? []).map((link) => (
-                          <ScrollToTopLink
-                            key={link.href}
-                            to={link.href}
-                            className="group flex items-center text-gray-300 hover:text-white transition-all duration-300"
-                          >
-                            <span className="group-hover:translate-x-1 transition-transform duration-300">
-                              {link.name}
-                            </span>
-                            <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                          </ScrollToTopLink>
-                        ))
+                        <ScrollToTopLink
+                          key={link.href}
+                          to={link.href}
+                          className="group flex items-center text-gray-300 hover:text-white transition-all duration-300"
+                        >
+                          <span className="group-hover:translate-x-1 transition-transform duration-300">
+                            {link.name}
+                          </span>
+                          <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                        </ScrollToTopLink>
+                      ))
                       : "items" in section &&
-                        section.items.map((item, index) => {
-                          const Icon = item.icon;
-                          return (
-                            <div
-                              key={index}
-                              className="flex items-center space-x-3 text-gray-300 group"
-                            >
-                              <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors duration-300">
-                                <Icon className="h-4 w-4" />
-                              </div>
-                              <span className="group-hover:text-white transition-colors duration-300">
-                                {item.text}
-                              </span>
+                      section.items.map((item, index) => {
+                        const Icon = item.icon;
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center space-x-3 text-gray-300 group"
+                          >
+                            <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors duration-300">
+                              <Icon className="h-4 w-4" />
                             </div>
-                          );
-                        })}
+                            <span className="group-hover:text-white transition-colors duration-300">
+                              {item.text}
+                            </span>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               ))}
@@ -252,7 +252,7 @@ export function Footer({ translations }: FooterProps) {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex items-center text-gray-400">
               <span>
-                &copy; {currentYear} Agro Network. {translations.footer.rights}
+                &copy; {currentYear} Agrovie. {translations.footer.rights}
               </span>
             </div>
             <div className="flex items-center space-x-6 text-sm text-gray-400">

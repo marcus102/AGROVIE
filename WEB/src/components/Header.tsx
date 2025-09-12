@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Sun, Moon, ChevronDown, LogOut, Sparkles, Tractor } from "lucide-react";
+import { Menu, X, User, Sun, Moon, ChevronDown, LogOut, Tractor } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Language, Translations } from "../types";
 import { useTheme } from "../contexts/ThemeContext";
@@ -63,11 +63,10 @@ export function Header({
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-500 ${
-        isScrolled
-          ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-xl border-b border-primary/10"
-          : "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg"
-      }`}
+      className={`sticky top-0 z-50 transition-all duration-500 ${isScrolled
+        ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-xl border-b border-primary/10"
+        : "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg"
+        }`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between">
@@ -84,7 +83,7 @@ export function Header({
               </motion.div>
               <div className="flex flex-col">
                 <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent font-montserrat">
-                  Agrrick
+                  Agrovie
                 </span>
                 {/* <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                   Network
@@ -98,11 +97,10 @@ export function Header({
               <ScrollToTopLink
                 key={item.href}
                 to={item.href}
-                className={`relative text-base font-medium transition-all duration-300 group ${
-                  location.pathname === item.href
-                    ? "text-primary dark:text-primary-light"
-                    : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary-light"
-                }`}
+                className={`relative text-base font-medium transition-all duration-300 group ${location.pathname === item.href
+                  ? "text-primary dark:text-primary-light"
+                  : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary-light"
+                  }`}
               >
                 <span className="relative z-10">{item.name}</span>
                 {location.pathname === item.href && (
@@ -173,15 +171,15 @@ export function Header({
                           {user?.email}
                         </p>
                       </div>
-                      {!hidden && (
-                        <ScrollToTopLink
-                          to="/profile"
-                          className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                          onClick={() => setIsProfileDropdownOpen(false)}
-                        >
-                          Profile Settings
-                        </ScrollToTopLink>
-                      )}
+
+                      <ScrollToTopLink
+                        to={`/profile/${user?.id}`}
+                        className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        {translations.header.profile}
+                      </ScrollToTopLink>
+
                       {isAdmin && (
                         <ScrollToTopLink
                           to="/admin"
@@ -253,11 +251,10 @@ export function Header({
                   <ScrollToTopLink
                     key={item.href}
                     to={item.href}
-                    className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-300 ${
-                      location.pathname === item.href
-                        ? "bg-gradient-to-r from-primary/20 to-primary-light/20 text-primary"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    }`}
+                    className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-300 ${location.pathname === item.href
+                      ? "bg-gradient-to-r from-primary/20 to-primary-light/20 text-primary"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
@@ -290,7 +287,7 @@ export function Header({
                 {isAuthenticated ? (
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
                     <ScrollToTopLink
-                      to="/profile"
+                      to={`/profile/${user?.id}`}
                       className="block px-4 py-3 rounded-xl text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                       onClick={() => setIsMenuOpen(false)}
                     >

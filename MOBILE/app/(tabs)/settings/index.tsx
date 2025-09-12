@@ -19,13 +19,11 @@ import {
   Shield,
   Info,
   ChevronRight,
-  LogOut,
   Share as ShareIcon,
   Settings as SettingsIcon,
   Circle as HelpCircle,
   Heart,
 } from 'lucide-react-native';
-import { useAuthStore } from '@/stores/auth';
 import { useThemeStore } from '@/stores/theme';
 import { useLanguageStore } from '@/stores/language';
 import { LANGUAGES } from '@/types/language';
@@ -35,8 +33,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useLinkStore } from '@/stores/dynamic_links';
 import { useWelcomeFlow } from '@/hooks/useWelcomeFlow';
-import { FeedbackOverlay } from '@/components/FeedbackOverlay';
-
+import { FeedbackOverlay } from '@/components/modals/FeedbackOverlay';
 import type { LucideProps } from 'lucide-react-native';
 
 type MenuItemProps = {
@@ -122,7 +119,6 @@ export default function SettingsScreen() {
   const { theme, colors, toggleTheme, isLoading } =
     useThemeStore();
   const { language } = useLanguageStore();
-  const { signOut } = useAuthStore();
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const { links, fetchLinks } = useLinkStore();
@@ -149,11 +145,6 @@ export default function SettingsScreen() {
 
   const contactUsLink =
     links.find((link) => link.category === 'contact-us')?.link || '';
-
-  const handleSignOut = () => {
-    signOut();
-    router.replace('/(auth)/login');
-  };
 
   const handleThemeToggle = () => {
     toggleTheme();
@@ -300,7 +291,7 @@ export default function SettingsScreen() {
             <View style={styles.sectionContent}>
               <MenuItem
                 icon={ShareIcon}
-                title="Partager AGRO"
+                title="Partager AGROVIA"
                 subtitle="Inviter vos amis à rejoindre la plateforme"
                 onPress={handleShareApp}
                 iconColor="#8b5cf6"
@@ -371,32 +362,6 @@ export default function SettingsScreen() {
               />
             </View>
           </Animated.View>
-          {/* Logout Button */}
-          <Animated.View
-            entering={FadeInDown.delay(800)}
-            style={styles.logoutSection}
-          >
-            <TouchableOpacity
-              style={[
-                styles.logoutButton,
-                { backgroundColor: colors.error + '15' },
-              ]}
-              onPress={handleSignOut}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.logoutIcon,
-                  { backgroundColor: colors.error + '20' },
-                ]}
-              >
-                <LogOut size={24} color={colors.error} />
-              </View>
-              <Text style={[styles.logoutText, { color: colors.error }]}>
-                Déconnexion
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
         </View>
       </ScrollView>
 
@@ -418,8 +383,8 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 40,
     flex: 1,
-    marginBottom: 80,
   },
   loadingContainer: {
     flex: 1,
@@ -471,7 +436,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 30,
+    paddingBottom: 150,
   },
   section: {
     marginBottom: 32,
@@ -516,27 +481,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 13,
     lineHeight: 18,
-  },
-  logoutSection: {
-    marginTop: 20,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    borderRadius: 16,
-    justifyContent: 'center',
-  },
-  logoutIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  logoutText: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 18,
   },
 });

@@ -5,7 +5,6 @@ import {
   Target,
   FileText,
   PenTool,
-  TrendingUp,
   DollarSign,
   ArrowUpRight,
   Clock,
@@ -221,7 +220,7 @@ export function Dashboard() {
             const Icon = stat.icon;
             return (
               <motion.div
-                key={stat.title}
+                key={`${stat.title}-${index}`}
                 variants={fadeIn}
                 whileHover={{ y: -5, scale: 1.02 }}
                 className="group relative bg-white dark:bg-gray-900 overflow-hidden shadow-xl rounded-3xl border border-gray-100 dark:border-gray-800 transition-all duration-300"

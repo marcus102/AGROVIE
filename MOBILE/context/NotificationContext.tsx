@@ -45,14 +45,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   children,
 }) => {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [permissionStatus, setPermissionStatus] = useState<string>('undetermined');
+  const [permissionStatus, setPermissionStatus] =
+    useState<string>('undetermined');
   const [isSupported, setIsSupported] = useState(true);
-  const [notification, setNotification] = useState<Notifications.Notification | null>(null);
+  const [notification, setNotification] =
+    useState<Notifications.Notification | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const notificationListener = useRef<Subscription>();
-  const responseListener = useRef<Subscription>();
+  const notificationListener = useRef<Subscription>(null);
+  const responseListener = useRef<Subscription>(null);
 
   const isTokenSaved = !!expoPushToken;
 
@@ -60,20 +62,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     try {
       setError(null); // Clear previous errors
       console.log('🔔 Retrying token registration...');
-      
+
       const token = await registerForPushNotificationsAsync();
       setExpoPushToken(token);
       await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
-      
+
       // Update permission status after successful registration
       const { status } = await Notifications.getPermissionsAsync();
       setPermissionStatus(status);
-      
+
       console.log('✅ Token registration retry successful');
     } catch (err) {
       console.error('❌ Token registration retry failed:', err);
       setError(err as Error);
-      
+
       // Still update permission status even on failure
       const { status } = await Notifications.getPermissionsAsync();
       setPermissionStatus(status);
@@ -101,32 +103,33 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   useEffect(() => {
     const initialize = async () => {
       if (isInitialized) return;
-      
+
       try {
         console.log('🔔 Initializing notifications...');
-        
+
         // Check current permission status first
         const { status } = await Notifications.getPermissionsAsync();
         setPermissionStatus(status);
         console.log(`🔔 Current permission status: ${status}`);
-        
+
         // Only try to register if we don't have a token yet
         if (!expoPushToken) {
           console.log('🔔 No existing token, attempting registration...');
           const token = await registerForPushNotificationsAsync();
           setExpoPushToken(token);
           await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
-          
+
           // Update permission status after registration
-          const { status: newStatus } = await Notifications.getPermissionsAsync();
+          const { status: newStatus } =
+            await Notifications.getPermissionsAsync();
           setPermissionStatus(newStatus);
         }
-        
+
         console.log('✅ Notification initialization complete');
       } catch (err) {
         console.error('❌ Notification initialization failed:', err);
         setError(err as Error);
-        
+
         // Still update permission status on error
         try {
           const { status } = await Notifications.getPermissionsAsync();
@@ -145,7 +148,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   // Set up notification listeners
   useEffect(() => {
     console.log('🔔 Setting up notification listeners...');
-    
+
     // Set up notification listeners
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {

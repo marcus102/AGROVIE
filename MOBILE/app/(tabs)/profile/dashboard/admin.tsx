@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Alert,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { useThemeStore } from '@/stores/theme';
 import {
@@ -25,7 +26,7 @@ import {
   Clock,
   AlertCircle,
   BookOpen,
-  Eye,
+  ArrowLeft,
 } from 'lucide-react-native';
 import { StatCard } from '@/components/StatCard';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -35,6 +36,8 @@ import { useMissionStore } from '@/stores/mission';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { createClient } from '@supabase/supabase-js';
+import { router } from 'expo-router';
+import { useLinkStore } from '@/stores/dynamic_links';
 
 // Initialize Supabase client with error handling
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -115,6 +118,7 @@ export default function AdminDashboardScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { links, fetchLinks } = useLinkStore();
 
   // Memoized calculations for better performance
   const statsData = useMemo(() => {
@@ -137,9 +141,9 @@ export default function AdminDashboardScreen() {
     const successRate =
       completedMissions > 0
         ? (
-            (completedMissions / (completedMissions + activeMissions)) *
-            100
-          ).toFixed(1) + '%'
+          (completedMissions / (completedMissions + activeMissions)) *
+          100
+        ).toFixed(1) + '%'
         : '0%';
 
     return {
@@ -212,6 +216,17 @@ export default function AdminDashboardScreen() {
   useEffect(() => {
     handleRefresh();
   }, []);
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      fetchLinks();
+    };
+
+    initializeApp();
+  }, [fetchLinks]);
+
+  const adminPageLink =
+    links.find((link) => link.category === 'website-admin')?.link || '/';
 
   const isLoading = profilesLoading || missionsLoading || loadingBlogs;
 
@@ -595,11 +610,10 @@ export default function AdminDashboardScreen() {
                   styles.progressBar,
                   {
                     backgroundColor: colors.primary,
-                    width: `${
-                      statsData.totalUsers > 0
-                        ? (count / statsData.totalUsers) * 100
-                        : 0
-                    }%`,
+                    width: `${statsData.totalUsers > 0
+                      ? (count / statsData.totalUsers) * 100
+                      : 0
+                      }%`,
                   },
                 ]}
               />
@@ -698,7 +712,7 @@ export default function AdminDashboardScreen() {
               width: `${Math.min(
                 (missionActivity.thisWeek /
                   Math.max(missionActivity.thisMonth, 1)) *
-                  100,
+                100,
                 100
               )}%`,
             },
@@ -759,7 +773,7 @@ export default function AdminDashboardScreen() {
                     styles.webButton,
                     { backgroundColor: colors.primary },
                   ]}
-                  onPress={() => Linking.openURL('http://localhost:5173/admin')}
+                  onPress={() => Linking.openURL(adminPageLink)}
                 >
                   <Globe size={24} color="#fff" />
                   <Text style={styles.webButtonText}>
@@ -831,8 +845,25 @@ export default function AdminDashboardScreen() {
     { type: 'blogPosts' },
   ];
 
+  // Memoized back handler
+  const handleBack = useCallback(() => {
+    try {
+      router.back();
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Unable to go back');
+    }
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <TouchableOpacity
+        style={[styles.backButton, { backgroundColor: colors.card }]}
+        onPress={handleBack}
+        activeOpacity={0.7}
+      >
+        <ArrowLeft size={24} color={colors.primary} />
+      </TouchableOpacity>
       {error && (
         <View
           style={[styles.errorBanner, { backgroundColor: '#ef4444' + '20' }]}
@@ -975,8 +1006,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scrollContent: {
-    paddingHorizontal: 12,
-    paddingBottom: 30,
+    paddingHorizontal: 2,
+    paddingBottom: 150,
   },
   webButtonContainer: {
     paddingHorizontal: 12,
@@ -1208,7 +1239,7 @@ const styles = StyleSheet.create({
   themeBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8, 
+    borderRadius: 8,
   },
   themeText: {
     fontFamily: 'Inter-Medium',
@@ -1225,5 +1256,28 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 14,
+  },
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 24 : 48,
+    left: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+      },
+      default: {
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+      },
+    }),
   },
 });

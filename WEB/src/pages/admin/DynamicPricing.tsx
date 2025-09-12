@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   createColumnHelper,
   flexRender,
@@ -9,10 +9,10 @@ import {
   useReactTable,
   SortingState,
 } from "@tanstack/react-table";
-import { ChevronDown, ChevronUp, Edit2, Save, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit2, Save, X, Download } from "lucide-react";
 import { useAdminStore } from "../../store/adminStore";
 import type { DynamicPricing } from "../../store/adminStore";
-
+import * as XLSX from 'xlsx';
 
 export function DynamicPricing() {
   const [activeTab, setActiveTab] = useState<"base" | "dynamic">("base");
@@ -43,7 +43,8 @@ export function DynamicPricing() {
     advantages_reduction: null as HTMLInputElement | null,
   });
 
-  const handleSaveSpecializationPrice = async (id: string) => {
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleSaveSpecializationPrice = useCallback(async (id: string) => {
     if (editedSpecialization[id] === undefined) return;
 
     setUpdatingBase(true);
@@ -54,12 +55,14 @@ export function DynamicPricing() {
         delete newState[id];
         return newState;
       });
+    } catch (error) {
+      console.error("Failed to update specialization price:", error);
     } finally {
       setUpdatingBase(false);
     }
-  };
+  }, [editedSpecialization]);
 
-  const handleSaveExperienceMultiplier = async (id: string) => {
+  const handleSaveExperienceMultiplier = useCallback(async (id: string) => {
     if (editedExperience[id] === undefined) return;
 
     setUpdatingBase(true);
@@ -70,12 +73,14 @@ export function DynamicPricing() {
         delete newState[id];
         return newState;
       });
+    } catch (error) {
+      console.error("Failed to update experience multiplier:", error);
     } finally {
       setUpdatingBase(false);
     }
-  };
+  }, [editedExperience]);
 
-  const handleSaveSurfacePrice = async (id: string) => {
+  const handleSaveSurfacePrice = useCallback(async (id: string) => {
     if (editedSurface[id] === undefined) return;
 
     setUpdatingBase(true);
@@ -86,15 +91,17 @@ export function DynamicPricing() {
         delete newState[id];
         return newState;
       });
+    } catch (error) {
+      console.error("Failed to update surface price:", error);
     } finally {
       setUpdatingBase(false);
     }
-  };
+  }, [editedSurface]);
 
   // Fetch pricing data on mount
   useEffect(() => {
     fetchPricings();
-  }, []);
+  }, [fetchPricings]);
 
   // Derive base pricing data from dynamicPricings
   const {
@@ -134,7 +141,7 @@ export function DynamicPricing() {
       const [actor_rank, actor_specialization2] = key.split("-");
       return {
         id: key,
-        actor_rank: actor_rank as "worker" | "technician" | "entrepreneur",
+        actor_rank: actor_rank as "worker" | "advisor" | "entrepreneur",
         specialization: actor_specialization2,
         base_price,
       };
@@ -145,7 +152,7 @@ export function DynamicPricing() {
         const [actor_rank, experience_level] = key.split("-");
         return {
           id: key,
-          actor_rank: actor_rank as "worker" | "technician" | "entrepreneur",
+          actor_rank: actor_rank as "worker" | "advisor" | "entrepreneur",
           experience_level: experience_level as
             | "starter"
             | "qualified"
@@ -170,11 +177,80 @@ export function DynamicPricing() {
     };
   }, [dynamicPricings]);
 
+  // Excel export functionality
+  const exportToExcel = useCallback(() => {
+    try {
+      const workbook = XLSX.utils.book_new();
+
+      // Export Specialization Pricing
+      const specializationWS = XLSX.utils.json_to_sheet(
+        specializationPricingData.map(sp => ({
+          'Actor Rank': sp.actor_rank,
+          'Specialization': sp.specialization.replace(/_/g, ' '),
+          'Base Price (FCFA)': sp.base_price
+        }))
+      );
+      XLSX.utils.book_append_sheet(workbook, specializationWS, "Specialization Pricing");
+
+      // Export Experience Level Multipliers
+      const experienceWS = XLSX.utils.json_to_sheet(
+        experiencePricingData.map(ep => ({
+          'Actor Rank': ep.actor_rank,
+          'Experience Level': ep.experience_level,
+          'Multiplier': ep.multiplier
+        }))
+      );
+      XLSX.utils.book_append_sheet(workbook, experienceWS, "Experience Multipliers");
+
+      // Export Surface Unit Pricing
+      const surfaceWS = XLSX.utils.json_to_sheet(
+        surfacePricingData.map(sp => ({
+          'Surface Unit': sp.surface_unit,
+          'Price per Unit (FCFA)': sp.price_per_unit
+        }))
+      );
+      XLSX.utils.book_append_sheet(workbook, surfaceWS, "Surface Unit Pricing");
+
+      // Export Dynamic Pricing Rules
+      const dynamicWS = XLSX.utils.json_to_sheet(
+        dynamicPricings.map(dp => ({
+          'Actor Rank': dp.actor_rank,
+          'Specialization': dp.actor_specialization2.replace(/_/g, ' '),
+          'Experience Level': dp.experience_level,
+          'Surface Unit': dp.surface_unit2,
+          'Specialization Base Price (FCFA)': dp.specialization_base_price,
+          'Experience Multiplier': dp.experience_multiplier,
+          'Surface Unit Price (FCFA)': dp.surface_unit_price,
+          'Price per Kilometer (FCFA)': dp.price_per_kilometer,
+          'Price per Hour (FCFA)': dp.price_per_hour,
+          'Equipment Price (FCFA)': dp.equipments_price,
+          'Advantage Reduction (%)': dp.advantages_reduction
+        }))
+      );
+      XLSX.utils.book_append_sheet(workbook, dynamicWS, "Dynamic Pricing Rules");
+
+      // Generate filename with current date
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const filename = `dynamic_pricing_${dateStr}.xlsx`;
+
+      // Write and download file
+      XLSX.writeFile(workbook, filename);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      alert("Failed to export data. Please try again.");
+    }
+  }, [specializationPricingData, experiencePricingData, surfacePricingData, dynamicPricings]);
+
   // Handle base price updates
   const handleUpdateSpecializationPrice = async (
     id: string,
     newBasePrice: number
   ) => {
+    if (isNaN(newBasePrice) || newBasePrice < 0) {
+      throw new Error("Invalid base price value");
+    }
+
     setUpdatingBase(true);
     try {
       // Find all dynamic pricings that need updating
@@ -195,6 +271,7 @@ export function DynamicPricing() {
       );
     } catch (error) {
       console.error("Failed to update base price", error);
+      throw error;
     } finally {
       setUpdatingBase(false);
     }
@@ -204,6 +281,10 @@ export function DynamicPricing() {
     id: string,
     newMultiplier: number
   ) => {
+    if (isNaN(newMultiplier) || newMultiplier < 0.5 || newMultiplier > 3.0) {
+      throw new Error("Experience multiplier must be between 0.5 and 3.0");
+    }
+
     setUpdatingBase(true);
     try {
       const [actor_rank, experience_level] = id.split("-");
@@ -221,12 +302,17 @@ export function DynamicPricing() {
       );
     } catch (error) {
       console.error("Failed to update experience multiplier", error);
+      throw error;
     } finally {
       setUpdatingBase(false);
     }
   };
 
   const handleUpdateSurfacePrice = async (id: string, newPrice: number) => {
+    if (isNaN(newPrice) || newPrice < 0) {
+      throw new Error("Invalid surface price value");
+    }
+
     setUpdatingBase(true);
     try {
       const pricingsToUpdate = dynamicPricings.filter(
@@ -240,13 +326,14 @@ export function DynamicPricing() {
       );
     } catch (error) {
       console.error("Failed to update surface price", error);
+      throw error;
     } finally {
       setUpdatingBase(false);
     }
   };
 
   // Handle editing
-  const handleEdit = (pricing: DynamicPricing) => {
+  const handleEdit = useCallback((pricing: DynamicPricing) => {
     setEditingId(pricing.id);
     setEditValues({ ...pricing });
 
@@ -254,54 +341,105 @@ export function DynamicPricing() {
     setTimeout(() => {
       inputRefs.current.price_per_kilometer?.focus();
     }, 0);
-  };
+  }, []);
 
-  const handleSave = async (id: string) => {
+  const handleSave = useCallback(async (id: string) => {
     try {
-      const updatedValues: Partial<DynamicPricing> = {
-        price_per_kilometer: inputRefs.current.price_per_kilometer
-          ? parseFloat(inputRefs.current.price_per_kilometer.value)
-          : editValues.price_per_kilometer,
-        // Repeat for other fields:
-        price_per_hour: inputRefs.current.price_per_hour
-          ? parseFloat(inputRefs.current.price_per_hour.value)
-          : editValues.price_per_hour,
-        equipments_price: inputRefs.current.equipments_price
-          ? parseFloat(inputRefs.current.equipments_price.value)
-          : editValues.equipments_price,
-        advantages_reduction: inputRefs.current.advantages_reduction
-          ? parseFloat(inputRefs.current.advantages_reduction.value)
-          : editValues.advantages_reduction,
-      };
+      const updatedValues: Partial<DynamicPricing> = {};
+      
+      // Validate and parse values
+      const pricePerKm = inputRefs.current.price_per_kilometer?.value;
+      const pricePerHour = inputRefs.current.price_per_hour?.value;
+      const equipmentPrice = inputRefs.current.equipments_price?.value;
+      const advantageReduction = inputRefs.current.advantages_reduction?.value;
+
+      if (pricePerKm !== undefined && pricePerKm !== '') {
+        const parsed = parseFloat(pricePerKm);
+        if (isNaN(parsed) || parsed < 0) {
+          throw new Error("Invalid price per kilometer value");
+        }
+        updatedValues.price_per_kilometer = parsed;
+      }
+
+      if (pricePerHour !== undefined && pricePerHour !== '') {
+        const parsed = parseFloat(pricePerHour);
+        if (isNaN(parsed) || parsed < 0) {
+          throw new Error("Invalid price per hour value");
+        }
+        updatedValues.price_per_hour = parsed;
+      }
+
+      if (equipmentPrice !== undefined && equipmentPrice !== '') {
+        const parsed = parseFloat(equipmentPrice);
+        if (isNaN(parsed) || parsed < 0) {
+          throw new Error("Invalid equipment price value");
+        }
+        updatedValues.equipments_price = parsed;
+      }
+
+      if (advantageReduction !== undefined && advantageReduction !== '') {
+        const parsed = parseFloat(advantageReduction);
+        if (isNaN(parsed) || parsed < 0 || parsed > 100) {
+          throw new Error("Advantage reduction must be between 0 and 100");
+        }
+        updatedValues.advantages_reduction = parsed;
+      }
 
       await updatePricingById(id, updatedValues);
       setEditingId(null);
+      setEditValues({});
     } catch (error) {
       console.error("Failed to update pricing", error);
+      alert(error instanceof Error ? error.message : "Failed to update pricing");
     }
-  };
+  }, [updatePricingById]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setEditingId(null);
     setEditValues({});
-  };
+  }, []);
 
-  // const handleChange = (
-  //   field: keyof DynamicPricing,
-  //   value: number | string
-  // ) => {
-  //   setEditValues((prev) => ({ ...prev, [field]: value }));
-  // };
+  // Input change handlers with validation
+  const handleSpecializationChange = useCallback((id: string, value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setEditedSpecialization((prev) => ({
+        ...prev,
+        [id]: numValue,
+      }));
+    }
+  }, []);
+
+  const handleExperienceChange = useCallback((id: string, value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0.5 && numValue <= 3.0) {
+      setEditedExperience((prev) => ({
+        ...prev,
+        [id]: numValue,
+      }));
+    }
+  }, []);
+
+  const handleSurfaceChange = useCallback((id: string, value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setEditedSurface((prev) => ({
+        ...prev,
+        [id]: numValue,
+      }));
+    }
+  }, []);
 
   // Base Pricing Tables
-  
-  const basePricingTables = (
+  const basePricingTables = useMemo(() => (
     <div className="space-y-8">
       {/* Specialization Pricing Table */}
       <div>
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-          Specialization Base Pricing (FCFA)
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Specialization Base Pricing (FCFA)
+          </h2>
+        </div>
         <div className="overflow-x-auto relative">
           {updatingBase && (
             <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
@@ -340,22 +478,17 @@ export function DynamicPricing() {
                       min="0"
                       step="100"
                       defaultValue={sp.base_price}
-                      onChange={(e) =>
-                        setEditedSpecialization((prev) => ({
-                          ...prev,
-                          [sp.id]: parseFloat(e.target.value),
-                        }))
-                      }
-                      className="w-32 px-2 py-1 border rounded"
+                      onChange={(e) => handleSpecializationChange(sp.id, e.target.value)}
+                      className="w-32 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={updatingBase}
                     />
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700 dark:text-gray-200">
                     <button
                       onClick={() => handleSaveSpecializationPrice(sp.id)}
-                      disabled={!editedSpecialization[sp.id] || updatingBase}
-                      className={`px-3 py-1 rounded ${
-                        editedSpecialization[sp.id]
+                      disabled={editedSpecialization[sp.id] === undefined || updatingBase}
+                      className={`px-3 py-1 rounded transition-colors ${
+                        editedSpecialization[sp.id] !== undefined
                           ? "bg-green-500 hover:bg-green-600 text-white"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
@@ -416,22 +549,17 @@ export function DynamicPricing() {
                       max="3.0"
                       step="0.1"
                       defaultValue={ep.multiplier}
-                      onChange={(e) =>
-                        setEditedExperience((prev) => ({
-                          ...prev,
-                          [ep.id]: parseFloat(e.target.value),
-                        }))
-                      }
-                      className="w-24 px-2 py-1 border rounded"
+                      onChange={(e) => handleExperienceChange(ep.id, e.target.value)}
+                      className="w-24 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={updatingBase}
                     />
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700 dark:text-gray-200">
                     <button
                       onClick={() => handleSaveExperienceMultiplier(ep.id)}
-                      disabled={!editedExperience[ep.id] || updatingBase}
-                      className={`px-3 py-1 rounded ${
-                        editedExperience[ep.id]
+                      disabled={editedExperience[ep.id] === undefined || updatingBase}
+                      className={`px-3 py-1 rounded transition-colors ${
+                        editedExperience[ep.id] !== undefined
                           ? "bg-green-500 hover:bg-green-600 text-white"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
@@ -483,22 +611,17 @@ export function DynamicPricing() {
                       min="0"
                       step="100"
                       defaultValue={sp.price_per_unit}
-                      onChange={(e) =>
-                        setEditedSurface((prev) => ({
-                          ...prev,
-                          [sp.id]: parseFloat(e.target.value),
-                        }))
-                      }
-                      className="w-32 px-2 py-1 border rounded"
+                      onChange={(e) => handleSurfaceChange(sp.id, e.target.value)}
+                      className="w-32 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={updatingBase}
                     />
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700 dark:text-gray-200">
                     <button
                       onClick={() => handleSaveSurfacePrice(sp.id)}
-                      disabled={!editedSurface[sp.id] || updatingBase}
-                      className={`px-3 py-1 rounded ${
-                        editedSurface[sp.id]
+                      disabled={editedSurface[sp.id] === undefined || updatingBase}
+                      className={`px-3 py-1 rounded transition-colors ${
+                        editedSurface[sp.id] !== undefined
                           ? "bg-green-500 hover:bg-green-600 text-white"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
@@ -513,11 +636,25 @@ export function DynamicPricing() {
         </div>
       </div>
     </div>
-  );
+  ), [
+    specializationPricingData,
+    experiencePricingData,
+    surfacePricingData,
+    updatingBase,
+    editedSpecialization,
+    editedExperience,
+    editedSurface,
+    handleSaveSpecializationPrice,
+    handleSaveExperienceMultiplier,
+    handleSaveSurfacePrice,
+    handleSpecializationChange,
+    handleExperienceChange,
+    handleSurfaceChange
+  ]);
 
   // Dynamic Pricing Table Columns
   const columnHelper = createColumnHelper<DynamicPricing>();
-  const dynamicPricingColumns = [
+  const dynamicPricingColumns = useMemo(() => [
     columnHelper.accessor("actor_rank", {
       header: "Actor Rank",
       cell: (info) => (
@@ -568,7 +705,7 @@ export function DynamicPricing() {
             step="100"
             defaultValue={info.row.original.price_per_kilometer}
             ref={(el) => (inputRefs.current.price_per_kilometer = el)}
-            className="w-24 px-2 py-1 border rounded"
+            className="w-24 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             onKeyDown={(e) =>
               e.key === "Enter" && handleSave(info.row.original.id)
             }
@@ -587,7 +724,7 @@ export function DynamicPricing() {
             step="100"
             defaultValue={info.row.original.price_per_hour}
             ref={(el) => (inputRefs.current.price_per_hour = el)}
-            className="w-24 px-2 py-1 border rounded"
+            className="w-24 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             onKeyDown={(e) =>
               e.key === "Enter" && handleSave(info.row.original.id)
             }
@@ -606,7 +743,7 @@ export function DynamicPricing() {
             step="100"
             defaultValue={info.row.original.equipments_price}
             ref={(el) => (inputRefs.current.equipments_price = el)}
-            className="w-24 px-2 py-1 border rounded"
+            className="w-24 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             onKeyDown={(e) =>
               e.key === "Enter" && handleSave(info.row.original.id)
             }
@@ -626,7 +763,7 @@ export function DynamicPricing() {
             step="0.1"
             defaultValue={info.row.original.advantages_reduction}
             ref={(el) => (inputRefs.current.advantages_reduction = el)}
-            className="w-24 px-2 py-1 border rounded"
+            className="w-24 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             onKeyDown={(e) =>
               e.key === "Enter" && handleSave(info.row.original.id)
             }
@@ -644,14 +781,14 @@ export function DynamicPricing() {
             <>
               <button
                 onClick={() => handleSave(row.original.id)}
-                className="text-green-600 hover:text-green-800"
+                className="text-green-600 hover:text-green-800 transition-colors"
                 title="Save"
               >
                 <Save className="w-4 h-4" />
               </button>
               <button
                 onClick={handleCancel}
-                className="text-red-600 hover:text-red-800"
+                className="text-red-600 hover:text-red-800 transition-colors"
                 title="Cancel"
               >
                 <X className="w-4 h-4" />
@@ -661,7 +798,7 @@ export function DynamicPricing() {
             <>
               <button
                 onClick={() => handleEdit(row.original)}
-                className="text-blue-600 hover:text-blue-800"
+                className="text-blue-600 hover:text-blue-800 transition-colors"
                 title="Edit"
               >
                 <Edit2 className="w-4 h-4" />
@@ -671,7 +808,7 @@ export function DynamicPricing() {
         </div>
       ),
     }),
-  ];
+  ], [editingId, handleEdit, handleSave, handleCancel]);
 
   // Create dynamic pricing table
   const dynamicPricingTable = useReactTable({
@@ -685,12 +822,18 @@ export function DynamicPricing() {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 20,
+      },
+    },
   });
 
   if (loadingPricing) {
     return (
       <div className="flex justify-center items-center h-64">
-        <span className="text-lg text-gray-700">Loading pricing data...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <span className="ml-3 text-lg text-gray-700">Loading pricing data...</span>
       </div>
     );
   }
@@ -706,6 +849,18 @@ export function DynamicPricing() {
             Configure base prices and dynamic pricing rules
           </p>
         </div>
+        
+        {/* Export Button */}
+        <div className="mt-4 sm:mt-0">
+          <button
+            onClick={exportToExcel}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            disabled={loadingPricing || dynamicPricings.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export to Excel
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -714,10 +869,10 @@ export function DynamicPricing() {
           <button
             onClick={() => setActiveTab("base")}
             className={`
-              py-4 px-1 border-b-2 font-medium text-sm
+              py-4 px-1 border-b-2 font-medium text-sm transition-colors
               ${
                 activeTab === "base"
-                  ? "border-primary text-primary"
+                  ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-700 dark:text-gray-200 hover:text-gray-700 hover:border-gray-300"
               }
             `}
@@ -727,10 +882,10 @@ export function DynamicPricing() {
           <button
             onClick={() => setActiveTab("dynamic")}
             className={`
-              py-4 px-1 border-b-2 font-medium text-sm
+              py-4 px-1 border-b-2 font-medium text-sm transition-colors
               ${
                 activeTab === "dynamic"
-                  ? "border-primary text-primary"
+                  ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-700 dark:text-gray-200 hover:text-gray-700 hover:border-gray-300"
               }
             `}
@@ -746,29 +901,29 @@ export function DynamicPricing() {
       ) : (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-700">
-              Showing {dynamicPricingTable.getRowModel().rows.length}{" "}
-              configurations
+            <div className="text-sm text-gray-700 dark:text-gray-300">
+              Showing {dynamicPricingTable.getRowModel().rows.length} of{" "}
+              {dynamicPricings.length} configurations
             </div>
             <div className="flex space-x-2">
               <button
                 onClick={() => dynamicPricingTable.previousPage()}
                 disabled={!dynamicPricingTable.getCanPreviousPage()}
-                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 onClick={() => dynamicPricingTable.nextPage()}
                 disabled={!dynamicPricingTable.getCanNextPage()}
-                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
               >
                 Next
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
             <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 {dynamicPricingTable.getHeaderGroups().map((headerGroup) => (
@@ -783,7 +938,7 @@ export function DynamicPricing() {
                           <div
                             className={`group inline-flex ${
                               header.column.getCanSort()
-                                ? "cursor-pointer select-none"
+                                ? "cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 rounded px-2 py-1 -mx-2 -my-1 transition-colors"
                                 : ""
                             }`}
                             onClick={header.column.getToggleSortingHandler()}
@@ -795,10 +950,10 @@ export function DynamicPricing() {
                             {header.column.getCanSort() && (
                               <span className="ml-2 flex-none rounded">
                                 {{
-                                  asc: <ChevronUp className="h-4 w-4" />,
-                                  desc: <ChevronDown className="h-4 w-4" />,
+                                  asc: <ChevronUp className="h-4 w-4 text-gray-400" />,
+                                  desc: <ChevronDown className="h-4 w-4 text-gray-400" />,
                                 }[header.column.getIsSorted() as string] ??
-                                  null}
+                                  <ChevronDown className="h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />}
                               </span>
                             )}
                           </div>
@@ -812,11 +967,11 @@ export function DynamicPricing() {
                 {dynamicPricingTable.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className={
+                    className={`transition-colors ${
                       editingId === row.original.id
                         ? "bg-yellow-50 dark:bg-gray-700"
-                        : ""
-                    }
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700"
+                    }`}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td
@@ -835,25 +990,47 @@ export function DynamicPricing() {
             </table>
           </div>
 
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-700">
+          {/* Enhanced Pagination */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-gray-700 dark:text-gray-300">
               Page {dynamicPricingTable.getState().pagination.pageIndex + 1} of{" "}
-              {dynamicPricingTable.getPageCount()}
+              {dynamicPricingTable.getPageCount()} • Total: {dynamicPricings.length} items
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => dynamicPricingTable.setPageIndex(0)}
                 disabled={!dynamicPricingTable.getCanPreviousPage()}
-                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
               >
                 First
+              </button>
+              <button
+                onClick={() => dynamicPricingTable.previousPage()}
+                disabled={!dynamicPricingTable.getCanPreviousPage()}
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => dynamicPricingTable.nextPage()}
+                disabled={!dynamicPricingTable.getCanNextPage()}
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              >
+                Next
+              </button>
+              <button
+                onClick={() => dynamicPricingTable.setPageIndex(dynamicPricingTable.getPageCount() - 1)}
+                disabled={!dynamicPricingTable.getCanNextPage()}
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              >
+                Last
               </button>
               <select
                 value={dynamicPricingTable.getState().pagination.pageSize}
                 onChange={(e) =>
                   dynamicPricingTable.setPageSize(Number(e.target.value))
                 }
-                className="block rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring-primary-DEFAULT sm:text-sm"
+                className="block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               >
                 {[10, 20, 30, 50, 100].map((pageSize) => (
                   <option key={pageSize} value={pageSize}>

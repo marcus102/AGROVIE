@@ -16,7 +16,7 @@ export default function JobsLayout() {
       <Stack.Screen 
         name="index" 
         options={{
-          headerShown: true,
+          headerShown: false,
           title: 'Nouvelle mission',
           headerStyle: {
             backgroundColor: colors.card,

@@ -63,6 +63,7 @@ export const translations = {
       register: "S'inscrire",
       login: "Connexion",
       logout: "Deconnexion",
+      profile: "Profil",
     },
     resetPassword: {
       title: "Réinitialiser le mot de passe",
@@ -104,7 +105,7 @@ export const translations = {
         "Connectez-vous avec des professionnels agricoles, accédez à des connaissances expertes et découvrez des opportunités dans un réseau de confiance conçu pour l'avenir de l'agriculture.",
       getStarted: "Telecharger l'application mobile",
       learnMore: "En savoir plus",
-      whyUs: "Pourquoi choisir Agro ?",
+      whyUs: "Pourquoi choisir Agrovie ?",
       whyUsDescription: "La plateforme conçue pour la réussite agricole",
       conectExperts: "Connectez-vous avec des experts",
       conectExpertsDescription:
@@ -120,13 +121,13 @@ export const translations = {
         "Fonctionnalités adaptées aux différents professionnels agricoles",
       forFarmers: "Pour les agriculteurs",
       forFarmersDescription:
-        "Accédez à des conseils d'experts et trouvez des techniciens qualifiés",
+        "Accédez à des conseils d'experts et trouvez des conseilés agricole qualifiés",
       farmerBenefits: [
         "Consultation d'experts",
         "Accès à l'équipement",
         "Informations sur le marché",
       ],
-      forTechnicians: "Pour les techniciens",
+      forTechnicians: "Pour les conseilés agricole",
       forTechniciansDescription:
         "Connectez-vous avec des agriculteurs et mettez en valeur votre expertise",
       forTechniciansBenefits: [
@@ -179,7 +180,7 @@ export const translations = {
       ourJourney: "Notre parcours",
       ourJourneyDescription: "Étapes clés de notre histoire",
       ourTeam: "Notre équipe",
-      ourTeamDescription: "Rencontrez les experts derrière AgroNetwork",
+      ourTeamDescription: "Rencontrez les experts derrière Agrovie",
       learnMore: "En savoir plus",
     },
     services: {
@@ -199,7 +200,6 @@ export const translations = {
         features: [
           "Opportunités de réseautage mondial",
           "Connexions spécifiques à l'industrie",
-          "Système de messagerie directe",
           "Création de profil professionnel",
         ],
       },
@@ -317,13 +317,10 @@ export const translations = {
       },
       networkBuilding: {
         detailedDescription:
-          "Notre service de construction de réseau connecte les professionnels de l'agriculture du monde entier, créant un écosystème complet où agriculteurs, techniciens et entrepreneurs peuvent collaborer, partager des connaissances et grandir ensemble. Grâce à nos algorithmes de correspondance avancés et à nos profils professionnels vérifiés, nous assurons des connexions significatives qui génèrent des résultats commerciaux réels.",
+          "Notre service de construction de réseau connecte les professionnels de l'agriculture du monde entier, créant un écosystème complet où agriculteurs, conseilés agricole et entrepreneurs peuvent collaborer, partager des connaissances et grandir ensemble. Grâce à nos algorithmes de correspondance avancés et à nos profils professionnels vérifiés, nous assurons des connexions significatives qui génèrent des résultats commerciaux réels.",
         benefits: [
           "Accès à plus de 10 000 professionnels de l'agriculture vérifiés",
-          "Correspondance basée sur l'expertise et la localisation grâce à l'IA",
-          "Messagerie sécurisée et visioconférence",
           "Système de vérification de profil professionnel",
-          "Événements de réseautage spécifiques à l'industrie",
           "Support multilingue pour des connexions mondiales",
         ],
         useCases: [
@@ -549,13 +546,13 @@ export const translations = {
         "Toutes les questions",
         "Général",
         "Pour agriculteurs",
-        "Pour techniciens",
+        "Pour conseillers agricoles",
         "Pour entrepreneurs",
       ],
       question1: {
-        question: "Qu'est-ce qu'Agro ?",
+        question: "Qu'est-ce qu'Agrovie ?",
         answer:
-          "Agro est une plateforme de réseautage professionnel conçue spécifiquement pour l'industrie agricole. Nous connectons agriculteurs, techniciens agricoles et entrepreneurs pour faciliter la collaboration, le partage de connaissances et la croissance commerciale.",
+          "Agrovie est une plateforme de réseautage professionnel conçue spécifiquement pour l'industrie agricole. Nous connectons agriculteurs, techniciens agricoles et entrepreneurs pour faciliter la collaboration, le partage de connaissances et la croissance commerciale.",
       },
       question2: {
         question:
@@ -565,12 +562,12 @@ export const translations = {
       },
       question3: {
         question:
-          "Quelles opportunités existent pour les techniciens agricoles ?",
+          "Quelles opportunités existent pour les conseillers agricoles ?",
         answer:
-          "Les techniciens agricoles peuvent proposer leurs services, partager leur expertise, se connecter avec des agriculteurs ayant besoin d'un support technique et se tenir informés des dernières technologies et méthodologies agricoles.",
+          "Les conseillers agricoles peuvent proposer leurs services, partager leur expertise, se connecter avec des agriculteurs ayant besoin d'un support technique et se tenir informés des dernières technologies et méthodologies agricoles.",
       },
       question4: {
-        question: "Comment Agro soutient-il les agro-entrepreneurs ?",
+        question: "Comment Agrovie soutient-il les agro-entrepreneurs ?",
         answer:
           "Les entrepreneurs peuvent découvrir des opportunités commerciales, se connecter avec des partenaires potentiels, accéder à des données de marché et trouver des opportunités d'investissement dans le secteur agricole.",
       },
@@ -630,10 +627,10 @@ export const translations = {
       title: "Conditions d'utilisation",
       lastUpdated: "Dernière mise à jour",
       description:
-        "Veuillez lire attentivement ces Conditions d'utilisation avant d'utiliser la plateforme et les services d'AgroNetwork.",
+        "Veuillez lire attentivement ces Conditions d'utilisation avant d'utiliser la plateforme et les services d'Agrovie.",
       agreementToTerms: "Acceptation des conditions",
       agreementToTermsContent:
-        "En accédant ou utilisant les services d'AgroNetwork, vous acceptez d'être lié par ces Conditions d'utilisation et toutes les lois et réglementations applicables. Si vous n'acceptez pas ces conditions, vous êtes interdit d'utiliser nos services.",
+        "En accédant ou utilisant les services d'Agrovie, vous acceptez d'être lié par ces Conditions d'utilisation et toutes les lois et réglementations applicables. Si vous n'acceptez pas ces conditions, vous êtes interdit d'utiliser nos services.",
       accountSecurity: "Sécurité du compte",
       accountSecurityContent:
         "Vous êtes responsable de la confidentialité de votre compte et mot de passe. Vous acceptez d'assumer la responsabilité de toutes les activités survenant sous votre compte. Vous devez nous informer immédiatement de toute utilisation non autorisée.",
@@ -649,22 +646,22 @@ export const translations = {
         "Nous nous réservons le droit de résilier ou suspendre votre compte et accès à nos services immédiatement, sans préavis, pour toute raison incluant le non-respect de ces Conditions.",
       intellectualProperty: "Propriété intellectuelle",
       intellectualPropertyContent:
-        "Le service et son contenu original sont la propriété d'AgroNetwork, protégés par les lois internationales sur le droit d'auteur, les marques commerciales, brevets et secrets commerciaux.",
+        "Le service et son contenu original sont la propriété d'Agrovie, protégés par les lois internationales sur le droit d'auteur, les marques commerciales, brevets et secrets commerciaux.",
       communitcation: "Communication",
       communitcationContent:
         "En créant un compte, vous acceptez de recevoir nos communications incluant newsletters et promotions. Vous pouvez vous désinscrire des communications marketing à tout moment.",
       contactInfo: "Contact et informations",
       contactInfoContent:
         "Pour toute question concernant ces Conditions d'utilisation, contactez-nous à :",
-      email: "Email : legal@agro.com",
-      phone: "Téléphone : +226---------------",
-      address: "Adresse : 123 Rue Principale, Ville, Pays",
+      email: "Email : support@agrovie.africa",
+      phone: "Téléphone : +22674189763",
+      address: "Adresse : Ouagadougou, Burkina Faso",
     },
     privacyPolicy: {
       title: "Politique de confidentialité",
       lastUpdated: "Dernière mise à jour",
       description:
-        "Agro prend votre vie privée au sérieux. Cette politique décrit comment nous collectons, utilisons et protégeons vos informations personnelles.",
+        "Agrovie prend votre vie privée au sérieux. Cette politique décrit comment nous collectons, utilisons et protégeons vos informations personnelles.",
       informationCollection: "Collecte d'informations",
       informationCollectionContent:
         "Nous collectons les informations que vous nous fournissez directement, incluant :",
@@ -699,9 +696,9 @@ export const translations = {
       contactInfo: "Contact et informations",
       contactInfoContent:
         "Pour toute question concernant cette Politique de confidentialité, contactez-nous à :",
-      email: "Email : legal@agronetwork.com",
-      phone: "Téléphone : +226---------------",
-      address: "Adresse : 123 Rue Principale, Ville, Pays",
+      email: "Email : support@agrovie.africa",
+      phone: "Téléphone : +22674189763",
+      address: "Adresse : Ouagadougou, Burkina Faso",
     },
     register: {
       title: "Créer un compte",
@@ -798,6 +795,8 @@ export const translations = {
       passwordRequired: "Le mot de passe est requis",
     },
   },
+
+  //Agro
   en: {
     header: {
       home: "Home",
@@ -809,6 +808,7 @@ export const translations = {
       register: "Register",
       login: "Login",
       logout: "Logout",
+      profile: "Profile",
     },
     footer: {
       description:
@@ -841,7 +841,7 @@ export const translations = {
         "Connect with agricultural professionals, access expert knowledge, and discover opportunities in a trusted network designed for the future of farming.",
       getStarted: "Download the mobile app",
       learnMore: "Learn More",
-      whyUs: "Why Choose Agro?",
+      whyUs: "Why Choose Agrovie?",
       whyUsDescription: "The platform built for agricultural success",
       conectExperts: "Connect with Experts",
       conectExpertsDescription:
@@ -857,13 +857,13 @@ export const translations = {
         "Tailored features for different agricultural professionals",
       forFarmers: "For Farmers",
       forFarmersDescription:
-        "Access expert advice and find qualified technicians",
+        "Access expert advice and find qualified agricultural advisors",
       farmerBenefits: [
         "Expert Consultation",
         "Equipment Access",
         "Market Insights",
       ],
-      forTechnicians: "For Technicians",
+      forTechnicians: "For agricultural advisors",
       forTechniciansDescription:
         "Connect with farmers and showcase your expertise",
       forTechniciansBenefits: [
@@ -915,7 +915,7 @@ export const translations = {
       ourJourney: "Our Journey",
       ourJourneyDescription: "Key milestones in our growth story",
       ourTeam: "Our Team",
-      ourTeamDescription: "Meet the experts behind AgroNetwork",
+      ourTeamDescription: "Meet the experts behind Agrovie",
       learnMore: "Learn More",
     },
     services: {
@@ -935,7 +935,6 @@ export const translations = {
         features: [
           "Global networking opportunities",
           "Industry-specific connections",
-          "Direct messaging system",
           "Professional profile building",
         ],
       },
@@ -1051,13 +1050,10 @@ export const translations = {
       },
       networkBuilding: {
         detailedDescription:
-          "Our Network Building service connects agricultural professionals worldwide, creating a comprehensive ecosystem where farmers, technicians, and entrepreneurs can collaborate, share knowledge, and grow together. Through our advanced matching algorithms and verified professional profiles, we ensure meaningful connections that drive real business results.",
+          "Our Network Building service connects agricultural professionals worldwide, creating a comprehensive ecosystem where farmers, agricultural advisors, and entrepreneurs can collaborate, share knowledge, and grow together. Through our advanced matching algorithms and verified professional profiles, we ensure meaningful connections that drive real business results.",
         benefits: [
-          "Access to 10,000+ verified agricultural professionals",
-          "AI-powered matching based on expertise and location",
-          "Secure messaging and video conferencing",
+          "Access to verified agricultural professionals",
           "Professional profile verification system",
-          "Industry-specific networking events",
           "Multilingual support for global connections",
         ],
         useCases: [
@@ -1276,7 +1272,7 @@ export const translations = {
       tagline: "Get Your Questions Answered",
       title: "Frequently Asked Questions",
       description:
-        "Find answers to common questions about Agro and how it can help you succeed in agriculture.",
+        "Find answers to common questions about Agrovie and how it can help you succeed in agriculture.",
       searchPlaceholder: "Search questions...",
       tags: [
         "All Questions",
@@ -1286,9 +1282,9 @@ export const translations = {
         "For Entrepreneurs",
       ],
       question1: {
-        question: "What is Agro?",
+        question: "What is Agrovie?",
         answer:
-          "Agro is a professional networking platform designed specifically for the agricultural industry. We connect farmers, agricultural technicians, and entrepreneurs to facilitate collaboration, knowledge sharing, and business growth.",
+          "Agrovie is a professional networking platform designed specifically for the agricultural industry. We connect farmers, agricultural technicians, and entrepreneurs to facilitate collaboration, knowledge sharing, and business growth.",
       },
       question2: {
         question: "How can farmers benefit from the platform?",
@@ -1301,7 +1297,7 @@ export const translations = {
           "Agricultural technicians can offer their services, share expertise, connect with farmers needing technical support, and stay updated with the latest agricultural technologies and methodologies.",
       },
       question4: {
-        question: "How does Agro support agri-entrepreneurs?",
+        question: "How does Agrovie support agri-entrepreneurs?",
         answer:
           "Entrepreneurs can discover business opportunities, connect with potential partners, access market data, and find investment opportunities in the agricultural sector.",
       },
@@ -1358,10 +1354,10 @@ export const translations = {
       title: "Terms of Service",
       lastUpdated: "Last updated",
       description:
-        "Please read these Terms of Service carefully before using AgroNetwork's platform and services.",
+        "Please read these Terms of Service carefully before using Agrovie's platform and services.",
       agreementToTerms: "Agreement to Terms",
       agreementToTermsContent:
-        "BBy accessing or using AgroNetwork's services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing our services.",
+        "BBy accessing or using Agrovie's services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing our services.",
       accountSecurity: "Account Security",
       accountSecurityContent:
         "You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account.",
@@ -1377,22 +1373,22 @@ export const translations = {
         "We reserve the right to terminate or suspend your account and access to our services immediately, without prior notice or liability, for any reason, including breach of these Terms of Service.",
       intellectualProperty: "Intellectual Property",
       intellectualPropertyContent:
-        "The service and its original content, features, and functionality are owned by AgroNetwork and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.",
+        "The service and its original content, features, and functionality are owned by Agrovie and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.",
       communitcation: "Communication",
       communitcationContent:
         "By creating an account, you agree to receive communications from us, including newsletters, updates, and promotional materials. You can opt out of marketing communications at any time.",
       contactInfo: "Contact Information",
       contactInfoContent:
         "If you have any questions about these Terms of Service, please contact us at:",
-      email: "Email: legal@agro.com",
-      phone: "Phone: +226---------------",
-      address: "Address: 123 Main Street, City, Country",
+      email: "Email: support@agrovie.africa",
+      phone: "Phone: +22674189763",
+      address: "Ouagadougou, Burkina Faso",
     },
     privacyPolicy: {
       title: "Privacy Policy",
       lastUpdated: "Last updated",
       description:
-        "At Agro, we take your privacy seriously. This privacy policy describes how we collect, use, and protect your personal information.",
+        "At Agrovie, we take your privacy seriously. This privacy policy describes how we collect, use, and protect your personal information.",
       informationCollection: "Information Collection",
       informationCollectionContent:
         "We collect information that you provide directly to us, including:",
@@ -1427,9 +1423,9 @@ export const translations = {
       contactInfo: "Contact Information",
       contactInfoContent:
         "If you have any questions about this Privacy Policy, please contact us at:",
-      email: "Email: legal@agronetwork.com",
-      phone: "Phone: +226---------------",
-      address: "Address: 123 Main Street, City, Country",
+      email: "Email: support@agrovie.africa",
+      phone: "Phone: +22674189763",
+      address: "Ouagadougou, Burkina Faso",
     },
     register: {
       title: "Create an Account",

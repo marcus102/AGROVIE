@@ -17,7 +17,7 @@ export default function SettingsLayout() {
         options={{
           presentation: 'modal',
           title: 'Paramètres',
-          headerShown: true,
+          headerShown: false,
           headerStyle: {
             backgroundColor: colors.background,
           },
@@ -33,7 +33,7 @@ export default function SettingsLayout() {
         options={{
           presentation: 'modal',
           title: 'Modifier le mot de passe',
-          headerShown: true,
+          headerShown: false,
           headerStyle: {
             backgroundColor: colors.background,
           },
@@ -49,7 +49,7 @@ export default function SettingsLayout() {
         options={{
           presentation: 'modal',
           title: "Modifier l'adresse email",
-          headerShown: true,
+          headerShown: false,
           headerStyle: {
             backgroundColor: colors.background,
           },

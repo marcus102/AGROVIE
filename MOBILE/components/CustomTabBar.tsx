@@ -11,11 +11,7 @@ import Animated, {
   interpolateColor,
   useSharedValue,
   withTiming,
-  interpolate,
-  Extrapolate,
-  runOnJS,
   withSequence,
-  withDelay,
 } from 'react-native-reanimated';
 import { usePathname } from 'expo-router';
 

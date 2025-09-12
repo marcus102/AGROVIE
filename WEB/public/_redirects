@@ -1,0 +1,14 @@
+# Netlify redirects file for React SPA with client-side routing
+
+# Handle all routes and serve index.html for client-side routing
+# This ensures that direct navigation to any route works properly
+/*    /index.html   200
+
+# Optional: If you have API endpoints that should return 404
+# Uncomment the line below if you have actual API routes that should not fallback to index.html
+# /api/*  /api/:splat  404
+
+# Optional: Redirect old URLs (add as needed)
+# /old-path  /new-path  301
+
+# The /* rule above must be the last rule to catch all unmatched routes

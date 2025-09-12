@@ -5,8 +5,6 @@ import { useKeyboardAware } from '@/hooks/useKeyboardAware';
 import Animated, {
   useAnimatedStyle,
   withTiming,
-  interpolate,
-  Extrapolate,
 } from 'react-native-reanimated';
 
 interface KeyboardAvoidingTabBarProps {

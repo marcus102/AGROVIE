@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#05612e"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "buildNumber": "1.0.0",
       "supportsTablet": true,
@@ -57,7 +59,9 @@
           "color": "#ffffff",
           "defaultChannel": "default",
           "enableBackgroundRemoteNotifications": true,
-          "sounds": ["./assets/notification_sound.wav"]
+          "sounds": [
+            "./assets/notification_sound.wav"
+          ]
         }
       ]
     ],
@@ -66,15 +70,13 @@
       "typedRoutes": true,
       "tsconfigPaths": true
     },
-    "newArchEnabled": true,
+    "newArchEnabled": false,
+    "owner": "s_w_marcus102",
     "extra": {
-      "router": {
-        "origin": false
-      },
+      "router": {},
       "eas": {
         "projectId": "ed97114c-282f-406a-bbcb-465d49cf0211"
       }
-    },
-    "owner": "s_w_marcus102"
+    }
   }
 }

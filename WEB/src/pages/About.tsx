@@ -16,28 +16,28 @@ export function About({ translations }: AboutProps) {
       role: "Agronome, Expert consultant en sécurité alimentaire et nutrition & Co-fondateur",
       image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Eymar.jpg",
       bio: "9 ans d’expérience en conseil agricole et chaine de valeur",
-      social: { email: "aymard@agronetwork.com", location: "Ouagadougou, BF" }
+      social: { email: "aymard@agrovie.africa", location: "Ouagadougou, BF" }
     },
     {
       name: "Marcus W. SAWADOGO",
       role: "Developpeur fullstack & Co-Fondateur",
       image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Marcus.jpg",
       bio: "Software engineer with a passion for agriculture",
-      social: { email: "marcus@agronetwork.com", location: "Ouagadougou, BF" }
+      social: { email: "marcus@agrovie.africa", location: "Ouagadougou, BF" }
     },
     {
       name: "Razack A. NIKIEMA",
       role: "développeur de solutions IoT & Co-Fondateur",
       image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/WhatsApp%20Image%202025-05-17%20at%2020.18.58_1ae41512.jpg",
       bio: "Expert in agricultural partnerships",
-      social: { email: "razack@agronetwork.com", location: "Ouagadougou, BF" }
+      social: { email: "razack@agrovie.africa", location: "Ouagadougou, BF" }
     },
     {
       name: "Ariane P. SAWADOGO",
       role: "Directrice Générale de Expertise Rurale, Ingénieur en aménagement hydro-agricole & Co-fondatrice",
       image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Ariane.jpg",
       bio: "Ingénieur en aménagement hydro-agricole",
-      social: { email: "ariane@agronetwork.com", location: "Ouagadougou, BF" }
+      social: { email: "ariane@agrovie.africa", location: "Ouagadougou, BF" }
     },
   ];
 
@@ -159,8 +159,7 @@ export function About({ translations }: AboutProps) {
                 transition={{ delay: 0.5 }}
                 className="absolute -bottom-8 -left-8 bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl border border-gray-100 dark:border-gray-800"
               >
-                <div className="text-3xl font-bold text-primary mb-1">Make</div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Happy Farmers</div>
+                <div className="text-3xl font-bold text-primary mb-1">😊</div>
               </motion.div>
             </motion.div>
           </div>

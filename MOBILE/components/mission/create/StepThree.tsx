@@ -411,7 +411,7 @@ export function StepThree({
             {formData.equipment && <Check size={16} color={colors.card} />}
           </View>
           <Text style={[styles.checkboxLabel, { color: colors.text }]}>
-            Nous fournissons l'équipement nécessaire
+            Vous fournirez l'équipement nécessaire pour la mission
           </Text>
         </TouchableOpacity>
       </View>

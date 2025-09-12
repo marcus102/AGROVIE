@@ -24,7 +24,7 @@ const defaultColors = {
 const slides = [
   {
     id: '1',
-    title: 'Bienvenue sur AGRO',
+    title: 'Bienvenue sur AGROVIE',
     subtitle: 'La plateforme qui connecte les talents agricoles de demain',
     image: require('../assets/img1.jpg'),
     icon: Leaf,
