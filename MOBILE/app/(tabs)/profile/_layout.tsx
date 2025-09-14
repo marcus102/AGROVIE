@@ -16,7 +16,7 @@ export default function ProfileLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerShown: true,
+          headerShown: false,
           title: 'Profil',
           headerStyle: {
             backgroundColor: colors.card,
@@ -32,7 +32,7 @@ export default function ProfileLayout() {
         name="edit"
         options={{
           presentation: 'modal',
-          headerShown: true,
+          headerShown: false,
           title: 'Modifier le profil',
           headerStyle: {
             backgroundColor: colors.card,
@@ -48,7 +48,7 @@ export default function ProfileLayout() {
         name="dashboard/admin"
         options={{
           presentation: 'modal',
-          headerShown: true,
+          headerShown: false,
           title: 'Tableau de bord administrateur',
           headerStyle: {
             backgroundColor: colors.card,
@@ -64,7 +64,7 @@ export default function ProfileLayout() {
         name="dashboard/entrepreneur"
         options={{
           presentation: 'modal',
-          headerShown: true,
+          headerShown: false,
           title: 'Tableau de bord entrepreneur',
           headerStyle: {
             backgroundColor: colors.card,
@@ -80,7 +80,7 @@ export default function ProfileLayout() {
         name="dashboard/advisor"
         options={{
           presentation: 'modal',
-          headerShown: true,
+          headerShown: false,
           title: 'Tableau de bord conseiller agricole',
           headerStyle: {
             backgroundColor: colors.card,
@@ -96,7 +96,7 @@ export default function ProfileLayout() {
         name="dashboard/worker"
         options={{
           presentation: 'modal',
-          headerShown: true,
+          headerShown: false,
           title: 'Tableau de bord travaileur',
           headerStyle: {
             backgroundColor: colors.card,

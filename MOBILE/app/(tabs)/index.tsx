@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
   Alert,
   RefreshControl,
   Dimensions,
-  InteractionManager,
 } from 'react-native';
 import {
   Bell,
@@ -28,8 +27,8 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useNotificationStore } from '@/stores/notification';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLinkStore } from '@/stores/dynamic_links';
-import { WelcomeOverlay } from '@/components/WelcomeOverlay';
-import { FeedbackOverlay } from '@/components/FeedbackOverlay';
+import { WelcomeOverlay } from '@/components/modals/WelcomeOverlay';
+import { FeedbackOverlay } from '@/components/modals/FeedbackOverlay';
 import { useWelcomeFlow } from '@/hooks/useWelcomeFlow';
 import { useAuthStore } from '@/stores/auth';
 import { useMissionStore } from '@/stores/mission';
@@ -46,10 +45,8 @@ import {
 const DEFAULT_HERO_IMAGE = require('../../assets/img1.jpg');
 
 // Constants for better performance
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SCREEN_WIDTH = Dimensions.get('window').width;
 const HERO_HEIGHT = Math.min(400, SCREEN_WIDTH * 0.8);
-const TOAST_DURATION = 3000;
-const DEBOUNCE_DELAY = 300;
 
 // Types for better type safety
 interface ContactLinks {
@@ -63,38 +60,63 @@ interface NavigationRoute {
   params?: Record<string, any>;
 }
 
-interface ToastState {
-  visible: boolean;
-  type: ToastType;
-  message: string;
-}
+export default function HomeScreen() {
+  // State management
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [applyingToMission, setApplyingToMission] = useState<string | null>(
+    null
+  );
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>('success');
+  const [toastMessage, setToastMessage] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
-// Memoized components for better performance
-const MemoizedHeroImage = memo(
-  ({ source, onError }: { source: any; onError: (error: any) => void }) => (
-    <Image
-      source={source}
-      style={styles.heroImage}
-      onError={onError}
-      accessibilityLabel="Image représentant l'agriculture moderne"
-      resizeMode="cover"
-      // Optimize image loading
-      progressiveRenderingEnabled
-      fadeDuration={200}
-    />
-  )
-);
+  // Refs for cleanup and optimization
+  const timeoutRef = useRef<number | null>(null);
+  const isMountedRef = useRef(true);
 
-const MemoizedLinearGradient = memo(() => (
-  <LinearGradient
-    colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.7)']}
-    style={styles.heroOverlay}
-  />
-));
+  // Store hooks
+  const { colors } = useThemeStore();
+  const { notifications } = useNotificationStore();
+  const { links, fetchLinks, loading: linksLoading } = useLinkStore();
+  const { showWelcome, showFeedback, markWelcomeShown, markFeedbackShown } =
+    useWelcomeFlow();
+  const { profile, user } = useAuthStore();
+  const {
+    missions,
+    fetchMissions,
+    updateMission,
+    loading: missionsLoading,
+    error: missionsError,
+  } = useMissionStore();
 
-// Custom hooks for better separation of concerns
-const useAppLinks = (links: any[]): ContactLinks => {
-  return useMemo(() => {
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Memoized calculations for better performance
+  const unreadNotifications = useMemo(() => {
+    try {
+      return (
+        notifications?.filter((notification) => !notification?.read)?.length ||
+        0
+      );
+    } catch (error) {
+      console.error('Error calculating unread notifications:', error);
+      return 0;
+    }
+  }, [notifications]);
+
+  // Memoized link extraction with better error handling
+  const appLinks: ContactLinks = useMemo(() => {
     try {
       if (!Array.isArray(links)) {
         return { playStore: '', appStore: '', website: '' };
@@ -112,156 +134,65 @@ const useAppLinks = (links: any[]): ContactLinks => {
       return { playStore: '', appStore: '', website: '' };
     }
   }, [links]);
-};
 
-const useFilteredMissions = (missions: any[], role?: string) => {
-  return useMemo(() => {
+  // Filter missions with error handling
+  const filteredMissions = useMemo(() => {
     try {
-      if (!Array.isArray(missions) || !role) {
+      if (!Array.isArray(missions) || !profile?.role) {
         return [];
       }
-      return filterMissionsByRole(missions, role);
+      return filterMissionsByRole(missions, profile.role);
     } catch (error) {
       console.error('Error filtering missions:', error);
       return [];
     }
-  }, [missions, role]);
-};
+  }, [missions, profile?.role]);
 
-const useToastManager = () => {
-  const [toast, setToast] = useState<ToastState>({
-    visible: false,
-    type: 'success',
-    message: '',
-  });
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  // Toast management with cleanup
   const showToast = useCallback((type: ToastType, message: string) => {
-    // Clear existing timeout
+    if (!isMountedRef.current) return;
+
+    setToastType(type);
+    setToastMessage(message);
+    setToastVisible(true);
+
+    // Auto-hide toast after 3 seconds
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    setToast({ visible: true, type, message });
-
-    // Auto-hide toast
     timeoutRef.current = setTimeout(() => {
-      setToast((prev) => ({ ...prev, visible: false }));
-    }, TOAST_DURATION);
+      if (isMountedRef.current) {
+        setToastVisible(false);
+      }
+    }, 3000);
   }, []);
 
   const hideToast = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    setToast((prev) => ({ ...prev, visible: false }));
+    setToastVisible(false);
   }, []);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return { toast, showToast, hideToast };
-};
-
-// URL validation utility
-const isValidUrl = (url: string): boolean => {
-  if (!url || typeof url !== 'string' || url.trim() === '') {
-    return false;
-  }
-
-  try {
-    const urlObj = new URL(url.trim());
-    return ['http:', 'https:'].includes(urlObj.protocol);
-  } catch {
-    return false;
-  }
-};
-
-// Debounce utility
-const useDebounce = (callback: Function, delay: number) => {
-  const timeoutRef = useRef<NodeJS.Timeout>();
-
-  return useCallback(
-    (...args: any[]) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => callback(...args), delay);
-    },
-    [callback, delay]
-  );
-};
-
-export default function HomeScreen() {
-  // State management - consolidated
-  const [uiState, setUiState] = useState({
-    showNotifications: false,
-    imageError: false,
-    isLoading: false,
-    applyingToMission: null as string | null,
-    refreshing: false,
-  });
-
-  // Refs for optimization
-  const isMountedRef = useRef(true);
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  // Store hooks
-  const { colors } = useThemeStore();
-  const { notifications } = useNotificationStore();
-  const { links, fetchLinks, loading: linksLoading } = useLinkStore();
-  const { showWelcome, showFeedback, markWelcomeShown, markFeedbackShown } =
-    useWelcomeFlow();
-  const { profile, user, updateProfile } = useAuthStore();
-  const {
-    missions,
-    fetchMissions,
-    updateMission,
-    loading: missionsLoading,
-    error: missionsError,
-  } = useMissionStore();
-
-  // Custom hooks
-  const appLinks = useAppLinks(links);
-  const filteredMissions = useFilteredMissions(missions, profile?.role);
-  const { toast, showToast, hideToast } = useToastManager();
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  // Optimized state updates
-  const updateUiState = useCallback((updates: Partial<typeof uiState>) => {
-    if (!isMountedRef.current) return;
-    setUiState((prev) => ({ ...prev, ...updates }));
-  }, []);
-
-  // Memoized calculations
-  const unreadNotifications = useMemo(() => {
-    try {
-      return (
-        notifications?.filter((notification) => !notification?.read)?.length ||
-        0
-      );
-    } catch (error) {
-      console.error('Error calculating unread notifications:', error);
-      return 0;
+  // Enhanced URL validation
+  const isValidUrl = useCallback((url: string): boolean => {
+    if (!url || typeof url !== 'string' || url.trim() === '') {
+      return false;
     }
-  }, [notifications]);
 
-  // Safe link opening with debounce
+    try {
+      const urlObj = new URL(url.trim());
+      return ['http:', 'https:'].includes(urlObj.protocol);
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Safe link opening with better error handling
   const handleOpenLink = useCallback(
     async (url: string, fallbackMessage?: string): Promise<void> => {
-      if (uiState.isLoading) return;
+      if (isLoading) return;
 
       if (!url || !isValidUrl(url)) {
         Alert.alert(
@@ -271,8 +202,7 @@ export default function HomeScreen() {
         return;
       }
 
-      updateUiState({ isLoading: true });
-
+      setIsLoading(true);
       try {
         const supported = await Linking.canOpenURL(url);
         if (supported) {
@@ -287,20 +217,17 @@ export default function HomeScreen() {
           "Impossible d'ouvrir ce lien. Veuillez vérifier votre connexion internet."
         );
       } finally {
-        updateUiState({ isLoading: false });
+        setIsLoading(false);
       }
     },
-    [uiState.isLoading, updateUiState]
+    [isValidUrl, isLoading]
   );
-
-  const debouncedHandleOpenLink = useDebounce(handleOpenLink, DEBOUNCE_DELAY);
 
   // Enhanced share functionality
   const handleShareApp = useCallback(async () => {
-    if (uiState.isLoading) return;
+    if (isLoading) return;
 
-    updateUiState({ isLoading: true });
-
+    setIsLoading(true);
     try {
       const hasLinks =
         appLinks.playStore || appLinks.appStore || appLinks.website;
@@ -341,9 +268,9 @@ export default function HomeScreen() {
         "Impossible de partager l'application pour le moment."
       );
     } finally {
-      updateUiState({ isLoading: false });
+      setIsLoading(false);
     }
-  }, [appLinks, uiState.isLoading, showToast, updateUiState]);
+  }, [appLinks, isLoading, showToast]);
 
   // Safe navigation with error handling
   const handleNavigation = useCallback((route: string | NavigationRoute) => {
@@ -360,15 +287,14 @@ export default function HomeScreen() {
   }, []);
 
   // Image error handling
-  const handleImageError = useCallback(
-    (error: any) => {
-      console.error('Hero image load error:', error);
-      updateUiState({ imageError: true });
-    },
-    [updateUiState]
-  );
+  const handleImageError = useCallback((error: any) => {
+    console.error('Hero image load error:', error);
+    setImageError(true);
+  }, []);
 
-  // Enhanced mission application
+  // Enhanced mission application with better error handling
+
+  // Enhanced mission application with better error handling
   const handleApplyToMission = useCallback(
     async (mission: any) => {
       if (!mission?.id) {
@@ -376,26 +302,46 @@ export default function HomeScreen() {
         return;
       }
 
-      if (!user?.id) {
+      if (!profile?.id || !user?.id) {
         showToast('error', 'Vous devez être connecté pour postuler');
         setTimeout(() => handleNavigation('/auth/login'), 1500);
         return;
       }
 
-      if (mission.applicants?.includes(user.id)) {
+      // Check if user has already applied using profile.id
+      const hasAlreadyApplied = mission.applicants?.some(
+        (applicant: any) =>
+          applicant?.id === profile.id || applicant === profile.id
+      );
+
+      if (hasAlreadyApplied) {
         showToast('info', 'Vous avez déjà postulé à cette mission');
         return;
       }
 
-      if (uiState.applyingToMission) {
+      if (applyingToMission) {
         showToast('info', 'Candidature en cours...');
         return;
       }
 
-      updateUiState({ applyingToMission: mission.id });
-
+      setApplyingToMission(mission.id);
       try {
-        const updatedApplicants = [...(mission.applicants || []), user.id];
+        // Create applicant object with profile data
+        const applicantData = {
+          id: profile.id,
+          full_name: profile.full_name || 'Nom non spécifié',
+          role: profile.role || 'Rôle non spécifié',
+          applied_at: new Date().toISOString(), // Optional: add timestamp
+        };
+
+        // Get existing applicants and ensure it's an array
+        const existingApplicants = Array.isArray(mission.applicants)
+          ? mission.applicants
+          : [];
+
+        // Add new applicant data
+        const updatedApplicants = [...existingApplicants, applicantData];
+
         await updateMission(mission.id, { applicants: updatedApplicants });
 
         if (isMountedRef.current) {
@@ -411,53 +357,52 @@ export default function HomeScreen() {
         }
       } finally {
         if (isMountedRef.current) {
-          updateUiState({ applyingToMission: null });
+          setApplyingToMission(null);
         }
       }
     },
     [
+      profile?.id,
+      profile?.full_name,
+      profile?.role,
       user?.id,
       updateMission,
       showToast,
-      uiState.applyingToMission,
+      applyingToMission,
       handleNavigation,
-      updateUiState,
     ]
   );
 
-  // Optimized data fetching with InteractionManager
+  // Data fetching with error handling
   const fetchData = useCallback(
     async (showRefreshIndicator = false) => {
       if (showRefreshIndicator) {
-        updateUiState({ refreshing: true });
+        setRefreshing(true);
       }
 
-      // Use InteractionManager to ensure smooth animations
-      InteractionManager.runAfterInteractions(async () => {
-        try {
-          await Promise.allSettled([
-            fetchLinks().catch((error) => {
-              console.error('Failed to fetch links:', error);
-              return Promise.resolve();
-            }),
-            fetchMissions().catch((error) => {
-              console.error('Failed to fetch missions:', error);
-              return Promise.resolve();
-            }),
-          ]);
-        } catch (error) {
-          console.error('Error fetching data:', error);
-          if (isMountedRef.current) {
-            showToast('error', 'Erreur lors du chargement des données');
-          }
-        } finally {
-          if (showRefreshIndicator && isMountedRef.current) {
-            updateUiState({ refreshing: false });
-          }
+      try {
+        await Promise.allSettled([
+          fetchLinks().catch((error) => {
+            console.error('Failed to fetch links:', error);
+            return Promise.resolve();
+          }),
+          fetchMissions().catch((error) => {
+            console.error('Failed to fetch missions:', error);
+            return Promise.resolve();
+          }),
+        ]);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        if (isMountedRef.current) {
+          showToast('error', 'Erreur lors du chargement des données');
         }
-      });
+      } finally {
+        if (showRefreshIndicator && isMountedRef.current) {
+          setRefreshing(false);
+        }
+      }
     },
-    [fetchLinks, fetchMissions, showToast, updateUiState]
+    [fetchLinks, fetchMissions, showToast]
   );
 
   // Initial data loading
@@ -470,14 +415,14 @@ export default function HomeScreen() {
     fetchData(true);
   }, [fetchData]);
 
-  // Notification toggle
+  // Notification toggle with safety check
   const toggleNotifications = useCallback(() => {
-    updateUiState({ showNotifications: !uiState.showNotifications });
-  }, [uiState.showNotifications, updateUiState]);
+    setShowNotifications((prev) => !prev);
+  }, []);
 
-  // Memoized header component
-  const headerComponent = useMemo(
-    () => (
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card }]}>
         <Animated.View
           entering={FadeInUp.delay(200)}
@@ -486,9 +431,9 @@ export default function HomeScreen() {
           <View style={styles.logoSection}>
             <Text
               style={[styles.logoText, { color: colors.primary }]}
-              accessibilityLabel="Logo AGRO"
+              accessibilityLabel="Logo AGROVIA"
             >
-              Agro
+              Agrovia
             </Text>
           </View>
           <TouchableOpacity
@@ -502,7 +447,7 @@ export default function HomeScreen() {
             }`}
             accessibilityRole="button"
             accessibilityHint="Ouvre le panneau des notifications"
-            disabled={uiState.isLoading}
+            disabled={isLoading}
           >
             <Bell size={24} color={colors.primary} />
             {unreadNotifications > 0 && (
@@ -517,268 +462,259 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Animated.View>
       </View>
-    ),
-    [colors, toggleNotifications, unreadNotifications, uiState.isLoading]
-  );
-
-  // Memoized hero section
-  const heroSection = useMemo(
-    () => (
-      <View style={[styles.heroSection, { height: HERO_HEIGHT }]}>
-        <MemoizedHeroImage
-          source={DEFAULT_HERO_IMAGE}
-          onError={handleImageError}
-        />
-        <MemoizedLinearGradient />
-        <View style={styles.heroContent}>
-          <Animated.View entering={FadeInDown.delay(300)}>
-            <Text
-              style={styles.heroTitle}
-              accessibilityLabel="Titre principal: Le Futur de l'Agriculture"
-            >
-              Le Futur de l'Agriculture
-            </Text>
-            <Text
-              style={styles.heroSubtitle}
-              accessibilityLabel="Sous-titre: Connectez-vous avec les meilleurs talents agricoles"
-            >
-              Connectez-vous avec les meilleurs talents agricoles et accédez à
-              des opportunités dans un environnement de confiance.
-            </Text>
-          </Animated.View>
-
-          <Animated.View
-            entering={FadeInDown.delay(500)}
-            style={styles.heroActions}
-          >
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                {
-                  backgroundColor: colors.primary,
-                  opacity: uiState.isLoading ? 0.7 : 1,
-                },
-              ]}
-              onPress={() => handleNavigation('/new')}
-              accessibilityLabel="Commencer"
-              accessibilityHint="Navigue vers la page de création de profil"
-              accessibilityRole="button"
-              disabled={uiState.isLoading}
-            >
-              <Text style={styles.primaryButtonText}>Commencer</Text>
-              <ArrowRight size={20} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.secondaryButton,
-                { opacity: uiState.isLoading ? 0.7 : 1 },
-              ]}
-              onPress={() =>
-                debouncedHandleOpenLink(
-                  appLinks.website,
-                  'Le site web sera bientôt disponible.'
-                )
-              }
-              accessibilityLabel="En savoir plus"
-              accessibilityHint="Ouvre le site web pour plus d'informations"
-              accessibilityRole="button"
-              disabled={uiState.isLoading || linksLoading}
-            >
-              <Text style={styles.secondaryButtonText}>En savoir plus</Text>
-              <ChevronRight size={20} color="#fff" />
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </View>
-    ),
-    [
-      colors,
-      uiState.isLoading,
-      handleNavigation,
-      debouncedHandleOpenLink,
-      appLinks,
-      linksLoading,
-      handleImageError,
-    ]
-  );
-
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {headerComponent}
 
       <ScrollView
-        ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
-            refreshing={uiState.refreshing}
+            refreshing={refreshing}
             onRefresh={onRefresh}
             colors={[colors.primary]}
             tintColor={colors.primary}
+            // Add these props to prevent overlay issues
+            progressBackgroundColor={colors.background}
+            style={{ zIndex: -1 }}
           />
         }
-        // Performance optimizations
-        removeClippedSubviews={Platform.OS === 'android'}
-        // updateCellsBatchingPeriod={50}
-        // initialNumToRender={5}
-        // windowSize={10}
+        // Add these props to ensure proper scrolling behavior
+        bounces={true}
+        alwaysBounceVertical={true}
+        keyboardShouldPersistTaps="handled"
       >
-        {heroSection}
+        {/* Hero Section */}
+        <View style={[styles.heroSection, { height: HERO_HEIGHT }]}>
+          <Image
+            source={DEFAULT_HERO_IMAGE}
+            style={styles.heroImage}
+            onError={handleImageError}
+            accessibilityLabel="Image représentant l'agriculture moderne"
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.7)']}
+            style={styles.heroOverlay}
+          />
+          <View style={styles.heroContent}>
+            <Animated.View entering={FadeInDown.delay(300)}>
+              <Text
+                style={styles.heroTitle}
+                accessibilityLabel="Titre principal: Le Futur de l'Agriculture"
+              >
+                Le Futur de l'Agriculture
+              </Text>
+              <Text
+                style={styles.heroSubtitle}
+                accessibilityLabel="Sous-titre: Connectez-vous avec les meilleurs talents agricoles"
+              >
+                Connectez-vous avec les meilleurs talents agricoles et accédez à
+                des opportunités dans un environnement de confiance.
+              </Text>
+            </Animated.View>
 
-        {/* Error State for Missions */}
-        {missionsError && (
-          <Animated.View
-            entering={FadeInDown.delay(800)}
-            style={[styles.errorContainer, { backgroundColor: colors.card }]}
+            <Animated.View
+              entering={FadeInDown.delay(500)}
+              style={styles.heroActions}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: isLoading ? 0.7 : 1,
+                  },
+                ]}
+                onPress={() => handleNavigation('/new')}
+                accessibilityLabel="Commencer"
+                accessibilityHint="Navigue vers la page de création de profil"
+                accessibilityRole="button"
+                disabled={isLoading}
+              >
+                <Text style={styles.primaryButtonText}>Commencer</Text>
+                <ArrowRight size={20} color="#fff" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.secondaryButton,
+                  { opacity: isLoading ? 0.7 : 1 },
+                ]}
+                onPress={() =>
+                  handleOpenLink(
+                    appLinks.website,
+                    'Le site web sera bientôt disponible.'
+                  )
+                }
+                accessibilityLabel="En savoir plus"
+                accessibilityHint="Ouvre le site web pour plus d'informations"
+                accessibilityRole="button"
+                disabled={isLoading || linksLoading}
+              >
+                <Text style={styles.secondaryButtonText}>En savoir plus</Text>
+                <ChevronRight size={20} color="#fff" />
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </View>
+
+        <View>
+          {/* Error State for Missions */}
+          {missionsError && (
+            <Animated.View
+              entering={FadeInDown.delay(800)}
+              style={[styles.errorContainer, { backgroundColor: colors.card }]}
+            >
+              <Text style={[styles.errorText, { color: colors.text }]}>
+                Erreur lors du chargement des missions
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.retryButton,
+                  { backgroundColor: colors.primary + '15' },
+                ]}
+                onPress={() => fetchMissions()}
+              >
+                <Text
+                  style={[styles.retryButtonText, { color: colors.primary }]}
+                >
+                  Réessayer
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Missions Section */}
+          {!missionsError && (
+            <MissionsSection
+              profile={profile}
+              colors={colors}
+              missionsLoading={missionsLoading}
+              filteredMissions={filteredMissions}
+              user={user}
+              applyingToMission={applyingToMission}
+              onApplyToMission={handleApplyToMission}
+              formatPrice={formatPrice}
+              formatDate={formatDate}
+              fetchMissions={fetchMissions}
+            />
+          )}
+        </View>
+
+        <>
+          {/* Features Section */}
+          <FeaturesSection profile={profile} colors={colors} />
+
+          {/* Mission Section - Fixed z-index and positioning */}
+          <View
+            style={[styles.missionSection, { backgroundColor: colors.card }]}
           >
-            <Text style={[styles.errorText, { color: colors.text }]}>
-              Erreur lors du chargement des missions
+            <Text
+              style={[styles.sectionTitle, { color: colors.text }]}
+              accessibilityLabel="Section: Notre Mission"
+            >
+              Notre Mission
+            </Text>
+            <Text style={[styles.missionText, { color: colors.text }]}>
+              Nous avons pour mission d'autonomiser les professionnels agricoles
+              grâce à la technologie et à la collaboration. En connectant
+              experts, innovateurs et producteurs, nous construisons un avenir
+              plus durable et efficace pour l'agriculture.
             </Text>
             <TouchableOpacity
               style={[
-                styles.retryButton,
-                { backgroundColor: colors.primary + '15' },
+                styles.missionButton,
+                {
+                  backgroundColor: colors.primary + '15',
+                  opacity: isLoading ? 0.7 : 1,
+                },
               ]}
-              onPress={() => fetchMissions()}
+              onPress={() =>
+                handleOpenLink(
+                  `${appLinks.website}about`,
+                  'La page À propos sera bientôt disponible.'
+                )
+              }
+              accessibilityLabel="Découvrir notre vision"
+              accessibilityHint="Ouvre la page À propos sur le site web"
+              accessibilityRole="button"
+              disabled={isLoading}
             >
-              <Text style={[styles.retryButtonText, { color: colors.primary }]}>
-                Réessayer
+              <Text
+                style={[styles.missionButtonText, { color: colors.primary }]}
+              >
+                Découvrir notre vision
               </Text>
+              <ArrowRight size={16} color={colors.primary} />
             </TouchableOpacity>
-          </Animated.View>
-        )}
-
-        {/* Missions Section */}
-        {!missionsError && (
-          <MissionsSection
-            profile={profile}
-            colors={colors}
-            missionsLoading={missionsLoading}
-            filteredMissions={filteredMissions}
-            user={user}
-            applyingToMission={uiState.applyingToMission}
-            onApplyToMission={handleApplyToMission}
-            formatPrice={formatPrice}
-            formatDate={formatDate}
-            fetchMissions={fetchMissions}
-          />
-        )}
-
-        {/* Features Section */}
-        <FeaturesSection profile={profile} colors={colors} />
-
-        {/* Mission Section */}
-        <Animated.View
-          entering={FadeInDown.delay(1200)}
-          style={styles.missionSection}
-        >
-          <Text
-            style={[styles.sectionTitle, { color: colors.text }]}
-            accessibilityLabel="Section: Notre Mission"
-          >
-            Notre Mission
-          </Text>
-          <Text style={[styles.missionText, { color: colors.text }]}>
-            Nous avons pour mission d'autonomiser les professionnels agricoles
-            grâce à la technologie et à la collaboration. En connectant experts,
-            innovateurs et producteurs, nous construisons un avenir plus durable
-            et efficace pour l'agriculture.
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.missionButton,
-              {
-                backgroundColor: colors.primary + '15',
-                opacity: uiState.isLoading ? 0.7 : 1,
-              },
-            ]}
-            onPress={() =>
-              debouncedHandleOpenLink(
-                `${appLinks.website}/about`,
-                'La page À propos sera bientôt disponible.'
-              )
-            }
-            accessibilityLabel="Découvrir notre vision"
-            accessibilityHint="Ouvre la page À propos sur le site web"
-            accessibilityRole="button"
-            disabled={uiState.isLoading}
-          >
-            <Text style={[styles.missionButtonText, { color: colors.primary }]}>
-              Découvrir notre vision
-            </Text>
-            <ArrowRight size={16} color={colors.primary} />
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Contact Section */}
-        <Animated.View
-          entering={FadeInDown.delay(1600)}
-          style={styles.contactSection}
-        >
-          <Text
-            style={[styles.sectionTitle, { color: colors.text }]}
-            accessibilityLabel="Section: Contactez-nous"
-          >
-            Contactez-nous
-          </Text>
-          <Text style={[styles.contactText, { color: colors.text }]}>
-            Vous avez des questions sur notre plateforme ? Nous sommes là pour
-            vous aider à vous connecter avec la communauté agricole.
-          </Text>
-
-          <View style={styles.contactInfo}>
-            <View style={styles.contactItem}>
-              <Text style={[styles.contactLabel, { color: colors.text }]}>
-                Email:
-              </Text>
-              <Text
-                style={[styles.contactValue, { color: colors.primary }]}
-                accessibilityLabel="Email: service@agro.com"
-              >
-                service@agro.com
-              </Text>
-            </View>
-            <View style={styles.contactItem}>
-              <Text style={[styles.contactLabel, { color: colors.text }]}>
-                Téléphone:
-              </Text>
-              <Text
-                style={[styles.contactValue, { color: colors.primary }]}
-                accessibilityLabel="Téléphone: +226 74 18 97 63"
-              >
-                {'+226 74 18 97 63\n+226 74 18 97 63'}
-              </Text>
-            </View>
           </View>
 
-          <TouchableOpacity
-            style={[
-              styles.shareButton,
-              {
-                backgroundColor: colors.primary,
-                opacity: uiState.isLoading ? 0.7 : 1,
-              },
-            ]}
-            onPress={handleShareApp}
-            disabled={uiState.isLoading}
-            accessibilityLabel="Partager AGRO"
-            accessibilityHint="Partage l'application avec vos contacts"
-            accessibilityRole="button"
+          {/* Contact Section - Fixed z-index and positioning */}
+          <View
+            style={[styles.contactSection, { backgroundColor: colors.card }]}
           >
-            <Share2 size={20} color="#fff" />
-            <Text style={styles.shareButtonText}>
-              {uiState.isLoading ? 'Partage...' : 'Partager AGRO'}
+            <Text
+              style={[styles.sectionTitle, { color: colors.text }]}
+              accessibilityLabel="Section: Contactez-nous"
+            >
+              Contactez-nous
             </Text>
-          </TouchableOpacity>
-        </Animated.View>
+            <Text style={[styles.contactText, { color: colors.text }]}>
+              Vous avez des questions sur notre plateforme ? Nous sommes là pour
+              vous aider à vous connecter avec la communauté agricole.
+            </Text>
+
+            <View style={styles.contactInfo}>
+              <View style={styles.contactItem}>
+                <Text style={[styles.contactLabel, { color: colors.text }]}>
+                  Email:
+                </Text>
+                <Text
+                  style={[styles.contactValue, { color: colors.primary }]}
+                  accessibilityLabel="Email: support@agrovie.africa"
+                >
+                  service@agrovia.com
+                </Text>
+              </View>
+              <View style={styles.contactItem}>
+                <Text style={[styles.contactLabel, { color: colors.text }]}>
+                  Téléphone:
+                </Text>
+                <Text
+                  style={[styles.contactValue, { color: colors.primary }]}
+                  accessibilityLabel="Téléphone: +226 74 18 97 63"
+                >
+                  {'+226 74 18 97 63\n+226 74 18 97 63'}
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.shareButton,
+                {
+                  backgroundColor: colors.primary,
+                  opacity: isLoading ? 0.7 : 1,
+                },
+              ]}
+              onPress={handleShareApp}
+              disabled={isLoading}
+              accessibilityLabel="Partager AGRO"
+              accessibilityHint="Partage l'application avec vos contacts"
+              accessibilityRole="button"
+            >
+              <Share2 size={20} color="#fff" />
+              <Text style={styles.shareButtonText}>
+                {isLoading ? 'Partage...' : 'Partager AGRO'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
       </ScrollView>
 
-      {/* Modals and Overlays */}
+      {/* Modals and Overlays - Fixed z-index */}
       <NotificationsModal
-        visible={uiState.showNotifications}
-        onClose={() => updateUiState({ showNotifications: false })}
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
       />
       <WelcomeOverlay
         visible={showWelcome}
@@ -787,11 +723,11 @@ export default function HomeScreen() {
       />
       <FeedbackOverlay visible={showFeedback} onClose={markFeedbackShown} />
       <Toast
-        visible={toast.visible}
-        type={toast.type}
-        message={toast.message}
+        visible={toastVisible}
+        type={toastType}
+        message={toastMessage}
         onHide={hideToast}
-        duration={TOAST_DURATION}
+        duration={3000}
       />
     </View>
   );
@@ -800,10 +736,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginBottom: 80,
+    position: 'relative',
   },
   scrollContent: {
-    flexGrow: 1,
+    // flexGrow: 1,
+    // position: 'relative',
+    paddingBottom: 150,
   },
   header: {
     paddingHorizontal: 24,
@@ -814,6 +752,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    zIndex: 10, // Added to ensure header stays on top
   },
   headerContent: {
     flexDirection: 'row',
@@ -851,6 +790,7 @@ const styles = StyleSheet.create({
   heroSection: {
     position: 'relative',
     marginBottom: 40,
+    zIndex: 1,
   },
   heroImage: {
     width: '100%',
@@ -1004,6 +944,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     gap: 12,
+    position: 'relative',
+    zIndex: 2,
   },
   errorText: {
     fontFamily: 'Inter-Regular',

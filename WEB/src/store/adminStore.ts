@@ -1,4 +1,3 @@
-import { Json } from "./../../../MOBILE/types/supabase";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createClient, Session, User } from "@supabase/supabase-js";
@@ -9,28 +8,51 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type ActorRank = "Worker" | "Technician" | "Entrepreneur";
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export type ActorRank = "Worker" | "Advisor" | "Entrepreneur";
 export type ActorSpecialization =
-  | "precision_agriculture_technician"
-  | "agricultural_equipment_technician"
-  | "crop_and_soil_technician"
-  | "research_and_laboratory_technician"
-  | "livestock_and_airy_technician"
-  | "food_safety_and_quality_technician"
-  | "pest_management_and_environmental_technician"
-  | "inspection_and_certification_technician"
-  | "sales_and_support_technician"
+  // Worker specializations
   | "crop_production_worker"
   | "livestock_worker"
   | "mechanized_worker"
-  | "processing_worker"
   | "specialized_worker"
   | "seasonal_worker"
-  | "maintenance_worker"
+  | "agroforestry_worker"
+  | "nursery_worker"
+  | "aquaculture_worker"
+  // Conseiller agricole
+  | "horticulture_market_gardening"
+  | "fruit_cultivation_orchard"
+  | "irrigation"
+  | "agricultural_machinery"
+  | "livestock_farming"
+  | "smart_agriculture"
+  | "agricultural_drone"
+  | "large_scale_production"
+  | "phytosanitary"
+  | "soil_science"
+  | "agricultural_development"
+  | "project_management"
+  | "agroecology"
+  | "farm_management"
+  | "agrifood"
+  | "rural_land"
+  | "aquaculture"
   | "other";
 
 export type ExperienceLevel = "starter" | "qualified" | "expert";
-export type SurfaceUnit = "hectares" | "acres";
+export type SurfaceUnit =
+  | "hectares"
+  | "square_meter"
+  | "acres"
+  | "square_kilometers";
 
 export interface DynamicPricing {
   id: string;
@@ -60,7 +82,7 @@ export type UserSuperRole =
   | "law"
   | "finance";
 export type UserNationality = "national" | "international" | "foreign";
-export type Role = "Worker" | "Technician" | "Entrepreneur";
+export type Role = "Worker" | "Advisor" | "Entrepreneur";
 export type AccountStatus = "healthy" | "warning" | "suspended" | "deleted";
 export type PaymentStatus = "Completed" | "Pending" | "Failed" | "Refunded";
 export type MissionStatus =
@@ -70,7 +92,7 @@ export type MissionStatus =
   | "rejected"
   | "completed"
   | "removed";
-export type ActorsNeeded = "worker" | "technician" | "entrepreneur";
+export type ActorsNeeded = "worker" | "advisor" | "entrepreneur";
 export type RequiredExperience = "starter" | "qualified" | "expert";
 export type UserStatus = "active" | "inactive" | "suspended";
 export type VerificationStatus = "verified" | "not_verified";
@@ -129,9 +151,11 @@ export interface Mission {
   proposed_advantages: string[];
   equipment: boolean;
   mission_images: string[];
+  applicants: string[];
   metadata: JSON;
   creator: string;
   created_at: Date;
+  updated_at: Date;
   status: MissionStatus;
 }
 
@@ -173,9 +197,11 @@ export interface Document {
   id_file_path: string;
   legal_document_type: LegalDocType;
   legal_file_path: string;
+  rejection_reason?: string;
   status: DocumentStatus;
   created_at: Date;
   updated_at: Date;
+  metadata: Json;
 }
 
 export type BlogPostStatus = "draft" | "online" | "offline" | "removed";
@@ -235,9 +261,23 @@ export type LinkItem = {
   created_at: string;
 };
 
+export interface Feedback {
+  id: string;
+  user_name: string;
+  user_role: string;
+  rating: number;
+  app_version: string;
+  platform: string;
+  user_agent: string;
+  feedback_text: string;
+  category: string;
+  created_at: Date;
+}
+
 interface AdminState {
   links: LinkItem[];
   dynamicPricings: DynamicPricing[];
+  feedbacks: Feedback[];
   currentPricing: DynamicPricing | null;
   loadingPricing: boolean;
   pricingError: string | null;
@@ -246,6 +286,7 @@ interface AdminState {
   profile: Profile | null;
   users: Profile[];
   fetchUsers: () => Promise<void>;
+  fetchUser: (userId: string) => Promise<void>;
   createUser: (
     email: string,
     password: string,
@@ -281,7 +322,8 @@ interface AdminState {
     id: string,
     data: Partial<Document>,
     userId: string,
-    profData: Partial<Profile>
+    profData: Partial<Profile>,
+    userEmail: string
   ) => void;
   fetchDocumentsWithSignedUrls: () => Promise<Document[]>;
   deleteDocument: (id: string) => void;
@@ -327,6 +369,11 @@ interface AdminState {
     pushToken: string | null,
     message: string
   ) => Promise<void>;
+
+  getFeedbacks: () => Promise<void>;
+  getFeedbackById: (id: string) => Promise<Feedback | null>;
+  deleteFeedback: (id: string) => Promise<void>;
+  updateFeedbackStatus: (id: string, status: string) => Promise<void>;
 }
 
 // Type guard for NotificationType
@@ -357,6 +404,7 @@ function transformNotification(
 export const useAdminStore = create<AdminState>()(
   persist(
     (set, get) => ({
+      feedbacks: [],
       links: [],
       dynamicPricings: [],
       currentPricing: null,
@@ -537,6 +585,30 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
+      fetchUser: async (userId: string) => {
+        set({ loading: true, error: null });
+        try {
+          const { data: profileData, error: profilError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
+            .single();
+          if (profilError) {
+            console.error("Error fetching user:", profilError);
+            set({ error: profilError.message });
+            return;
+          }
+          set({ profile: profileData || null });
+        } catch (err: unknown) {
+          set({
+            error:
+              err instanceof Error ? err.message : "An unknown error occurred",
+          });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
       createUser: async (
         email: string,
         password: string,
@@ -622,7 +694,7 @@ export const useAdminStore = create<AdminState>()(
           // Update account_status to "Deleted" instead of deleting the record
           const { error } = await supabase
             .from("profiles")
-            .update({ account_status: "Deleted" })
+            .update({ account_status: "deleted" })
             .eq("id", id);
 
           if (error) {
@@ -929,10 +1001,71 @@ export const useAdminStore = create<AdminState>()(
           set({ loading: false });
         }
       },
-      updateDocument: async (id, data, userId, profData) => {
+      // updateDocument: async (id, data, userId, profData) => {
+      //   set({ loading: true, error: null });
+
+      //   try {
+      //     const { error: profileError } = await supabase
+      //       .from("profiles")
+      //       .update(profData)
+      //       .eq("id", userId)
+      //       .select();
+
+      //     if (profileError) {
+      //       console.error(
+      //         `Error updating profile with ID ${id}:`,
+      //         profileError
+      //       );
+      //       set({ error: profileError.message });
+      //       return;
+      //     }
+
+      //     const { error } = await supabase
+      //       .from("user_documents")
+      //       .update(data)
+      //       .eq("id", id)
+      //       .select();
+
+      //     if (error) {
+      //       console.error(`Error updating document with ID ${id}:`, error);
+      //       set({ error: error.message });
+      //       return;
+      //     } else {
+      //       console.log(`Updated document with ID ${id} user ${userId}`);
+      //     }
+
+      //     const pushToken = await get().getUserPushToken(userId);
+
+      //     if (data.status === "approved" || data.status === "rejected") {
+      //       const message =
+      //         data.status === "approved"
+      //           ? "Your documents have been approved!"
+      //           : "Your documents have been rejected. Please resubmit.";
+
+      //       // Send notification
+      //       await get().sendDocumentNotification(pushToken, message);
+      //     }
+
+      //     set((state) => ({
+      //       documents: state.documents.map((document) =>
+      //         document.id === id ? { ...document, ...data } : document
+      //       ),
+      //     }));
+      //   } catch (err: unknown) {
+      //     set({
+      //       error:
+      //         err instanceof Error ? err.message : "An unknown error occurred",
+      //     });
+      //   } finally {
+      //     set({ loading: false });
+      //   }
+      // },
+
+      updateDocument: async (id, data, userId, profData, userEmail) => {
         set({ loading: true, error: null });
 
         try {
+          // Update profile first
           const { error: profileError } = await supabase
             .from("profiles")
             .update(profData)
@@ -948,6 +1081,7 @@ export const useAdminStore = create<AdminState>()(
             return;
           }
 
+          // Update document
           const { error } = await supabase
             .from("user_documents")
             .update(data)
@@ -962,6 +1096,19 @@ export const useAdminStore = create<AdminState>()(
             console.log(`Updated document with ID ${id} user ${userId}`);
           }
 
+          // Get user profile data (full_name) from profiles table
+          const { data: userProfile, error: profileFetchError } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", userId)
+            .single();
+
+          if (profileFetchError) {
+            console.error("Error fetching user profile:", profileFetchError);
+            // Continue without email if profile fetch fails
+          }
+
+          // Send push notification
           const pushToken = await get().getUserPushToken(userId);
 
           if (data.status === "approved" || data.status === "rejected") {
@@ -970,10 +1117,56 @@ export const useAdminStore = create<AdminState>()(
                 ? "Your documents have been approved!"
                 : "Your documents have been rejected. Please resubmit.";
 
-            // Send notification
+            // Send push notification
             await get().sendDocumentNotification(pushToken, message);
+
+            // Send email notification if user data is available
+            if (userEmail && userProfile?.full_name) {
+              try {
+                const emailPayload = {
+                  userId: userId,
+                  email: userEmail,
+                  full_name: userProfile.full_name,
+                  status: data.status,
+                  rejectionReason: data.rejection_reason || null,
+                };
+
+                // Call the Supabase Edge Function for sending emails
+                const { data: emailResponse, error: emailError } =
+                  await supabase.functions.invoke(
+                    "send-document-status-email",
+                    {
+                      body: emailPayload,
+                    }
+                  );
+
+                if (emailError) {
+                  console.error(
+                    "Error sending document status email:",
+                    emailError
+                  );
+                  // Don't fail the entire operation if email fails
+                } else {
+                  console.log(
+                    "Document status email sent successfully:",
+                    emailResponse
+                  );
+                }
+              } catch (emailErr) {
+                console.error(
+                  "Failed to send document status email:",
+                  emailErr
+                );
+                // Continue without failing the entire operation
+              }
+            } else {
+              console.warn(
+                "User data incomplete, skipping email notification - missing email or full_name"
+              );
+            }
           }
 
+          // Update local state
           set((state) => ({
             documents: state.documents.map((document) =>
               document.id === id ? { ...document, ...data } : document
@@ -1643,6 +1836,100 @@ export const useAdminStore = create<AdminState>()(
             error
           );
           throw error;
+        }
+      },
+
+      // Feedback
+      getFeedbacks: async () => {
+        set({ loading: true, error: null });
+        try {
+          const { data, error } = await supabase
+            .from("feedbacks")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          set({ feedbacks: data || [] });
+        } catch (error) {
+          console.error("Error fetching feedbacks via Supabase:", error);
+          throw error;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      getFeedbackById: async (id: string) => {
+        set({ loading: true, error: null });
+        try {
+          const { data, error } = await supabase
+            .from("feedbacks")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+          if (error) throw error;
+          return data;
+        } catch (err) {
+          set({
+            error:
+              err instanceof Error ? err.message : "Failed to get feedback",
+          });
+          return null;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      deleteFeedback: async (id: string) => {
+        set({ loading: true, error: null });
+        try {
+          const { error } = await supabase
+            .from("feedbacks")
+            .delete()
+            .eq("id", id);
+
+          if (error) throw error;
+
+          set((state) => ({
+            feedbacks: state.feedbacks.filter((feedback) => feedback.id !== id),
+          }));
+        } catch (err) {
+          set({
+            error:
+              err instanceof Error ? err.message : "Failed to delete feedback",
+          });
+          throw err;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      updateFeedbackStatus: async (id: string, status: string) => {
+        set({ loading: true, error: null });
+        try {
+          // Note: You'd need to add a 'status' column to your feedbacks table for this
+          const { error } = await supabase
+            .from("feedbacks")
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq("id", id);
+
+          if (error) throw error;
+
+          set((state) => ({
+            feedbacks: state.feedbacks.map((feedback) =>
+              feedback.id === id ? { ...feedback, status } : feedback
+            ),
+          }));
+        } catch (err) {
+          set({
+            error:
+              err instanceof Error
+                ? err.message
+                : "Failed to update feedback status",
+          });
+          throw err;
+        } finally {
+          set({ loading: false });
         }
       },
     }),

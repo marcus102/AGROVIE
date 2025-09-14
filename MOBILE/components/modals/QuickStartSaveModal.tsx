@@ -28,7 +28,7 @@ export function QuickStartSaveModal({
   onSaved,
 }: QuickStartSaveModalProps) {
   const { colors } = useThemeStore();
-  const { createQuickStart, loading } = useQuickStartStore();
+  const { createQuickStart, loading, error } = useQuickStartStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
@@ -45,26 +45,17 @@ export function QuickStartSaveModal({
         mission_data: missionData,
       });
 
-      Alert.alert(
-        'Succès',
-        'Votre modèle a été sauvegardé avec succès !',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setTitle('');
-              setDescription('');
-              onClose();
-              onSaved?.();
-            },
-          },
-        ]
-      );
+      // Success - close modal and call onSaved callback
+      handleClose();
+      if (onSaved) {
+        onSaved();
+      }
     } catch (error) {
       Alert.alert(
         'Erreur',
         'Impossible de sauvegarder le modèle. Veuillez réessayer.'
       );
+      // Don't close modal on error so user can retry
     }
   };
 
@@ -72,6 +63,14 @@ export function QuickStartSaveModal({
     setTitle('');
     setDescription('');
     onClose();
+  };
+
+  const handleSkip = () => {
+    // Close modal and call onSaved callback even when skipping
+    handleClose();
+    if (onSaved) {
+      onSaved();
+    }
   };
 
   return (
@@ -103,7 +102,7 @@ export function QuickStartSaveModal({
             </View>
             <TouchableOpacity
               style={[styles.closeButton, { backgroundColor: colors.border }]}
-              onPress={handleClose}
+              onPress={handleSkip}
             >
               <X size={20} color={colors.text} />
             </TouchableOpacity>
@@ -180,11 +179,11 @@ export function QuickStartSaveModal({
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.cancelButton, { borderColor: colors.border }]}
-              onPress={handleClose}
+              onPress={handleSkip}
               disabled={loading}
             >
               <Text style={[styles.cancelButtonText, { color: colors.text }]}>
-                Annuler
+                Passer
               </Text>
             </TouchableOpacity>
 
@@ -192,9 +191,7 @@ export function QuickStartSaveModal({
               style={[
                 styles.saveButton,
                 {
-                  backgroundColor: title.trim()
-                    ? colors.primary
-                    : colors.muted,
+                  backgroundColor: title.trim() ? colors.primary : colors.muted,
                 },
                 loading && styles.buttonDisabled,
               ]}

@@ -7,6 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  Platform,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -18,6 +20,7 @@ import {
   Plus,
   X,
   User,
+  ArrowLeft,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth';
 import { useThemeStore } from '@/stores/theme';
@@ -159,7 +162,7 @@ const MemoizedArrayInputSection = memo(
               )}
             </View>
           ))}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[styles.addButton, { backgroundColor: colors.primary }]}
             onPress={onAddNewInput}
           >
@@ -167,7 +170,7 @@ const MemoizedArrayInputSection = memo(
             <Text style={[styles.addButtonText, { color: colors.card }]}>
               Ajouter un autre champ
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
     );
@@ -367,113 +370,133 @@ export default function EditProfileScreen() {
     []
   );
 
+  // Memoized back handler
+  const handleBack = useCallback(() => {
+    try {
+      router.back();
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Unable to go back');
+    }
+  }, []);
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View
-        style={[
-          styles.imageSection,
-          {
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
-          },
-        ]}
+    <>
+      <TouchableOpacity
+        style={[styles.backButton, { backgroundColor: colors.card }]}
+        onPress={handleBack}
+        activeOpacity={0.7}
       >
-        <View style={styles.profileImageContainer}>
-          {profile?.profile_picture ? (
-            <Image
-              source={{ uri: profile.profile_picture }}
-              style={styles.profileImage}
-            />
-          ) : (
-            <View
-              style={[
-                styles.userIconContainer,
-                { backgroundColor: colors.muted },
-              ]}
+        <ArrowLeft size={24} color={colors.primary} />
+      </TouchableOpacity>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View
+          style={[
+            styles.imageSection,
+            {
+              backgroundColor: colors.card,
+              borderBottomColor: colors.border,
+            },
+          ]}
+        >
+          <View style={styles.profileImageContainer}>
+            {profile?.profile_picture ? (
+              <Image
+                source={{ uri: profile.profile_picture }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.userIconContainer,
+                  { backgroundColor: colors.muted },
+                ]}
+              >
+                <User size={50} color={colors.card} />
+              </View>
+            )}
+            <TouchableOpacity
+              style={[styles.editButton, { backgroundColor: colors.primary }]}
+              onPress={pickImage}
+              disabled={uploading}
             >
-              <User size={50} color={colors.card} />
-            </View>
-          )}
-          <TouchableOpacity
-            style={[styles.editButton, { backgroundColor: colors.primary }]}
-            onPress={pickImage}
-            disabled={uploading}
-          >
-            <Camera size={20} color={colors.card} />
-            <Text style={[styles.changeImageText, { color: colors.card }]}>
-              {uploading ? 'Téléchargement...' : 'Changer la photo'}
-            </Text>
-          </TouchableOpacity>
+              <Camera size={20} color={colors.card} />
+              <Text style={[styles.changeImageText, { color: colors.card }]}>
+                {uploading ? 'Téléchargement...' : 'Changer la photo'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.form}>
-        <MemoizedInputField
-          Icon={FileText}
-          label="Nom complet"
-          value={formData.full_name}
-          onChangeText={(text) => handleTextChange('full_name', text)}
-          colors={colors}
-        />
-
-        <MemoizedInputField
-          Icon={Phone}
-          label="Téléphone"
-          value={formData.phone}
-          onChangeText={(text) => handleTextChange('phone', text)}
-          colors={colors}
-        />
-
-        <MemoizedInputField
-          Icon={MapPin}
-          label="Localisation Actuelle"
-          value={formData.actual_location}
-          onChangeText={(text) => handleTextChange('actual_location', text)}
-          colors={colors}
-        />
-
-        <MemoizedInputField
-          Icon={FileText}
-          label="Biographie"
-          value={formData.bio}
-          onChangeText={(text) => handleTextChange('bio', text)}
-          multiline
-          colors={colors}
-        />
-
-        {arrayFieldConfigs.map(({ field, label, Icon }) => (
-          <MemoizedArrayInputSection
-            key={field}
-            field={field}
-            label={label}
-            Icon={Icon}
-            items={formData[field as keyof FormData] as string[]}
-            onUpdateItems={(newItems) =>
-              handleArrayUpdate(field as keyof FormData, newItems)
-            }
-            onAddNewInput={() => addNewInputToArray(field as keyof FormData)}
+        <View style={styles.form}>
+          <MemoizedInputField
+            Icon={FileText}
+            label="Nom complet"
+            value={formData.full_name}
+            onChangeText={(text) => handleTextChange('full_name', text)}
             colors={colors}
           />
-        ))}
-      </View>
 
-      <TouchableOpacity
-        style={[styles.saveButton, { backgroundColor: colors.primary }]}
-        onPress={handleSave}
-      >
-        <Text style={[styles.saveButtonText, { color: colors.card }]}>
-          Enregistrer les modifications
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+          <MemoizedInputField
+            Icon={Phone}
+            label="Téléphone"
+            value={formData.phone}
+            onChangeText={(text) => handleTextChange('phone', text)}
+            colors={colors}
+          />
+
+          <MemoizedInputField
+            Icon={MapPin}
+            label="Localisation Actuelle"
+            value={formData.actual_location}
+            onChangeText={(text) => handleTextChange('actual_location', text)}
+            colors={colors}
+          />
+
+          <MemoizedInputField
+            Icon={FileText}
+            label="Biographie"
+            value={formData.bio}
+            onChangeText={(text) => handleTextChange('bio', text)}
+            multiline
+            colors={colors}
+          />
+
+          {arrayFieldConfigs.map(({ field, label, Icon }) => (
+            <MemoizedArrayInputSection
+              key={field}
+              field={field}
+              label={label}
+              Icon={Icon}
+              items={formData[field as keyof FormData] as string[]}
+              onUpdateItems={(newItems) =>
+                handleArrayUpdate(field as keyof FormData, newItems)
+              }
+              onAddNewInput={() => addNewInputToArray(field as keyof FormData)}
+              colors={colors}
+            />
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={[styles.saveButton, { backgroundColor: colors.primary }]}
+          onPress={handleSave}
+        >
+          <Text style={[styles.saveButtonText, { color: colors.card }]}>
+            Enregistrer les modifications
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: Platform.OS === 'web' ? 0 : 40,
     flex: 1,
   },
   userIconContainer: {
@@ -582,5 +605,28 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
+  },
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 24 : 48,
+    left: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+      },
+      default: {
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+      },
+    }),
   },
 });

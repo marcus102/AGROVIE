@@ -167,7 +167,7 @@ export default function ForgotPasswordScreen() {
             </Text>
             <Text style={[styles.modalMessage, { color: colors.text }]}>
               Nous avons envoyé les instructions de réinitialisation à {email}.
-              Veuillez vérifier votre boîte de réception et vos spams.
+              Veuillez vérifier votre boîte de réception et vos spams en cas non reception de l'email.
             </Text>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: colors.primary }]}

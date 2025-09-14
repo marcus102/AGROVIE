@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Mail, AlertCircle, ArrowLeft } from 'lucide-react-native';
+import { Mail, ArrowLeft } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
 import { isValidVerificationCode } from '@/lib/supabase';
@@ -40,7 +40,7 @@ export default function VerifyEmailScreen() {
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: number;
     if (timer > 0 && !canResend) {
       interval = setInterval(() => {
         setTimer((prev) => prev - 1);
@@ -148,11 +148,22 @@ export default function VerifyEmailScreen() {
           </Text>
         </View>
 
+        <View style={styles.noteContainer}>
+          <Text style={[styles.noteText, { color: colors.muted }]}>
+            <Text style={{ fontWeight: 'bold' }}>Note importante:</Text> Vérifiez votre dossier spam/courrier indésirable dans Gmail ou tout autre service de messagerie si vous ne trouvez pas notre email dans votre boîte de réception.
+          </Text>
+        </View>
+
         <View style={styles.codeContainer}>
           {[...Array(CODE_LENGTH)].map((_, index) => (
             <TextInput
               key={index}
-              ref={(ref) => ref && (inputRefs.current[index] = ref)}
+              ref={(ref) => {
+                if (ref) {
+                  inputRefs.current[index] = ref;
+                }
+                return;
+              }}
               style={[
                 styles.codeInput,
                 {
@@ -279,6 +290,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 8,
   },
+  noteContainer: {
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
+  },
+  noteText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+  },
   codeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -328,7 +352,6 @@ const styles = StyleSheet.create({
   helpContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
     padding: 16,
     borderRadius: 12,
   },

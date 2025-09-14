@@ -1,5 +1,10 @@
-import { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Outlet,
+} from "react-router-dom";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -17,7 +22,7 @@ import { TermsOfService } from "./pages/TermsOfService";
 import { ProfilePage } from "./pages/Profile";
 import { Login } from "./pages/Login";
 import { ForgotPassword } from "./pages/ForgotPassword";
-import { PasswordReset } from "./components/PasswordReset";
+import { PasswordReset } from "./pages/PasswordReset";
 import { AdminLayout } from "./layouts/AdminLayout";
 import { AdminLogin } from "./components/AdminLogin";
 import { RequireAuth } from "./components/RequireAuth";
@@ -30,6 +35,7 @@ import { PaymentManagement } from "./pages/admin/PaymentManagement";
 import { NotificationManagement } from "./pages/admin/NotificationManagement";
 import { DynamicPricing } from "./pages/admin/DynamicPricing";
 import { LinksManagement } from "./pages/admin/LinksManagement";
+import { FeedbackManagement } from "./pages/admin/FeedbacksManagement";
 import { translations } from "./constants";
 import { Language } from "./types";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -40,7 +46,6 @@ import "@fontsource/montserrat/600.css";
 import "@fontsource/montserrat/700.css";
 import "@fontsource/open-sans/400.css";
 import "@fontsource/open-sans/600.css";
-import { Outlet } from "react-router-dom";
 
 // Component to handle scroll to top on route change
 function ScrollToTopOnRouteChange() {
@@ -48,15 +53,68 @@ function ScrollToTopOnRouteChange() {
   return null;
 }
 
+// Main layout wrapper component
+function MainLayout({
+  language,
+  onLanguageChange,
+}: {
+  language: Language;
+  onLanguageChange: (lang: Language) => void;
+}) {
+  return (
+    <div className="min-h-screen flex flex-col font-open-sans bg-background-light">
+      <Header
+        language={language}
+        translations={translations[language]}
+        onLanguageChange={onLanguageChange}
+      />
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+      <Footer language={language} translations={translations[language]} />
+      <ScrollToTop />
+    </div>
+  );
+}
+
 function App() {
-  const [language, setLanguage] = useState<Language>(() => {
-    const savedLanguage = localStorage.getItem("preferredLanguage");
-    return (savedLanguage as Language) || "fr";
-  });
+  // Safe initialization of language state
+  const [language, setLanguage] = useState<Language>("fr");
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load saved language preference after component mounts
+  useEffect(() => {
+    try {
+      const savedLanguage = localStorage.getItem("preferredLanguage");
+      if (savedLanguage && (savedLanguage === "en" || savedLanguage === "fr")) {
+        setLanguage(savedLanguage as Language);
+      }
+    } catch (error) {
+      console.warn("Could not access localStorage:", error);
+    }
+    setIsInitialized(true);
+  }, []);
 
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage);
+    try {
+      localStorage.setItem("preferredLanguage", newLanguage);
+    } catch (error) {
+      console.warn("Could not save language preference:", error);
+    }
   };
+
+  // Show a loading state until language is initialized
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthProvider>
@@ -66,26 +124,16 @@ function App() {
           <Routes>
             {/* Main App Routes with Header and Footer */}
             <Route
+              path="/"
               element={
-                <div className="min-h-screen flex flex-col font-open-sans bg-background-light">
-                  <Header
-                    language={language}
-                    translations={translations[language]}
-                    onLanguageChange={handleLanguageChange}
-                  />
-                  <main className="flex-grow">
-                    <Outlet />
-                  </main>
-                  <Footer
-                    language={language}
-                    translations={translations[language]}
-                  />
-                  <ScrollToTop />
-                </div>
+                <MainLayout
+                  language={language}
+                  onLanguageChange={handleLanguageChange}
+                />
               }
             >
               <Route
-                path="/"
+                index
                 element={
                   <Home
                     language={language}
@@ -94,7 +142,7 @@ function App() {
                 }
               />
               <Route
-                path="/about"
+                path="about"
                 element={
                   <About
                     language={language}
@@ -103,7 +151,7 @@ function App() {
                 }
               />
               <Route
-                path="/services"
+                path="services"
                 element={
                   <Services
                     language={language}
@@ -112,7 +160,7 @@ function App() {
                 }
               />
               <Route
-                path="/services/:serviceId"
+                path="services/:serviceId"
                 element={
                   <ServiceDetail
                     language={language}
@@ -121,7 +169,7 @@ function App() {
                 }
               />
               <Route
-                path="/contact"
+                path="contact"
                 element={
                   <Contact
                     language={language}
@@ -130,7 +178,7 @@ function App() {
                 }
               />
               <Route
-                path="/faq"
+                path="faq"
                 element={
                   <FAQ
                     language={language}
@@ -139,7 +187,7 @@ function App() {
                 }
               />
               <Route
-                path="/profile"
+                path="profile/:profileId?"
                 element={
                   <ProfilePage
                     language={language}
@@ -148,7 +196,7 @@ function App() {
                 }
               />
               <Route
-                path="/blog"
+                path="blog"
                 element={
                   <Blog
                     language={language}
@@ -156,9 +204,9 @@ function App() {
                   />
                 }
               />
-              <Route path="/blog/:id" element={<BlogPost />} />
+              <Route path="blog/:id" element={<BlogPost />} />
               <Route
-                path="/privacy-policy"
+                path="privacy-policy"
                 element={
                   <PrivacyPolicy
                     language={language}
@@ -167,7 +215,7 @@ function App() {
                 }
               />
               <Route
-                path="/terms-of-service"
+                path="terms-of-service"
                 element={
                   <TermsOfService
                     language={language}
@@ -175,9 +223,8 @@ function App() {
                   />
                 }
               />
-
               <Route
-                path="/login"
+                path="login"
                 element={
                   <Login
                     language={language}
@@ -186,7 +233,7 @@ function App() {
                 }
               />
               <Route
-                path="/forgot-password"
+                path="forgot-password"
                 element={
                   <ForgotPassword
                     language={language}
@@ -195,7 +242,7 @@ function App() {
                 }
               />
               <Route
-                path="/reset-password"
+                path="reset-password"
                 element={
                   <PasswordReset
                     language={language}
@@ -208,7 +255,7 @@ function App() {
             {/* Admin Routes (without Header and Footer) */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
-              path="/admin/*"
+              path="/admin"
               element={
                 <RequireAuth>
                   <AdminLayout
@@ -230,6 +277,38 @@ function App() {
               />
               <Route path="dynamic-pricing" element={<DynamicPricing />} />
               <Route path="links" element={<LinksManagement />} />
+              <Route path="feedback" element={<FeedbackManagement />} />
+            </Route>
+
+            {/* Catch-all route for 404 */}
+            <Route
+              path="*"
+              element={
+                <MainLayout
+                  language={language}
+                  onLanguageChange={handleLanguageChange}
+                />
+              }
+            >
+              <Route
+                path="*"
+                element={
+                  <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                      <h1 className="text-4xl font-bold text-gray-800 mb-4">
+                        404
+                      </h1>
+                      <p className="text-gray-600 mb-4">Page not found</p>
+                      <a
+                        href="/"
+                        className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        Go Home
+                      </a>
+                    </div>
+                  </div>
+                }
+              />
             </Route>
           </Routes>
         </Router>

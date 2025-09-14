@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Sun, Moon, ChevronDown, LogOut, Sparkles, Tractor } from "lucide-react";
+import {
+  Menu,
+  X,
+  User,
+  Sun,
+  Moon,
+  ChevronDown,
+  LogOut,
+  Tractor,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Language, Translations } from "../types";
 import { useTheme } from "../contexts/ThemeContext";
@@ -72,7 +81,10 @@ export function Header({
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between">
           <div className="flex items-center">
-            <ScrollToTopLink to="/" className="flex items-center space-x-3 group">
+            <ScrollToTopLink
+              to="/"
+              className="flex items-center space-x-3 group"
+            >
               <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -84,7 +96,7 @@ export function Header({
               </motion.div>
               <div className="flex flex-col">
                 <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent font-montserrat">
-                  Agrrick
+                  Agrovie
                 </span>
                 {/* <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                   Network
@@ -126,8 +138,8 @@ export function Header({
                 onChange={(e) => handleLanguageChange(e.target.value)}
                 className="appearance-none bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-primary dark:hover:border-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-300 cursor-pointer"
               >
-                <option value="en">🇺🇸 EN</option>
-                <option value="fr">🇫🇷 FR</option>
+                <option value="en">EN</option>
+                <option value="fr">FR</option>
               </select>
             </div>
 
@@ -173,15 +185,15 @@ export function Header({
                           {user?.email}
                         </p>
                       </div>
-                      {!hidden && (
-                        <ScrollToTopLink
-                          to="/profile"
-                          className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                          onClick={() => setIsProfileDropdownOpen(false)}
-                        >
-                          Profile Settings
-                        </ScrollToTopLink>
-                      )}
+
+                      <ScrollToTopLink
+                        to={`/profile/${user?.id}`}
+                        className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        {translations.header.profile}
+                      </ScrollToTopLink>
+
                       {isAdmin && (
                         <ScrollToTopLink
                           to="/admin"
@@ -271,8 +283,8 @@ export function Header({
                       onChange={(e) => handleLanguageChange(e.target.value)}
                       className="flex-1 p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800"
                     >
-                      <option value="en">🇺🇸 English</option>
-                      <option value="fr">🇫🇷 Français</option>
+                      <option value="en">English</option>
+                      <option value="fr">Français</option>
                     </select>
                     <button
                       onClick={toggleTheme}
@@ -290,7 +302,7 @@ export function Header({
                 {isAuthenticated ? (
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
                     <ScrollToTopLink
-                      to="/profile"
+                      to={`/profile/${user?.id}`}
                       className="block px-4 py-3 rounded-xl text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -315,13 +327,15 @@ export function Header({
                   </div>
                 ) : (
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
-                    <ScrollToTopLink
-                      to="/register"
-                      className="block px-4 py-3 rounded-xl text-base font-medium text-white bg-gradient-to-r from-primary to-primary-dark text-center"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {translations.header.register}
-                    </ScrollToTopLink>
+                    {!hidden && (
+                      <ScrollToTopLink
+                        to="/register"
+                        className="block px-4 py-3 rounded-xl text-base font-medium text-white bg-gradient-to-r from-primary to-primary-dark text-center"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {translations.header.register}
+                      </ScrollToTopLink>
+                    )}
                     <ScrollToTopLink
                       to="/login"
                       className="block px-4 py-3 rounded-xl text-base font-medium text-primary border-2 border-primary text-center"

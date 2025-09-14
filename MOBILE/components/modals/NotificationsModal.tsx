@@ -11,7 +11,7 @@ import { BaseModal } from './BaseModal';
 import { Star, Award, MessageSquare, Bell, Check } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useNotificationStore } from '@/stores/notification';
-import { formatDistanceToNow } from 'date-fns';   
+import { formatDistance } from 'date-fns';   
 import { fr } from 'date-fns/locale';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeStore } from '@/stores/theme';
@@ -117,7 +117,7 @@ export function NotificationsModal({
   };
 
   const formatTime = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), {
+    return formatDistance(new Date(dateString), {
       addSuffix: true,
       locale: fr,
     }).replace('il y a ', 'Il y a ');

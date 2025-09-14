@@ -29,10 +29,11 @@ import { Layout } from "../components/Layout";
 import { Language, Translations } from "../types";
 
 interface ServiceDetailProps {
+  language: Language;
   translations: Translations[Language];
 }
 
-export function ServiceDetail({ translations }: ServiceDetailProps) {
+export function ServiceDetail({ translations, language }: ServiceDetailProps) {
   const { serviceId } = useParams();
   const t = translations.serviceDetail;
 
@@ -524,14 +525,20 @@ export function ServiceDetail({ translations }: ServiceDetailProps) {
               variants={slideIn}
               className="flex flex-col sm:flex-row gap-6 justify-center"
             >
-              <motion.button
+
+
+              <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className="inline-flex items-center px-8 py-4 text-lg font-semibold rounded-2xl text-primary bg-white hover:bg-gray-50 transition-all duration-300 shadow-2xl hover:shadow-3xl"
               >
-                <PlayCircle className="mr-3 h-6 w-6" />
-                {t.getStarted}
-              </motion.button>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center px-8 py-4 text-lg font-semibold rounded-2xl text-primary bg-white hover:bg-gray-50 transition-all duration-300 shadow-2xl hover:shadow-3xl"
+                >
+                  <PlayCircle className="mr-3 h-6 w-6" />
+                  {t.getStarted}
+                </Link>
+              </motion.div>
 
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}

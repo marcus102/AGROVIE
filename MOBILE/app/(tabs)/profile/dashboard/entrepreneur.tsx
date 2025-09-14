@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -8,18 +8,20 @@ import {
   ActivityIndicator,
   Dimensions,
   RefreshControl,
+  Alert,
+  Platform,
 } from 'react-native';
 import { useThemeStore } from '@/stores/theme';
 import {
   Users,
   Briefcase,
   TrendingUp,
-  RefreshCw,
   CheckCircle2,
   DollarSign,
   Target,
   Heart,
   Star,
+  ArrowLeft,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { StatCard } from '@/components/StatCard';
@@ -228,6 +230,16 @@ export default function EntrepreneurDashboard() {
     'removed',
   ];
 
+  // Memoized back handler
+  const handleBack = useCallback(() => {
+    try {
+      router.back();
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Unable to go back');
+    }
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <FlatList
@@ -237,6 +249,13 @@ export default function EntrepreneurDashboard() {
           if (item.type === 'stats') {
             return (
               <>
+                <TouchableOpacity
+                  style={[styles.backButton, { backgroundColor: colors.card }]}
+                  onPress={handleBack}
+                  activeOpacity={0.7}
+                >
+                  <ArrowLeft size={24} color={colors.primary} />
+                </TouchableOpacity>
                 {/* Header with Gradient */}
                 <View style={styles.headerContainer}>
                   <LinearGradient
@@ -426,8 +445,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scrollContent: {
-    paddingHorizontal: 12,
-    paddingBottom: 30,
+    paddingHorizontal: 2,
+    paddingBottom: 150,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -471,5 +490,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
+  },
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 24 : 48,
+    left: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+      },
+      default: {
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+      },
+    }),
   },
 });

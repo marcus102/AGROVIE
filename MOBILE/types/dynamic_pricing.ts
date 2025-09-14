@@ -11,7 +11,7 @@ export type ActorSpecialization =
   | 'agroforestry_worker'
   | 'nursery_worker'
   | 'aquaculture_worker'
-  // Technician specializations (Conseiller agricole)
+  // Conseiller agricole
   | 'horticulture_market_gardening'
   | 'fruit_cultivation_orchard'
   | 'irrigation'

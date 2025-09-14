@@ -75,7 +75,7 @@ export default function DocumentsScreen() {
   const { colors } = useThemeStore();
   const [state, setState] = useState<DocumentsState>(INITIAL_STATE);
   const [searchQuery, setSearchQuery] = useState('');
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout>(null);
   const isMountedRef = useRef(true);
 
   // Cleanup on unmount
@@ -486,8 +486,8 @@ export default function DocumentsScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 40,
     flex: 1,
-    marginBottom: 80,
   },
   centerContent: {
     justifyContent: 'center',
@@ -532,6 +532,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
+    paddingBottom: 150,
   },
   emptyListContent: {
     flexGrow: 1,

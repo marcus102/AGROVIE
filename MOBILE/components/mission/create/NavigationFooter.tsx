@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: '#ebe9e5ff',
   },
   footerButtons: {
     flexDirection: 'row',

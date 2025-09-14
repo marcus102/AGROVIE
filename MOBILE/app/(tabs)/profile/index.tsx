@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -21,6 +22,7 @@ import {
   RefreshCw,
   Info,
   Phone,
+  LogOut,
 } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import { useAuthStore } from '@/stores/auth';
@@ -174,7 +176,7 @@ const ProfileSection = React.memo(
 
 export default function ProfileScreen() {
   const { colors } = useThemeStore();
-  const { fetchProfile, loading, profile, error } = useAuthStore();
+  const { fetchProfile, loading, profile, error, signOut } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -199,6 +201,29 @@ export default function ProfileScreen() {
   const handleEditPress = useCallback(() => {
     router.push('/profile/edit');
   }, []);
+
+  // Enhanced logout handler with confirmation dialog
+  const handleSignOut = useCallback(() => {
+    Alert.alert(
+      'Confirmer la déconnexion',
+      'Êtes-vous sûr de vouloir vous déconnecter ?',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Se déconnecter',
+          style: 'destructive',
+          onPress: () => {
+            signOut();
+            router.replace('/(auth)/login');
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  }, [signOut]);
 
   const translateSpecialization = useCallback((value: string) => {
     if (!value) return null;
@@ -390,8 +415,8 @@ export default function ProfileScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView 
-        style={styles.container} 
+      <ScrollView
+        style={styles.container}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -411,21 +436,20 @@ export default function ProfileScreen() {
             colors={[colors.primary, colors.primary + 'CC']}
             style={styles.gradientHeader}
           >
-
             <Animated.View
               entering={FadeInUp.delay(200)}
               style={styles.profileSection}
             >
               <ProfileImage profile={profile} onEditPress={handleEditPress} />
-              <ProfileInfo profile={profile } />
+              <ProfileInfo profile={profile} />
             </Animated.View>
           </LinearGradient>
         </View>
 
-        {/* Dashboard Button */}
+        {/* Action Buttons */}
         <Animated.View
           entering={FadeInDown.delay(200)}
-          style={styles.dashboardSection}
+          style={styles.actionButtonsSection}
         >
           <TouchableOpacity
             style={[
@@ -436,6 +460,19 @@ export default function ProfileScreen() {
           >
             <Briefcase size={24} color="#fff" />
             <Text style={styles.dashboardButtonText}>Tableau De Bord</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.signOutButton,
+              { borderColor: colors.error, backgroundColor: colors.background },
+            ]}
+            onPress={handleSignOut}
+          >
+            <LogOut size={20} color={colors.error} />
+            <Text style={[styles.signOutButtonText, { color: colors.error }]}>
+              Se Déconnecter
+            </Text>
           </TouchableOpacity>
         </Animated.View>
 
@@ -460,8 +497,8 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 40,
     flex: 1,
-    marginBottom: 80,
   },
   centeredContainer: {
     flex: 1,
@@ -562,9 +599,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     opacity: 0.9,
   },
-  dashboardSection: {
+  actionButtonsSection: {
     paddingHorizontal: 24,
     marginBottom: 20,
+    gap: 12,
   },
   dashboardButton: {
     flexDirection: 'row',
@@ -584,10 +622,23 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#fff',
   },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    gap: 8,
+  },
+  signOutButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+  },
   detailsContainer: {
     paddingHorizontal: 24,
     gap: 16,
-    paddingBottom: 30,
+    paddingBottom: 150,
   },
   card: {
     borderRadius: 20,

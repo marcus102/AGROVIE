@@ -218,7 +218,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             body: JSON.stringify({
               userId: authData.user.id,
               email: email.trim(),
-              fullName: profileData.full_name,
+              full_name: profileData.full_name,
             }),
           }
         );
@@ -391,7 +391,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           body: JSON.stringify({
             userId: user.id,
             email: user.email || '',
-            fullName: profile.full_name || 'User',
+            full_name: profile.full_name || 'User',
           }),
         }
       );
@@ -633,24 +633,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: false });
     }
   },
-
+  
   sendPasswordResetEmail: async (email: string): Promise<void> => {
     if (!email?.trim()) {
       set({ error: 'Email is required' });
       return;
     }
-
     set({ loading: true, error: null });
     try {
-      const appUrl = getEnvVariable('EXPO_PUBLIC_APP_URL');
-      const redirectTo = appUrl ? `${appUrl}/reset-password` : undefined;
-
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
-        {
-          redirectTo,
-        }
-      );
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.EXPO_PUBLIC_APP_URL}/reset-password`,
+      });
 
       if (error) throw error;
     } catch (error) {

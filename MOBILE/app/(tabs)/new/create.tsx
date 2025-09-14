@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Platform,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
@@ -29,6 +28,7 @@ import { StepOne } from '@/components/mission/create/StepOne';
 import { StepTwo } from '@/components/mission/create/SetpTwo';
 import { StepThree } from '@/components/mission/create/StepThree';
 import { StepFour } from '@/components/mission/create/StepFour';
+import { StepFive } from '@/components/mission/create/StepFive';
 import { ProgressIndicator } from '@/components/mission/create/ProgressIndicator';
 import { NavigationFooter } from '@/components/mission/create/NavigationFooter';
 import { validateStep } from '@/utils/missionValidation';
@@ -257,7 +257,7 @@ export default function CreateMissionScreen() {
   };
 
   const handleNext = async () => {
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       if (handleStepValidation(currentStep)) {
         if (currentStep === 3) {
           const success = await calculatePrice();
@@ -275,8 +275,12 @@ export default function CreateMissionScreen() {
     setCurrentStep((prev) => prev - 1);
   };
 
+  const jumpToStep = (step: number) => {
+    setCurrentStep(step);
+  };
+
   const handleSubmit = async () => {
-    if (!handleStepValidation(4)) return;
+    if (!handleStepValidation(5)) return;
 
     try {
       const missionData = {
@@ -312,12 +316,11 @@ export default function CreateMissionScreen() {
     }
   };
 
-  const handleQuickStartSaved = () => {
-    router.back();
-  };
+  // In your CreateMissionScreen component, update the handleQuickStartSaved function:
 
-  const handleSkipQuickStart = () => {
-    router.push('./(tabs)/new/index');
+  const handleQuickStartSaved = () => {
+    setShowQuickStartModal(false); // Ensure modal state is reset
+    router.back();
   };
 
   const renderStepContent = () => {
@@ -365,13 +368,34 @@ export default function CreateMissionScreen() {
             removeImage={removeImage}
           />
         );
+      case 5:
+        return (
+          <StepFive
+            formData={formData}
+            errors={errors}
+            colors={colors}
+            onEditStep={jumpToStep}
+          />
+        );
       default:
         return null;
     }
   };
 
+  // Memoized back handler
+  const handleBack = useCallback(() => {
+    try {
+      router.back();
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Unable to go back');
+    }
+  }, []);
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <Toast
         visible={toastVisible}
         type={toastType}
@@ -380,36 +404,36 @@ export default function CreateMissionScreen() {
         duration={3000}
       />
 
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
+      {/* Header with back button */}
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
+          style={[styles.backButton, { backgroundColor: colors.card }]}
+          onPress={handleBack}
+          activeOpacity={0.7}
         >
           <ArrowLeft size={24} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Créer une mission
-        </Text>
-        <View style={styles.headerRight} />
       </View>
 
       {/* Progress indicator */}
       <ProgressIndicator
         currentStep={currentStep}
-        totalSteps={4}
+        totalSteps={5}
         colors={colors}
       />
 
       {/* Content */}
-      <KeyboardAwareScrollView style={styles.content}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.content}
+        extraScrollHeight={50}
+      >
         {renderStepContent()}
       </KeyboardAwareScrollView>
 
       {/* Footer */}
       <NavigationFooter
         currentStep={currentStep}
-        totalSteps={4}
+        totalSteps={5}
         loading={loading}
         calculatingPrice={calculatingPrice}
         colors={colors}
@@ -424,7 +448,6 @@ export default function CreateMissionScreen() {
           visible={showQuickStartModal}
           onClose={() => {
             setShowQuickStartModal(false);
-            handleSkipQuickStart();
           }}
           missionData={{
             mission_title: formData.mission_title,
@@ -444,22 +467,25 @@ export default function CreateMissionScreen() {
           onSaved={handleQuickStartSaved}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: Platform.OS === 'android' ? 24 : 0,
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingBottom: 200,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 56,
   },
   backButton: {
     width: 40,
@@ -467,15 +493,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headerTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
-  },
-  headerRight: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+      },
+      default: {
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+    }),
   },
 });

@@ -1,6 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
-import { Chrome as Home, ArrowLeft, Search, RefreshCw } from 'lucide-react-native';
+import { Home, ArrowLeft, Search, RefreshCw } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, BounceIn } from 'react-native-reanimated';
@@ -55,15 +55,15 @@ export default function NotFoundScreen() {
           {/* Action Buttons */}
           <Animated.View entering={FadeInDown.delay(800)} style={styles.actionsContainer}>
             {/* Primary Action - Go Home */}
-            <Link href="/" asChild>
+            {/* <Link href="/" asChild>
               <TouchableOpacity 
                 style={[styles.primaryButton, { backgroundColor: colors.primary }]}
                 activeOpacity={0.8}
               >
-                <Home size={20} color="#fff" />
-                <Text style={styles.primaryButtonText}>Retour à l'accueil</Text>
+                <Home size={20} color={colors.text} />
+                <Text style={[styles.primaryButtonText, { color: colors.text }]}>Retour à l'accueil</Text>
               </TouchableOpacity>
-            </Link>
+            </Link> */}
 
             {/* Secondary Actions */}
             <View style={styles.secondaryActions}>
@@ -201,7 +201,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   primaryButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     fontWeight: '600',
@@ -270,36 +269,3 @@ const styles = StyleSheet.create({
   },
 });
 
-// import { Link, Stack } from 'expo-router';
-// import { StyleSheet, Text, View } from 'react-native';
-
-// export default function NotFoundScreen() {
-//   return (
-//     <>
-//       <Stack.Screen options={{ title: 'Oops!' }} />
-//       <View style={styles.container}>
-//         <Text style={styles.text}>This screen doesn't exist.</Text>
-//         <Link href="/" style={styles.link}>
-//           <Text>Go to home screen!</Text>
-//         </Link>
-//       </View>
-//     </>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     padding: 20,
-//   },
-//   text: {
-//     fontSize: 20,
-//     fontWeight: 600,
-//   },
-//   link: {
-//     marginTop: 15,
-//     paddingVertical: 15,
-//   },
-// });

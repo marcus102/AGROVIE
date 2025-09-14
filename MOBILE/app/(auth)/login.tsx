@@ -397,7 +397,7 @@ export default function LoginScreen() {
                       Email:
                     </Text>
                     <Text style={responsiveStyles.contactValue}>
-                      support@agrrick.com
+                      support@agrovie.africa
                     </Text>
                   </View>
 
