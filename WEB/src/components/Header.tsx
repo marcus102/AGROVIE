@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Sun, Moon, ChevronDown, LogOut, Tractor } from "lucide-react";
+import {
+  Menu,
+  X,
+  User,
+  Sun,
+  Moon,
+  ChevronDown,
+  LogOut,
+  Tractor,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Language, Translations } from "../types";
 import { useTheme } from "../contexts/ThemeContext";
@@ -63,15 +72,19 @@ export function Header({
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-500 ${isScrolled
-        ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-xl border-b border-primary/10"
-        : "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg"
-        }`}
+      className={`sticky top-0 z-50 transition-all duration-500 ${
+        isScrolled
+          ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-xl border-b border-primary/10"
+          : "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg"
+      }`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between">
           <div className="flex items-center">
-            <ScrollToTopLink to="/" className="flex items-center space-x-3 group">
+            <ScrollToTopLink
+              to="/"
+              className="flex items-center space-x-3 group"
+            >
               <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -97,10 +110,11 @@ export function Header({
               <ScrollToTopLink
                 key={item.href}
                 to={item.href}
-                className={`relative text-base font-medium transition-all duration-300 group ${location.pathname === item.href
-                  ? "text-primary dark:text-primary-light"
-                  : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary-light"
-                  }`}
+                className={`relative text-base font-medium transition-all duration-300 group ${
+                  location.pathname === item.href
+                    ? "text-primary dark:text-primary-light"
+                    : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary-light"
+                }`}
               >
                 <span className="relative z-10">{item.name}</span>
                 {location.pathname === item.href && (
@@ -124,8 +138,8 @@ export function Header({
                 onChange={(e) => handleLanguageChange(e.target.value)}
                 className="appearance-none bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-primary dark:hover:border-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-300 cursor-pointer"
               >
-                <option value="en">🇺🇸 EN</option>
-                <option value="fr">🇫🇷 FR</option>
+                <option value="en">EN</option>
+                <option value="fr">FR</option>
               </select>
             </div>
 
@@ -251,10 +265,11 @@ export function Header({
                   <ScrollToTopLink
                     key={item.href}
                     to={item.href}
-                    className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-300 ${location.pathname === item.href
-                      ? "bg-gradient-to-r from-primary/20 to-primary-light/20 text-primary"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      }`}
+                    className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-300 ${
+                      location.pathname === item.href
+                        ? "bg-gradient-to-r from-primary/20 to-primary-light/20 text-primary"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
@@ -268,8 +283,8 @@ export function Header({
                       onChange={(e) => handleLanguageChange(e.target.value)}
                       className="flex-1 p-3 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800"
                     >
-                      <option value="en">🇺🇸 English</option>
-                      <option value="fr">🇫🇷 Français</option>
+                      <option value="en">English</option>
+                      <option value="fr">Français</option>
                     </select>
                     <button
                       onClick={toggleTheme}
@@ -312,13 +327,15 @@ export function Header({
                   </div>
                 ) : (
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
-                    <ScrollToTopLink
-                      to="/register"
-                      className="block px-4 py-3 rounded-xl text-base font-medium text-white bg-gradient-to-r from-primary to-primary-dark text-center"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {translations.header.register}
-                    </ScrollToTopLink>
+                    {!hidden && (
+                      <ScrollToTopLink
+                        to="/register"
+                        className="block px-4 py-3 rounded-xl text-base font-medium text-white bg-gradient-to-r from-primary to-primary-dark text-center"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {translations.header.register}
+                      </ScrollToTopLink>
+                    )}
                     <ScrollToTopLink
                       to="/login"
                       className="block px-4 py-3 rounded-xl text-base font-medium text-primary border-2 border-primary text-center"

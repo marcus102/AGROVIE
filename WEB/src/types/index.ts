@@ -355,14 +355,14 @@ export interface Translations {
       business: string;
       by: string;
     };
-    profile: {
-        role: string;
-        isVerified: string;
-        insNotVerified: string;
-        status: string;
-        membershipDate: string;
-        about: {}
-    };
+    // profile: {
+    //   role: string;
+    //   isVerified: string;
+    //   insNotVerified: string;
+    //   status: string;
+    //   membershipDate: string;
+    //   about: {}
+    // };
     termsOfService: {
       title: string;
       lastUpdated: string;
@@ -860,7 +860,7 @@ export interface Translations {
       business: string;
       by: string;
     };
-    profile: {};
+    // profile: {};
     termsOfService: {
       title: string;
       lastUpdated: string;

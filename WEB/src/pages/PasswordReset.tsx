@@ -12,6 +12,7 @@ import {
 import { Language, Translations, PasswordRequirement } from "../types";
 import { createClient } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
+import { ScrollToTopLink } from "../components/ScrollToTopLink";
 
 // Initialize the Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
@@ -240,18 +241,16 @@ export function PasswordReset({ language, translations }: PasswordResetProps) {
                     key={requirement.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className={`flex items-center text-sm transition-colors duration-200 ${
-                      requirement.met
+                    className={`flex items-center text-sm transition-colors duration-200 ${requirement.met
                         ? "text-green-600 dark:text-green-400"
                         : "text-gray-500 dark:text-gray-400"
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`mr-2 p-1 rounded-full ${
-                        requirement.met
+                      className={`mr-2 p-1 rounded-full ${requirement.met
                           ? "bg-green-100 dark:bg-green-900/30"
                           : "bg-gray-100 dark:bg-gray-700"
-                      }`}
+                        }`}
                     >
                       {requirement.met ? (
                         <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -271,11 +270,10 @@ export function PasswordReset({ language, translations }: PasswordResetProps) {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className={`p-4 rounded-2xl border ${
-                  status === "success"
+                className={`p-4 rounded-2xl border ${status === "success"
                     ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
                     : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-                }`}
+                  }`}
               >
                 <div className="flex items-center">
                   {status === "success" ? (
@@ -284,11 +282,10 @@ export function PasswordReset({ language, translations }: PasswordResetProps) {
                     <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
                   )}
                   <span
-                    className={`text-sm font-medium ${
-                      status === "success"
+                    className={`text-sm font-medium ${status === "success"
                         ? "text-green-700 dark:text-green-300"
                         : "text-red-700 dark:text-red-300"
-                    }`}
+                      }`}
                   >
                     {status === "success"
                       ? translations.resetPassword.success
@@ -306,11 +303,10 @@ export function PasswordReset({ language, translations }: PasswordResetProps) {
                 y: -2,
               }}
               whileTap={{ scale: 0.98 }}
-              className={`w-full flex justify-center py-4 px-4 border border-transparent text-sm font-semibold rounded-2xl transition-all duration-300 ${
-                allRequirementsMet && !isLoading
+              className={`w-full flex justify-center py-4 px-4 border border-transparent text-sm font-semibold rounded-2xl transition-all duration-300 ${allRequirementsMet && !isLoading
                   ? "text-white bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary shadow-lg hover:shadow-xl"
                   : "text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed"
-              }`}
+                }`}
             >
               {isLoading ? (
                 <div className="flex items-center">

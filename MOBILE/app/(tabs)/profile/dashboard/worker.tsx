@@ -20,7 +20,7 @@ import {
   Users,
   Clock,
 } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { router, Link } from 'expo-router';
 import { StatCard } from '@/components/StatCard';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ListItem } from '@/components/ListItem';
@@ -291,17 +291,20 @@ export default function WorkerDashboard() {
                       >
                         Commencez à postuler pour des missions
                       </Text>
-                      <TouchableOpacity
-                        style={[
-                          styles.exploreButton,
-                          { backgroundColor: colors.primary },
-                        ]}
-                        onPress={() => router.push('../../index')}
-                      >
-                        <Text style={styles.exploreButtonText}>
-                          Explorer les opportunités
-                        </Text>
-                      </TouchableOpacity>
+
+                      <Link href="/" asChild>
+                        <TouchableOpacity
+                          style={[
+                            styles.exploreButton,
+                            { backgroundColor: colors.primary },
+                          ]}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.exploreButtonText}>
+                            Explorer les opportunités
+                          </Text>
+                        </TouchableOpacity>
+                      </Link>
                     </View>
                   )}
                 </Animated.View>

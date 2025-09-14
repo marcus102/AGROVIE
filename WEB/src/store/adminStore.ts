@@ -1,4 +1,3 @@
-import { Json } from "./../../../MOBILE/types/supabase";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createClient, Session, User } from "@supabase/supabase-js";
@@ -8,6 +7,14 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export type ActorRank = "Worker" | "Advisor" | "Entrepreneur";
 export type ActorSpecialization =
@@ -144,9 +151,11 @@ export interface Mission {
   proposed_advantages: string[];
   equipment: boolean;
   mission_images: string[];
+  applicants: string[];
   metadata: JSON;
   creator: string;
   created_at: Date;
+  updated_at: Date;
   status: MissionStatus;
 }
 
@@ -252,9 +261,23 @@ export type LinkItem = {
   created_at: string;
 };
 
+export interface Feedback {
+  id: string;
+  user_name: string;
+  user_role: string;
+  rating: number;
+  app_version: string;
+  platform: string;
+  user_agent: string;
+  feedback_text: string;
+  category: string;
+  created_at: Date;
+}
+
 interface AdminState {
   links: LinkItem[];
   dynamicPricings: DynamicPricing[];
+  feedbacks: Feedback[];
   currentPricing: DynamicPricing | null;
   loadingPricing: boolean;
   pricingError: string | null;
@@ -346,6 +369,11 @@ interface AdminState {
     pushToken: string | null,
     message: string
   ) => Promise<void>;
+
+  getFeedbacks: () => Promise<void>;
+  getFeedbackById: (id: string) => Promise<Feedback | null>;
+  deleteFeedback: (id: string) => Promise<void>;
+  updateFeedbackStatus: (id: string, status: string) => Promise<void>;
 }
 
 // Type guard for NotificationType
@@ -376,6 +404,7 @@ function transformNotification(
 export const useAdminStore = create<AdminState>()(
   persist(
     (set, get) => ({
+      feedbacks: [],
       links: [],
       dynamicPricings: [],
       currentPricing: null,
@@ -665,7 +694,7 @@ export const useAdminStore = create<AdminState>()(
           // Update account_status to "Deleted" instead of deleting the record
           const { error } = await supabase
             .from("profiles")
-            .update({ account_status: "Deleted" })
+            .update({ account_status: "deleted" })
             .eq("id", id);
 
           if (error) {
@@ -1807,6 +1836,100 @@ export const useAdminStore = create<AdminState>()(
             error
           );
           throw error;
+        }
+      },
+
+      // Feedback
+      getFeedbacks: async () => {
+        set({ loading: true, error: null });
+        try {
+          const { data, error } = await supabase
+            .from("feedbacks")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          set({ feedbacks: data || [] });
+        } catch (error) {
+          console.error("Error fetching feedbacks via Supabase:", error);
+          throw error;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      getFeedbackById: async (id: string) => {
+        set({ loading: true, error: null });
+        try {
+          const { data, error } = await supabase
+            .from("feedbacks")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+          if (error) throw error;
+          return data;
+        } catch (err) {
+          set({
+            error:
+              err instanceof Error ? err.message : "Failed to get feedback",
+          });
+          return null;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      deleteFeedback: async (id: string) => {
+        set({ loading: true, error: null });
+        try {
+          const { error } = await supabase
+            .from("feedbacks")
+            .delete()
+            .eq("id", id);
+
+          if (error) throw error;
+
+          set((state) => ({
+            feedbacks: state.feedbacks.filter((feedback) => feedback.id !== id),
+          }));
+        } catch (err) {
+          set({
+            error:
+              err instanceof Error ? err.message : "Failed to delete feedback",
+          });
+          throw err;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      updateFeedbackStatus: async (id: string, status: string) => {
+        set({ loading: true, error: null });
+        try {
+          // Note: You'd need to add a 'status' column to your feedbacks table for this
+          const { error } = await supabase
+            .from("feedbacks")
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq("id", id);
+
+          if (error) throw error;
+
+          set((state) => ({
+            feedbacks: state.feedbacks.map((feedback) =>
+              feedback.id === id ? { ...feedback, status } : feedback
+            ),
+          }));
+        } catch (err) {
+          set({
+            error:
+              err instanceof Error
+                ? err.message
+                : "Failed to update feedback status",
+          });
+          throw err;
+        } finally {
+          set({ loading: false });
         }
       },
     }),

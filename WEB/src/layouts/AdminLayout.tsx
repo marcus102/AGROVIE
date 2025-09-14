@@ -20,6 +20,7 @@ import {
 import { useAdminStore } from "../store/adminStore";
 import { useTheme } from "../contexts/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { Language } from "../types";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -31,14 +32,15 @@ const navigation = [
   { name: "Notifications", href: "/admin/notifications", icon: Bell },
   { name: "Dynamic Pricing", href: "/admin/dynamic-pricing", icon: DollarSign },
   { name: "Links Management", href: "/admin/links", icon: LucideLink },
+  { name: "Feedback", href: "/admin/feedback", icon: Bell },
 ];
 
 export function AdminLayout({
   language,
   onLanguageChange,
 }: {
-  language: string;
-  onLanguageChange: (lang: string) => void;
+  language: Language;
+  onLanguageChange: (lang: Language) => void;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -122,11 +124,13 @@ export function AdminLayout({
                     </label>
                     <select
                       value={language}
-                      onChange={(e) => onLanguageChange(e.target.value)}
+                      onChange={(e) =>
+                        onLanguageChange(e.target.value as Language)
+                      }
                       className="w-full p-4 border border-gray-200 dark:border-gray-700 rounded-xl text-base text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 touch-manipulation"
                     >
-                      <option value="en">🇺🇸 English</option>
-                      <option value="fr">🇫🇷 Français</option>
+                      <option value="en">English</option>
+                      <option value="fr">Français</option>
                     </select>
                   </div>
 
@@ -230,9 +234,7 @@ export function AdminLayout({
 
   // Desktop Sidebar Component (unchanged for desktop)
   const DesktopSidebar = () => (
-    <div
-      className="hidden md:flex md:w-72 md:flex-col"
-    >
+    <div className="hidden md:flex md:w-72 md:flex-col">
       <div className="flex flex-col flex-grow bg-white dark:bg-gray-900 shadow-xl border-r border-gray-200 dark:border-gray-700">
         {/* Logo Section */}
         <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 dark:border-gray-700">
@@ -270,11 +272,11 @@ export function AdminLayout({
           <div className="flex items-center justify-between gap-3">
             <select
               value={language}
-              onChange={(e) => onLanguageChange(e.target.value)}
-              className="flex-1 p-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+              onChange={(e) => onLanguageChange(e.target.value as Language)}
+              className="w-full p-4 border border-gray-200 dark:border-gray-700 rounded-xl text-base text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 touch-manipulation"
             >
-              <option value="en">🇺🇸 English</option>
-              <option value="fr">🇫🇷 Français</option>
+              <option value="en">English</option>
+              <option value="fr">Français</option>
             </select>
 
             <motion.button
@@ -300,9 +302,7 @@ export function AdminLayout({
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
               return (
-                <div
-                  key={`${item.name}-${index}`}
-                >
+                <div key={`${item.name}-${index}`}>
                   <Link
                     to={item.href}
                     className={`group flex items-center px-4 py-3 text-sm font-medium rounded-2xl transition-all duration-200 ${
@@ -374,8 +374,10 @@ export function AdminLayout({
             >
               <Menu className="h-7 w-7" />
             </motion.button>
-
-            <Link to="/admin" className="flex items-center space-x-2 touch-manipulation">
+            <Link
+              to="/admin"
+              className="flex items-center space-x-2 touch-manipulation"
+            >
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 5 }}
                 whileTap={{ scale: 0.95 }}
@@ -387,7 +389,6 @@ export function AdminLayout({
                 Admin
               </span>
             </Link>
-
             <div className="w-12" /> {/* Spacer for centering */}
           </div>
         </div>

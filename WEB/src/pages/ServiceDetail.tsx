@@ -29,10 +29,11 @@ import { Layout } from "../components/Layout";
 import { Language, Translations } from "../types";
 
 interface ServiceDetailProps {
+  language: Language;
   translations: Translations[Language];
 }
 
-export function ServiceDetail({ translations }: ServiceDetailProps) {
+export function ServiceDetail({ translations, language }: ServiceDetailProps) {
   const { serviceId } = useParams();
   const t = translations.serviceDetail;
 

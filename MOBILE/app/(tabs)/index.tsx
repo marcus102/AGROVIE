@@ -83,7 +83,7 @@ export default function HomeScreen() {
   const { links, fetchLinks, loading: linksLoading } = useLinkStore();
   const { showWelcome, showFeedback, markWelcomeShown, markFeedbackShown } =
     useWelcomeFlow();
-  const { profile, user, updateProfile } = useAuthStore();
+  const { profile, user } = useAuthStore();
   const {
     missions,
     fetchMissions,
@@ -293,6 +293,8 @@ export default function HomeScreen() {
   }, []);
 
   // Enhanced mission application with better error handling
+
+  // Enhanced mission application with better error handling
   const handleApplyToMission = useCallback(
     async (mission: any) => {
       if (!mission?.id) {
@@ -300,13 +302,19 @@ export default function HomeScreen() {
         return;
       }
 
-      if (!user?.id) {
+      if (!profile?.id || !user?.id) {
         showToast('error', 'Vous devez être connecté pour postuler');
         setTimeout(() => handleNavigation('/auth/login'), 1500);
         return;
       }
 
-      if (mission.applicants?.includes(user.id)) {
+      // Check if user has already applied using profile.id
+      const hasAlreadyApplied = mission.applicants?.some(
+        (applicant: any) =>
+          applicant?.id === profile.id || applicant === profile.id
+      );
+
+      if (hasAlreadyApplied) {
         showToast('info', 'Vous avez déjà postulé à cette mission');
         return;
       }
@@ -318,7 +326,22 @@ export default function HomeScreen() {
 
       setApplyingToMission(mission.id);
       try {
-        const updatedApplicants = [...(mission.applicants || []), user.id];
+        // Create applicant object with profile data
+        const applicantData = {
+          id: profile.id,
+          full_name: profile.full_name || 'Nom non spécifié',
+          role: profile.role || 'Rôle non spécifié',
+          applied_at: new Date().toISOString(), // Optional: add timestamp
+        };
+
+        // Get existing applicants and ensure it's an array
+        const existingApplicants = Array.isArray(mission.applicants)
+          ? mission.applicants
+          : [];
+
+        // Add new applicant data
+        const updatedApplicants = [...existingApplicants, applicantData];
+
         await updateMission(mission.id, { applicants: updatedApplicants });
 
         if (isMountedRef.current) {
@@ -338,7 +361,16 @@ export default function HomeScreen() {
         }
       }
     },
-    [user?.id, updateMission, showToast, applyingToMission, handleNavigation]
+    [
+      profile?.id,
+      profile?.full_name,
+      profile?.role,
+      user?.id,
+      updateMission,
+      showToast,
+      applyingToMission,
+      handleNavigation,
+    ]
   );
 
   // Data fetching with error handling
@@ -410,8 +442,9 @@ export default function HomeScreen() {
               { backgroundColor: colors.primary + '15' },
             ]}
             onPress={toggleNotifications}
-            accessibilityLabel={`Notifications${unreadNotifications > 0 ? `, ${unreadNotifications} non lues` : ''
-              }`}
+            accessibilityLabel={`Notifications${
+              unreadNotifications > 0 ? `, ${unreadNotifications} non lues` : ''
+            }`}
             accessibilityRole="button"
             accessibilityHint="Ouvre le panneau des notifications"
             disabled={isLoading}
@@ -541,7 +574,9 @@ export default function HomeScreen() {
                 ]}
                 onPress={() => fetchMissions()}
               >
-                <Text style={[styles.retryButtonText, { color: colors.primary }]}>
+                <Text
+                  style={[styles.retryButtonText, { color: colors.primary }]}
+                >
                   Réessayer
                 </Text>
               </TouchableOpacity>
@@ -581,9 +616,9 @@ export default function HomeScreen() {
             </Text>
             <Text style={[styles.missionText, { color: colors.text }]}>
               Nous avons pour mission d'autonomiser les professionnels agricoles
-              grâce à la technologie et à la collaboration. En connectant experts,
-              innovateurs et producteurs, nous construisons un avenir plus durable
-              et efficace pour l'agriculture.
+              grâce à la technologie et à la collaboration. En connectant
+              experts, innovateurs et producteurs, nous construisons un avenir
+              plus durable et efficace pour l'agriculture.
             </Text>
             <TouchableOpacity
               style={[
@@ -595,7 +630,7 @@ export default function HomeScreen() {
               ]}
               onPress={() =>
                 handleOpenLink(
-                  `${appLinks.website}/about`,
+                  `${appLinks.website}about`,
                   'La page À propos sera bientôt disponible.'
                 )
               }
@@ -604,7 +639,9 @@ export default function HomeScreen() {
               accessibilityRole="button"
               disabled={isLoading}
             >
-              <Text style={[styles.missionButtonText, { color: colors.primary }]}>
+              <Text
+                style={[styles.missionButtonText, { color: colors.primary }]}
+              >
                 Découvrir notre vision
               </Text>
               <ArrowRight size={16} color={colors.primary} />

@@ -155,7 +155,7 @@ export function Dashboard() {
     },
     {
       title: "Monthly Revenue",
-      value: `$${stats.monthlyRevenue.toFixed(2)}`,
+      value: `XOF ${stats.monthlyRevenue.toFixed(2)}`,
       change: Math.round((stats.monthlyRevenue / stats.totalRevenue) * 100),
       icon: DollarSign,
       color: "from-purple-500 to-purple-600",
