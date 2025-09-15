@@ -88,37 +88,7 @@ export function Services({ language, translations }: ServiceProps) {
         "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop",
     },
   ];
-
-  // const testimonials = [
-  //   {
-  //     quote:
-  //       "AgroNetwork has transformed how we connect with agricultural experts. It's been invaluable for our farm's growth.",
-  //     author: "Sarah Thompson",
-  //     role: "Farm Owner",
-  //     image:
-  //       "https://images.pexels.com/photos/5717277/pexels-photo-5717277.jpeg",
-  //     rating: 5,
-  //   },
-  //   {
-  //     quote:
-  //       "The platform's market insights have helped us make better decisions and improve our yield significantly.",
-  //     author: "Michael Rodriguez",
-  //     role: "Agricultural Consultant",
-  //     image:
-  //       "https://images.pexels.com/photos/8851637/pexels-photo-8851637.jpeg",
-  //     rating: 5,
-  //   },
-  //   {
-  //     quote:
-  //       "Finding qualified agricultural technicians has never been easier. The verification system ensures quality partnerships.",
-  //     author: "Emma Chen",
-  //     role: "Agribusiness Manager",
-  //     image:
-  //       "https://images.pexels.com/photos/5717526/pexels-photo-5717526.jpeg",
-  //     rating: 5,
-  //   },
-  // ];
-
+  
   return (
     <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Hero Section */}

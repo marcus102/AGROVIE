@@ -154,7 +154,7 @@ export function BlogPost() {
           <img
             src={
               post.images[0] ||
-              "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=1920&h=1080&fit=crop"
+              "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/glenn-carstens-peters-piNf3C4TViA-unsplash.jpg"
             }
             alt={post.title}
             className="w-full h-[400px] lg:h-[500px] object-cover"

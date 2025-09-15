@@ -45,7 +45,7 @@ export function ServiceDetail({ translations, language }: ServiceDetailProps) {
       features: translations.services.service1.features,
       gradient: "from-blue-500 to-blue-600",
       image:
-        "https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=1200&h=600&fit=crop",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/glenn-carstens-peters-piNf3C4TViA-unsplash.jpg",
       detailedDescription: t.networkBuilding.detailedDescription,
       benefits: t.networkBuilding.benefits,
       useCases: [
@@ -119,7 +119,7 @@ export function ServiceDetail({ translations, language }: ServiceDetailProps) {
       features: translations.services.service2.features,
       gradient: "from-green-500 to-green-600",
       image:
-        "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=1200&h=600&fit=crop",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/knowledgeshare.jpg",
       detailedDescription: t.knowledgeExchange.detailedDescription,
       benefits: t.knowledgeExchange.benefits,
       useCases: [
@@ -181,7 +181,7 @@ export function ServiceDetail({ translations, language }: ServiceDetailProps) {
       features: translations.services.service3.features,
       gradient: "from-purple-500 to-purple-600",
       image:
-        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=1200&h=600&fit=crop",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/partnership.jpg",
       detailedDescription: t.partnershipFacilitation.detailedDescription,
       benefits: t.partnershipFacilitation.benefits,
       useCases: [
@@ -247,7 +247,7 @@ export function ServiceDetail({ translations, language }: ServiceDetailProps) {
       features: translations.services.service4.features,
       gradient: "from-emerald-500 to-emerald-600",
       image:
-        "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200&h=600&fit=crop",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/verifiedexpertize.jpg",
       detailedDescription: t.verifiedExpertise.detailedDescription,
       benefits: t.verifiedExpertise.benefits,
       useCases: [
@@ -309,7 +309,7 @@ export function ServiceDetail({ translations, language }: ServiceDetailProps) {
       features: translations.services.service5.features,
       gradient: "from-orange-500 to-orange-600",
       image:
-        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/marketinginsight.jpg",
       detailedDescription: t.marketInsights.detailedDescription,
       benefits: t.marketInsights.benefits,
       useCases: [
@@ -371,7 +371,7 @@ export function ServiceDetail({ translations, language }: ServiceDetailProps) {
       features: translations.services.service6.features,
       gradient: "from-red-500 to-red-600",
       image:
-        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/businessgrowth.jpg",
       detailedDescription: t.businessGrowth.detailedDescription,
       benefits: t.businessGrowth.benefits,
       useCases: [

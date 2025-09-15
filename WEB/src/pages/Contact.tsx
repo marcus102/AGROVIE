@@ -59,7 +59,7 @@ export function Contact({ translations }: ContactProps) {
 
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=1920&h=1080&fit=crop"
+            src="https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/glenn-carstens-peters-piNf3C4TViA-unsplash.jpg"
             alt="Contact background"
             className="w-full h-full object-cover opacity-20"
           />

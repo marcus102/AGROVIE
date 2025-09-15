@@ -14,28 +14,28 @@ export function About({ translations }: AboutProps) {
     {
       name: "Aymard P. SAWADOGO",
       role: "Agronome, Expert consultant en sécurité alimentaire et nutrition & Co-fondateur",
-      image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Eymar.jpg",
+      image: "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/Eymar.jpg",
       bio: "9 ans d’expérience en conseil agricole et chaine de valeur",
       social: { email: "aymard@agrovie.africa", location: "Ouagadougou, BF" }
     },
     {
       name: "Marcus W. SAWADOGO",
       role: "Developpeur fullstack & Co-Fondateur",
-      image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Marcus.jpg",
+      image: "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/Marcus.jpg",
       bio: "Software engineer with a passion for agriculture",
       social: { email: "marcus@agrovie.africa", location: "Ouagadougou, BF" }
     },
     {
       name: "Razack A. NIKIEMA",
       role: "développeur de solutions IoT & Co-Fondateur",
-      image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/WhatsApp%20Image%202025-05-17%20at%2020.18.58_1ae41512.jpg",
+      image: "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/WhatsApp%20Image%202025-05-17%20at%2020.18.58_1ae41512.jpg",
       bio: "Expert in agricultural partnerships",
       social: { email: "razack@agrovie.africa", location: "Ouagadougou, BF" }
     },
     {
       name: "Ariane P. SAWADOGO",
       role: "Directrice Générale de Expertise Rurale, Ingénieur en aménagement hydro-agricole & Co-fondatrice",
-      image: "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Ariane.jpg",
+      image: "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/Ariane.jpg",
       bio: "Ingénieur en aménagement hydro-agricole",
       social: { email: "ariane@agrovie.africa", location: "Ouagadougou, BF" }
     },
@@ -85,7 +85,7 @@ export function About({ translations }: AboutProps) {
         
         <div className="absolute inset-0 overflow-hidden">
           <img
-            src="https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/agriculture-riz-ghana.webp"
+            src="https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/agriculture-riz-ghana.webp"
             alt="Agriculture background"
             className="w-full h-full object-cover opacity-20"
           />
@@ -146,7 +146,7 @@ export function About({ translations }: AboutProps) {
             >
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <img
-                  src="https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/agriculture-riz-ghana.webp"
+                  src="https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/agriculture-riz-ghana.webp"
                   alt="Agricultural innovation"
                   className="w-full h-96 object-cover"
                 />

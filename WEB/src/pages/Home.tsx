@@ -58,7 +58,7 @@ export function Home({ language, translations }: HomeProps) {
       title: translations.home.forFarmers,
       description: translations.home.forFarmersDescription,
       image:
-        "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/offensive-agricole-burkina-faso-YT-1739963276.webp",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/offensive-agricole-burkina-faso-YT-1739963276.webp",
       benefits: translations.home.farmerBenefits,
       gradient: "from-emerald-500 to-teal-600",
     },
@@ -66,7 +66,7 @@ export function Home({ language, translations }: HomeProps) {
       title: translations.home.forTechnicians,
       description: translations.home.forTechniciansDescription,
       image:
-        "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/FieldActivity_01.jpg",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/FieldActivity_01.jpg",
       benefits: translations.home.forTechniciansBenefits,
       gradient: "from-blue-500 to-indigo-600",
     },
@@ -74,7 +74,7 @@ export function Home({ language, translations }: HomeProps) {
       title: translations.home.forEntrepreneurs,
       description: translations.home.forEntrepreneursDescription,
       image:
-        "https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/agriculture_potirons_loumbi.jpg",
+        "https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/agriculture_potirons_loumbi.jpg",
       benefits: translations.home.forEntrepreneursBenefits,
       gradient: "from-orange-500 to-red-600",
     },
@@ -186,7 +186,7 @@ export function Home({ language, translations }: HomeProps) {
               repeatType: "reverse",
             }}
             className="w-full h-full object-cover"
-            src="https://raw.githubusercontent.com/marcus102/AGRO/refs/heads/main/assets/team/Productions_agricoles_du_Burkina_Faso.webp"
+            src="https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/Productions_agricoles_du_Burkina_Faso.webp"
             alt="Agricultural landscape"
           />
           {/* Animated Particles */}

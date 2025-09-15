@@ -106,7 +106,7 @@ export function FAQ({ translations }: FaqProps) {
         
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1920&h=1080&fit=crop"
+            src="https://raw.githubusercontent.com/marcus102/AGROVIE/refs/heads/main/assets/team/glenn-carstens-peters-piNf3C4TViA-unsplash.jpg"
             alt="FAQ Background"
             className="w-full h-full object-cover opacity-20"
           />

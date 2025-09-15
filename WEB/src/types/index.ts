@@ -332,7 +332,7 @@ export interface Translations {
         question: string;
         answer: string;
       };
-      questionNoFound: string;
+      questionNotFound: string;
       stillHaveQuestions: string;
       cannotFind: string;
       contactSupportButton: string;
